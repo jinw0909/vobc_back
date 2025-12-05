@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.9-SNAPSHOT'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'io.vobc'
+version = '0.0.1-SNAPSHOT'
+description = 'vobc_back'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.spring.io/snapshot' }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    implementation 'org.webjars:bootstrap:5.3.3'
+    implementation 'org.webjars:jquery:3.7.1'
+    implementation 'org.webjars:font-awesome:6.5.1'
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    runtimeOnly 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

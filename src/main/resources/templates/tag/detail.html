@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="layout/head :: head"></head>
+<body>
+
+<div class="container mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>태그 상세</h2>
+
+        <div>
+            <!-- 게시글 목록으로 이동 버튼 -->
+            <a class="btn btn-outline-primary me-2"
+               th:href="@{/tag/posts(id=${tag.id})}">
+                관련 게시글 보기
+            </a>
+
+            <!-- 태그 목록 버튼 -->
+            <a class="btn btn-secondary"
+               th:href="@{/tag/list}">
+                목록으로
+            </a>
+        </div>
+    </div>
+
+    <!-- 에러 메시지 -->
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- 태그 정보 -->
+    <table class="table table-bordered">
+        <tr>
+            <th style="width: 20%;">ID</th>
+            <td th:text="${tag.id}"></td>
+        </tr>
+        <tr>
+            <th>이름</th>
+            <td th:text="${tag.name}"></td>
+        </tr>
+        <tr>
+            <th>등록일</th>
+            <td th:text="${#temporals.format(tag.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+        </tr>
+        <tr>
+            <th>수정일</th>
+            <td th:text="${#temporals.format(tag.updatedAt, 'yyyy-MM-dd HH:mm')}"></td>
+        </tr>
+    </table>
+
+    <!-- 관련 게시글 보기 링크 (두 번째 위치 예시 - 테이블 아래 배치) -->
+    <div class="mb-4">
+        <a th:href="@{/tag/posts(id=${tag.id})}"
+           class="btn btn-outline-primary">
+            이 태그가 포함된 게시글 보기 →
+        </a>
+    </div>
+
+    <!-- 수정 폼 -->
+    <div class="card mt-4">
+        <div class="card-header">
+            태그 이름 수정
+        </div>
+        <div class="card-body">
+            <form th:action="@{/tag/update}" method="post">
+                <input type="hidden" name="id" th:value="${tag.id}"/>
+
+                <div class="mb-3">
+                    <label for="name" class="form-label">이름</label>
+                    <input type="text"
+                           class="form-control"
+                           id="name"
+                           name="name"
+                           th:value="${name != null} ? ${name} : ${tag.name}">
+                </div>
+
+                <button type="submit" class="btn btn-primary">저장</button>
+                <a th:href="@{/tag/delete(id=${tag.id})}" class="btn btn-danger ms-2"
+                   onclick="return confirm('정말 삭제하시겠습니까?');">
+                    삭제
+                </a>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<div th:replace="layout/footer :: footer"></div>
+</body>
+</html>

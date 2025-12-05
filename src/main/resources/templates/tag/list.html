@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="layout/head :: head"></head>
+<body>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>태그 목록</h2>
+        <a class="btn btn-primary" th:href="@{/tag/create}">새 태그 만들기</a>
+    </div>
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+        <tr>
+            <th>ID</th>
+            <th>이름</th>
+            <th>등록일</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="tag : ${tags}">
+            <td>
+                <a th:href="@{/tag/detail(id=${tag.id})}" th:text="${tag.id}"></a>
+            </td>
+            <td>
+                <a th:href="@{/tag/detail(id=${tag.id})}" th:text="${tag.name}"></a>
+            </td>
+            <td th:text="${#temporals.format(tag.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div th:replace="layout/footer :: footer"></div>
+</body>
+</html>

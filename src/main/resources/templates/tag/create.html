@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="layout/head :: head"></head>
+<body>
+
+<div class="container mt-5">
+    <h2 class="mb-4">태그 생성</h2>
+
+    <!-- 에러 메시지 -->
+    <div th:if="${errorMessage}" class="alert alert-danger">
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <form th:action="@{/tag/create}" method="post">
+        <div class="mb-3">
+            <label for="name" class="form-label">태그명</label>
+            <input type="text"
+                   id="name"
+                   name="name"
+                   class="form-control"
+                   th:value="${name}">
+        </div>
+
+        <button type="submit" class="btn btn-primary">생성하기</button>
+        <a th:href="@{/tag/list}" class="btn btn-secondary ms-2">취소</a>
+    </form>
+</div>
+
+<div th:replace="layout/footer :: footer"></div>
+</body>
+</html>

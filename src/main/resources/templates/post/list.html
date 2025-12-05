@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="layout/head :: head"></head>
+<body>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>게시글 목록</h2>
+        <a class="btn btn-primary" th:href="@{/post/create}">새 글 작성</a>
+    </div>
+
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+        <tr>
+            <th style="width: 80px;">ID</th>
+            <th>제목</th>
+            <th style="width: 180px;">작성자</th>
+            <th style="width: 200px;">등록일</th>
+            <th style="width: 220px;">태그</th>
+            <th style="width: 140px;">관리</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="post : ${posts}">
+            <td th:text="${post.id}"></td>
+            <td>
+                <a th:href="@{/post/detail(id=${post.id})}"
+                   th:text="${post.title}"></a>
+            </td>
+            <td th:text="${post.author}"></td>
+            <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+            <td>
+                <span th:each="tag : ${post.tags}"
+                      class="badge text-bg-secondary me-1"
+                      th:text="${tag.name}">
+                </span>
+            </td>
+            <td>
+                <a class="btn btn-sm btn-outline-secondary"
+                   th:href="@{/post/update(id=${post.id})}">수정</a>
+                <form th:action="@{/post/delete}" method="post" style="display:inline-block;"
+                      onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                    <input type="hidden" name="id" th:value="${post.id}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(posts)}">
+            <td colspan="6" class="text-center text-muted">등록된 게시글이 없습니다.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div th:replace="layout/footer :: footer"></div>
+</body>
+</html>
