@@ -31,7 +31,7 @@ public class PostService {
     @Transactional
     public Long createPost(PostCreateRequest request) {
         Post post = Post.createPost(
-                request.getTitle(), request.getContent(), request.getSummary(), request.getAuthor());
+                request.getTitle(), request.getContent(), request.getSummary(), request.getAuthor(), request.getReleaseDate(), request.getThumbnail());
 
         if (request.getTagIds() != null) {
             for (Long tagId : request.getTagIds()) {
@@ -64,7 +64,7 @@ public class PostService {
     public Post updatePost(Long id, PostUpdateRequest request) {
         Post post = postRepository.findById(id).orElseThrow();
 
-        post.update(request.getTitle(), request.getContent(), request.getSummary(), request.getAuthor());
+        post.update(request.getTitle(), request.getContent(), request.getSummary(), request.getAuthor(), request.getReleaseDate(), request.getThumbnail());
 
         updatePostTagsFromForm(post, request.getTagIds());
 

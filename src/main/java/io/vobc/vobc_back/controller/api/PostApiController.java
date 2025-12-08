@@ -6,10 +6,7 @@ import io.vobc.vobc_back.dto.PagedResponse;
 import io.vobc.vobc_back.dto.PostResponse;
 import io.vobc.vobc_back.service.PostService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,6 +24,13 @@ public class PostApiController {
     ) {
         LanguageCode language = LanguageCode.from(lang);
         return postService.getPosts(language, page, size);
+    }
+
+    @GetMapping("/{id}")
+    public PostResponse getPost(@PathVariable Long id,
+                                @RequestParam(defaultValue = "en") String lang) {
+        LanguageCode language = LanguageCode.from(lang);
+        return PostResponse.from(postService.getPost(id), language);
     }
 
 }

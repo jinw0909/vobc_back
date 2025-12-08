@@ -4,6 +4,7 @@ import io.vobc.vobc_back.domain.Post;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,6 +16,8 @@ public class PostForm {
     private String content;
     private String summary;
     private String author;
+    private LocalDate releaseDate;
+    private String thumbnail;
 
     private List<TagForm> tags;
 
@@ -28,6 +31,8 @@ public class PostForm {
         f.setContent(p.getContent());
         f.setSummary(p.getSummary());
         f.setAuthor(p.getAuthor());
+        f.setReleaseDate(p.getReleaseDate());
+        f.setThumbnail(p.getThumbnail());
 
         List<TagForm> tagFormList = p.getPostTags().stream()
                 .map(pt -> new TagForm(pt.getTag().getId(), pt.getTag().getName()))

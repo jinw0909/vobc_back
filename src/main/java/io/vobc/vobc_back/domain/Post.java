@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,11 +26,17 @@ public class Post {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String summary;
 
     @Column(length = 32)
     private String author = "The VOB Foundation";
+
+    @Column
+    private LocalDate releaseDate;
+
+    @Column(length = 512)
+    private String thumbnail;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC, id ASC")
@@ -46,11 +53,13 @@ public class Post {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    private Post(String title, String content, String summary, String author) {
+    private Post(String title, String content, String summary, String author, LocalDate releaseDate, String thumbnail) {
         this.title = title;
         this.content = content;
         this.summary = summary;
         this.author = author;
+        this.releaseDate = releaseDate;
+        this.thumbnail = thumbnail;
     }
 
     // 연관관계 메서드
@@ -66,8 +75,8 @@ public class Post {
         translation.setPost(this);
     }
 
-    public static Post createPost(String title, String content, String summary, String author, PostTag... postTags) {
-        Post post = new Post(title, content, summary, author);
+    public static Post createPost(String title, String content, String summary, String author, LocalDate releaseDate, String thumbnail, PostTag... postTags) {
+        Post post = new Post(title, content, summary, author, releaseDate, thumbnail);
         for (PostTag postTag : postTags) {
             post.addPostTag(postTag);
         }
@@ -94,10 +103,12 @@ public class Post {
         });
     }
 
-    public void update(String title, String content, String summary, String author) {
+    public void update(String title, String content, String summary, String author, LocalDate releaseDate, String thumbnail) {
         this.title = title;
         this.content = content;
         this.summary = summary;
+        this.releaseDate = releaseDate;
+        this.thumbnail = thumbnail;
         if (author != null && !author.isBlank()) {
             this.author = author;
         }

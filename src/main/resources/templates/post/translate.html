@@ -3,6 +3,20 @@
 <head th:replace="~{layout/head :: head}"></head>
 <body>
 
+<style>
+    /* 원본 내용/요약 스크롤 박스 */
+    .scroll-box {
+        max-height: 220px;              /* 박스 높이 고정 */
+        overflow-y: auto;               /* 넘치면 세로 스크롤 */
+        white-space: pre-wrap;          /* 줄바꿈/공백 유지 */
+        border: 1px solid #ced4da;
+        border-radius: .375rem;
+        padding: .5rem .75rem;
+        background-color: #f8f9fa;
+        font-size: 0.95rem;
+    }
+</style>
+
 <div class="container mt-5">
 
     <h2 class="mb-3">
@@ -10,11 +24,35 @@
         <small class="text-muted" th:text="'(언어: ' + ${languageCode} + ')'"></small>
     </h2>
 
-    <p class="mb-4 text-muted">
+    <p class="mb-2 text-muted">
         원본 게시글 ID:
         <span th:text="${post.id}"></span>
     </p>
 
+    <!-- ✅ releaseDate / thumbnail 은 보기만 (수정 불가) -->
+    <div class="mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">발행일 (releaseDate)</label>
+                <div class="form-control-plaintext"
+                     th:text="${post.releaseDate}">2025-01-01</div>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label fw-bold">썸네일 이미지 (thumbnail)</label>
+                <div class="form-control-plaintext mb-2 text-truncate"
+                     th:text="${post.thumbnail}">
+                    https://example.com/image.jpg
+                </div>
+                <img th:if="${post.thumbnail}"
+                     th:src="${post.thumbnail}"
+                     alt="Thumbnail preview"
+                     class="img-thumbnail"
+                     style="max-height: 150px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ 여기부터 번역 폼 -->
     <form th:action="@{/post/translate}" method="post" th:object="${translationForm}">
 
         <!-- 숨겨진 필드 -->
@@ -35,23 +73,25 @@
         <!-- 요약 -->
         <div class="mb-4">
             <label class="form-label fw-bold">원본 요약</label>
-            <div class="form-control-plaintext" th:text="${post.summary}">원본 요약</div>
+            <div class="scroll-box" th:text="${post.summary}">원본 요약 (HTML)</div>
 
             <label class="form-label mt-2">번역 요약</label>
-            <input type="text"
-                   class="form-control translation-input"
-                   th:field="*{summary}"/>
+            <textarea class="form-control translation-input"
+                      rows="4"
+                      th:field="*{summary}"></textarea>
         </div>
 
         <!-- 내용 -->
         <div class="mb-4">
-            <label class="form-label fw-bold">원본 내용</label>
-            <div class="form-control-plaintext"
-                 th:utext="${post.content}">원본 내용</div>
+            <label class="form-label fw-bold">원본 내용 (HTML)</label>
+            <div class="scroll-box"
+                 th:text="${post.content}">
+                원본 내용
+            </div>
 
             <label class="form-label mt-2">번역 내용</label>
             <textarea class="form-control translation-input"
-                      rows="8"
+                      rows="10"
                       th:field="*{content}"></textarea>
         </div>
 
@@ -63,7 +103,7 @@
 
             <label class="form-label mt-2">번역 작가</label>
             <textarea class="form-control translation-input"
-                      rows="8"
+                      rows="2"
                       th:field="*{author}"></textarea>
         </div>
 
@@ -85,6 +125,7 @@
 
     </form>
 </div>
+
 <div th:replace="~{layout/footer :: footer}"></div>
 
 <script th:inline="javascript">
@@ -95,13 +136,12 @@
     const editBtn = document.getElementById('editBtn');
     const saveBtn = document.getElementById('saveBtn');
 
-    if (hasTranslation) {
-        // 이미 번역이 있는 경우: 처음에는 읽기 전용 + 저장 버튼 비활성처럼 보이게
+    if (hasTranslation && saveBtn) {
         inputs.forEach(i => i.setAttribute('readonly', 'readonly'));
         saveBtn.disabled = true;
     }
 
-    if (editBtn) {
+    if (editBtn && saveBtn) {
         editBtn.addEventListener('click', () => {
             inputs.forEach(i => i.removeAttribute('readonly'));
             saveBtn.disabled = false;

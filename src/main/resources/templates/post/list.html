@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
-<head th:replace="layout/head :: head"></head>
+<head th:replace="~{layout/head :: head}"></head>
 <body>
 
 <div class="container mt-5">
@@ -28,7 +28,7 @@
                    th:text="${post.title}"></a>
             </td>
             <td th:text="${post.author}"></td>
-            <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+            <td th:text="${#temporals.format(post.releaseDate, 'yyyy-MM-dd')}"></td>
             <td>
                 <span th:each="tag : ${post.tags}"
                       class="badge text-bg-secondary me-1"
@@ -52,6 +52,6 @@
     </table>
 </div>
 
-<div th:replace="layout/footer :: footer"></div>
+<div th:replace="~{layout/footer :: footer}"></div>
 </body>
 </html>

@@ -7,6 +7,7 @@ import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,6 +21,8 @@ public class PostResponse {
     private String content;
     private String author;
     private String summary;
+    private LocalDate releaseDate;
+    private String thumbnail;
 
     private String requestedLanguage;
     private String effectiveLanguage;
@@ -49,7 +52,7 @@ public class PostResponse {
                 .map(pt -> new TagForm(pt.getTag().getId(), pt.getTag().getName()))
                 .toList();
 
-        return new PostResponse(post.getId(), title, content, author, summary, requestedLanguage.getCode(), effectiveLanguage, translated, post.getCreatedAt(), post.getUpdatedAt(), tags);
+        return new PostResponse(post.getId(), title, content, author, summary, post.getReleaseDate(), post.getThumbnail(), requestedLanguage.getCode(), effectiveLanguage, translated, post.getCreatedAt(), post.getUpdatedAt(), tags);
 
     }
 
