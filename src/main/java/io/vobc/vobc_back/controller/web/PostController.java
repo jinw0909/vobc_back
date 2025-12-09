@@ -5,11 +5,14 @@ import io.vobc.vobc_back.domain.Post;
 import io.vobc.vobc_back.domain.PostTag;
 import io.vobc.vobc_back.domain.Translation;
 import io.vobc.vobc_back.dto.*;
+import io.vobc.vobc_back.security.CustomUserDetails;
 import io.vobc.vobc_back.service.PostService;
 import io.vobc.vobc_back.service.TagService;
 import io.vobc.vobc_back.service.TranslationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -66,8 +69,9 @@ public class PostController {
     }
 
     @PostMapping("/create")
-    public String create(@Valid PostCreateRequest request) {
-        postService.createPost(request);
+    public String create(@AuthenticationPrincipal CustomUserDetails userDetails, @Valid PostCreateRequest request) {
+        Long memberId = userDetails.getId();
+        postService.createPost(memberId, request);
         return "redirect:/post/list";
     }
 

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="header">
+    <header class="site-header">
+        <div class="header-inner">
+
+            <!-- ✅ 로고 / 홈 -->
+            <div class="header-left">
+                <a th:href="@{/}" class="logo">
+                    VOB
+                </a>
+            </div>
+
+            <!-- ✅ 우측 영역 -->
+            <nav class="header-right">
+
+                <!-- 로그인 안 한 상태 -->
+                <div th:if="${#authorization.expression('!isAuthenticated()')}">
+                    <a th:href="@{/auth/login}">Login</a>
+                    <a th:href="@{/auth/join}">Sign up</a>
+                </div>
+
+                <!-- 로그인 한 상태 -->
+                <div th:if="${#authorization.expression('isAuthenticated()')}">
+                    <span class="user-info">
+                        Hello, <strong>[[${#authentication.name}]]</strong>
+                    </span>
+
+                    <form th:action="@{/auth/logout}" method="post" style="display:inline;">
+                        <button type="submit" class="logout-btn">Logout</button>
+                    </form>
+                </div>
+
+            </nav>
+        </div>
+
+    </header>
+</th:block>
+</html>

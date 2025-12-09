@@ -1,5 +1,6 @@
 package io.vobc.vobc_back.domain;
 
+import io.vobc.vobc_back.domain.member.Member;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -45,6 +46,10 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Translation> translations = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -75,11 +80,20 @@ public class Post {
         translation.setPost(this);
     }
 
-    public static Post createPost(String title, String content, String summary, String author, LocalDate releaseDate, String thumbnail, PostTag... postTags) {
+    public void setMember(Member member) {
+        this.member = member;
+        member.getPosts().add(this);
+    }
+
+    public static Post createPost(Member member, String title, String content, String summary, String author, LocalDate releaseDate, String thumbnail, PostTag... postTags) {
+
         Post post = new Post(title, content, summary, author, releaseDate, thumbnail);
         for (PostTag postTag : postTags) {
             post.addPostTag(postTag);
         }
+
+        post.setMember(member);
+
         return post;
     }
 

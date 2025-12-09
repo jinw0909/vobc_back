@@ -1,0 +1,15 @@
+.site-header {
+    border-bottom: 1px solid #ddd;
+    padding: 12px 24px;
+}
+
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-right a,
+.logout-btn {
+    margin-left: 12px;
+}

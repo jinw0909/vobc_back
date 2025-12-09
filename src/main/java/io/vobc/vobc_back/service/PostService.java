@@ -1,10 +1,12 @@
 package io.vobc.vobc_back.service;
 
 import io.vobc.vobc_back.domain.*;
+import io.vobc.vobc_back.domain.member.Member;
 import io.vobc.vobc_back.dto.PagedResponse;
 import io.vobc.vobc_back.dto.PostCreateRequest;
 import io.vobc.vobc_back.dto.PostResponse;
 import io.vobc.vobc_back.dto.PostUpdateRequest;
+import io.vobc.vobc_back.repository.MemberRepository;
 import io.vobc.vobc_back.repository.PostRepository;
 import io.vobc.vobc_back.repository.TagRepository;
 import io.vobc.vobc_back.repository.TranslationRepository;
@@ -27,11 +29,16 @@ public class PostService {
     private final PostRepository postRepository;
     private final TagRepository tagRepository;
     private final TranslationRepository translationRepository;
+    private final MemberRepository memberRepository;
 
     @Transactional
-    public Long createPost(PostCreateRequest request) {
+    public Long createPost(Long memberId, PostCreateRequest request) {
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Member not found: " + memberId));
+
         Post post = Post.createPost(
-                request.getTitle(), request.getContent(), request.getSummary(), request.getAuthor(), request.getReleaseDate(), request.getThumbnail());
+                member, request.getTitle(), request.getContent(), request.getSummary(), request.getAuthor(), request.getReleaseDate(), request.getThumbnail());
 
         if (request.getTagIds() != null) {
             for (Long tagId : request.getTagIds()) {

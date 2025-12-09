@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<body>
+<div class="container" style="max-width: 420px; margin: 60px auto;">
+
+    <h2 style="text-align: center; margin-bottom: 24px;">
+        Sign Up
+    </h2>
+
+
+    <form th:action="@{/auth/join}" th:object="${joinRequest}" method="post">
+        <!-- ✅ 글로벌 에러 -->
+        <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+            <p th:each="err : ${#fields.globalErrors()}"
+               th:text="${err}"></p>
+        </div>
+
+        <!-- ✅ Email -->
+        <div style="margin-bottom: 16px;">
+            <label for="email">Email</label>
+            <input type="email"
+                   id="email"
+                   th:field="*{email}"
+                   placeholder="email@example.com"
+                   required
+                   class="form-control"/>
+
+            <div th:if="${#fields.hasErrors('email')}"
+                 th:errors="*{email}"
+                 class="text-danger"
+                 style="margin-top: 4px;">
+            </div>
+        </div>
+
+        <!-- ✅ Password -->
+        <div style="margin-bottom: 20px;">
+            <label for="password">Password</label>
+            <input type="password"
+                   id="password"
+                   th:field="*{password}"
+                   placeholder="••••••••"
+                   required
+                   class="form-control"/>
+
+            <div th:if="${#fields.hasErrors('password')}"
+                 th:errors="*{password}"
+                 class="text-danger"
+                 style="margin-top: 4px;">
+            </div>
+        </div>
+
+        <!-- ✅ Submit -->
+        <button type="submit"
+                class="btn btn-primary"
+                style="width: 100%;">
+            Create Account
+        </button>
+
+    </form>
+
+    <div style="text-align: center; margin-top: 16px;">
+        <a th:href="@{/auth/login}">
+            Already have an account? Login
+        </a>
+    </div>
+
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>
