@@ -1,4 +1,4 @@
-package io.vobc.vobc_back.dto;
+package io.vobc.vobc_back.dto.post;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

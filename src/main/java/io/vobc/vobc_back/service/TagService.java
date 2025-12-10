@@ -1,16 +1,21 @@
 package io.vobc.vobc_back.service;
 
-import io.vobc.vobc_back.domain.Post;
-import io.vobc.vobc_back.domain.PostTag;
-import io.vobc.vobc_back.domain.Tag;
+import io.vobc.vobc_back.domain.*;
+import io.vobc.vobc_back.dto.PagedResponse;
+import io.vobc.vobc_back.dto.post.PostResponse;
 import io.vobc.vobc_back.exception.DuplicateTagException;
 import io.vobc.vobc_back.repository.TagRepository;
+import io.vobc.vobc_back.repository.TranslationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +23,7 @@ import java.util.List;
 public class TagService {
 
     private final TagRepository tagRepository;
+    private final TranslationRepository translationRepository;
 
     @Transactional
     public Tag createTag(String name) {
@@ -62,6 +68,8 @@ public class TagService {
         return tag;
     }
 
+    // 관리자/웹용
+    @Transactional(readOnly = true)
     public List<Post> getPostsByTagId(Long id) {
 
         Tag tag = tagRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Tag not found: " + id));
@@ -69,5 +77,42 @@ public class TagService {
                 .map(PostTag::getPost)
                 .distinct()
                 .toList();
+    }
+
+    // API용 (페이징 + 번역)
+    @Transactional(readOnly = true)
+    public PagedResponse<PostResponse> getPostsByTagId(Long id,
+                                                       LanguageCode languageCode,
+                                                       Pageable pageable) {
+        Page<Post> postPage = tagRepository.findPostsByTagId(id, pageable);
+
+        if (postPage.isEmpty()) {
+            return new PagedResponse<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(), postPage.getTotalElements(), postPage.getTotalPages());
+        }
+
+        List<Post> posts = postPage.getContent();
+
+        //이번 페이지의 post id들
+        List<Long> postIds = posts.stream()
+                .map(Post::getId)
+                .toList();
+
+        // 해당 언어 번역만 한 번에 조회
+        List<Translation> translations = translationRepository.findAllByPostIdInAndLanguageCode(postIds, languageCode);
+
+        Map<Long, Translation> trMap = translations.stream()
+                .collect(Collectors.toMap(
+                        tr -> tr.getPost().getId(),
+                        tr -> tr
+                ));
+
+        List<PostResponse> dtoList = posts.stream()
+                .map(post -> {
+                    Translation tr = trMap.get(post.getId());
+                    return PostResponse.of(post, tr, languageCode);
+                })
+                .toList();
+
+        return new PagedResponse<>(dtoList, pageable.getPageNumber(), pageable.getPageSize(), postPage.getTotalElements(), postPage.getTotalPages());
     }
 }

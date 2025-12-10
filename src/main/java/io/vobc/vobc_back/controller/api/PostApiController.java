@@ -3,12 +3,12 @@ package io.vobc.vobc_back.controller.api;
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.Post;
 import io.vobc.vobc_back.dto.PagedResponse;
-import io.vobc.vobc_back.dto.PostResponse;
+import io.vobc.vobc_back.dto.post.PostResponse;
 import io.vobc.vobc_back.service.PostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/post")
@@ -19,18 +19,18 @@ public class PostApiController {
 
     @GetMapping("/list")
     public PagedResponse<PostResponse> list(@RequestParam(defaultValue = "en") String lang,
-                                            @RequestParam(defaultValue = "0") int page,
-                                            @RequestParam(defaultValue = "10") int size
+                                            @PageableDefault(size = 10) Pageable pageable
     ) {
         LanguageCode language = LanguageCode.from(lang);
-        return postService.getPosts(language, page, size);
+        return postService.getPosts(language, pageable);
     }
 
     @GetMapping("/{id}")
     public PostResponse getPost(@PathVariable Long id,
                                 @RequestParam(defaultValue = "en") String lang) {
-        LanguageCode language = LanguageCode.from(lang);
-        return PostResponse.from(postService.getPost(id), language);
+        LanguageCode languageCode = LanguageCode.from(lang);
+
+        return postService.getPostDetail(id, languageCode);
     }
 
 }

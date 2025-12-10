@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TranslationRepository extends JpaRepository<Translation, Long> {
+
     Optional<Translation> findByPostIdAndLanguageCode(Long postId, LanguageCode languageCode);
+
     List<Translation> findAllByPostIdInAndLanguageCode(List<Long> postIds, LanguageCode languageCode);
+
+    void deleteByPost_IdAndLanguageCode(Long postId, LanguageCode languageCode);
 }

@@ -1,6 +1,7 @@
-package io.vobc.vobc_back.dto;
+package io.vobc.vobc_back.dto.post;
 
 import io.vobc.vobc_back.domain.Post;
+import io.vobc.vobc_back.dto.TagForm;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,7 +20,7 @@ public class PostForm {
     private LocalDate releaseDate;
     private String thumbnail;
 
-    private List<TagForm> tags;
+//    private List<TagForm> tags;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -34,11 +35,11 @@ public class PostForm {
         f.setReleaseDate(p.getReleaseDate());
         f.setThumbnail(p.getThumbnail());
 
-        List<TagForm> tagFormList = p.getPostTags().stream()
-                .map(pt -> new TagForm(pt.getTag().getId(), pt.getTag().getName()))
-                .toList();
-
-        f.setTags(tagFormList);
+//        List<TagForm> tagFormList = p.getPostTags().stream()
+//                .map(pt -> new TagForm(pt.getTag().getId(), pt.getTag().getName()))
+//                .toList();
+//
+//        f.setTags(tagFormList);
 
         return f;
     }

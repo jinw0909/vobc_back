@@ -45,4 +45,9 @@ public class TranslationService {
         post.addTranslation(translation);
         translationRepository.save(translation);
     }
+
+    @Transactional
+    public void deleteByPostIdAndLanguageCode(Long postId, LanguageCode languageCode) {
+        translationRepository.deleteByPost_IdAndLanguageCode(postId, languageCode);
+    }
 }

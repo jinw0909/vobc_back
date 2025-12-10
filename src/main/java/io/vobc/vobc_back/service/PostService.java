@@ -3,13 +3,11 @@ package io.vobc.vobc_back.service;
 import io.vobc.vobc_back.domain.*;
 import io.vobc.vobc_back.domain.member.Member;
 import io.vobc.vobc_back.dto.PagedResponse;
-import io.vobc.vobc_back.dto.PostCreateRequest;
-import io.vobc.vobc_back.dto.PostResponse;
-import io.vobc.vobc_back.dto.PostUpdateRequest;
-import io.vobc.vobc_back.repository.MemberRepository;
-import io.vobc.vobc_back.repository.PostRepository;
-import io.vobc.vobc_back.repository.TagRepository;
-import io.vobc.vobc_back.repository.TranslationRepository;
+import io.vobc.vobc_back.dto.TagForm;
+import io.vobc.vobc_back.dto.post.PostCreateRequest;
+import io.vobc.vobc_back.dto.post.PostResponse;
+import io.vobc.vobc_back.dto.post.PostUpdateRequest;
+import io.vobc.vobc_back.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +28,7 @@ public class PostService {
     private final TagRepository tagRepository;
     private final TranslationRepository translationRepository;
     private final MemberRepository memberRepository;
+    private final PostTagRepository postTagRepository;
 
     @Transactional
     public Long createPost(Long memberId, PostCreateRequest request) {
@@ -58,8 +57,23 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Post> getPosts(Pageable pageable) {
+        return postRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Post> getAllPosts(Pageable pageable) {
+        return postRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Post findWithTagsById(Long id) {
+        return postRepository.findWithTagsById(id).orElseThrow(() -> new IllegalArgumentException("Post not found: " + id));
+    }
+
+    @Transactional(readOnly = true)
     public Post getPost(Long id) {
-        return postRepository.findById(id).orElseThrow();
+        return postRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Post not found: " + id));
     }
 
     @Transactional
@@ -294,21 +308,25 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PagedResponse<PostResponse> getPosts(LanguageCode languageCode, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public PagedResponse<PostResponse> getPosts(LanguageCode languageCode, Pageable pageable) {
+        if (pageable.getSort().isUnsorted()) {
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("createdAt").descending());
+        }
         Page<Post> postPage = postRepository.findAll(pageable);
-
         List<Post> posts = postPage.getContent();
+
         if (posts.isEmpty()) {
             return new PagedResponse<>(
                     List.of(), postPage.getNumber(), postPage.getSize(), postPage.getTotalElements(), postPage.getTotalPages()
             );
         }
 
+        // 1) 이 페이지에 포함된 Post ID 목록
         List<Long> postIds = posts.stream()
                 .map(Post::getId)
                 .toList();
 
+        // 2) 번역: post_id IN + languageCode
         List<Translation> translations = translationRepository.findAllByPostIdInAndLanguageCode(postIds, languageCode);
 
         Map<Long, Translation> trMap = translations.stream()
@@ -317,15 +335,46 @@ public class PostService {
                         tr -> tr
                 ));
 
+        // 3) 태그: post_id IN + EntityGraph(tag)
+        Sort tagSort = Sort
+                .by("post_id").ascending()
+                .and(Sort.by("sortOrder").ascending())
+                .and(Sort.by("id").descending());
+
+        List<PostTag> postTags = postTagRepository.findByPost_IdIn(postIds, tagSort);
+
+        Map<Long, List<TagForm>> tagMap = postTags.stream()
+                .collect(Collectors.groupingBy(
+                        pt -> pt.getPost().getId(),
+                        Collectors.mapping(pt -> new TagForm(pt.getTag().getId(), pt.getTag().getName()), Collectors.toList())
+                ));
+
+        // 4) DTO 조립
         List<PostResponse> dtoList = posts.stream()
                 .map(post -> {
                     Translation tr = trMap.get(post.getId());
-                    return PostResponse.of(post, tr, languageCode);
+                    List<TagForm> tags = tagMap.getOrDefault(post.getId(), List.of());
+                    return PostResponse.ofForList(post, tr, languageCode, tags);
                 })
                 .toList();
 
         return new PagedResponse<>(dtoList, postPage.getNumber(), postPage.getSize(), postPage.getTotalElements(), postPage.getTotalPages());
     }
 
+
+    public Post findPostWithTagsById(Long id) {
+        return null;
+    }
+
+    public PostResponse getPostDetail(Long id, LanguageCode languageCode) {
+        // 1) 태그까지 한 번에 가져온 Post
+        Post post = postRepository.findWithTagsById(id).orElseThrow(() -> new IllegalArgumentException("Post not found: " + id));
+
+        // 2) 요청 언어 번역
+        Translation tr = translationRepository.findByPostIdAndLanguageCode(id, languageCode).orElse(null);
+
+        // 3) Post + Translation + Tags로 DTO 조립
+        return PostResponse.of(post, tr, languageCode);
+    }
 
 }

@@ -16,7 +16,7 @@
             <th>제목</th>
             <th style="width: 180px;">작성자</th>
             <th style="width: 200px;">등록일</th>
-            <th style="width: 220px;">태그</th>
+<!--            <th style="width: 220px;">태그</th>-->
             <th style="width: 140px;">관리</th>
         </tr>
         </thead>
@@ -29,12 +29,12 @@
             </td>
             <td th:text="${post.author}"></td>
             <td th:text="${#temporals.format(post.releaseDate, 'yyyy-MM-dd')}"></td>
-            <td>
-                <span th:each="tag : ${post.tags}"
-                      class="badge text-bg-secondary me-1"
-                      th:text="${tag.name}">
-                </span>
-            </td>
+<!--            <td>-->
+<!--                <span th:each="tag : ${post.tags}"-->
+<!--                      class="badge text-bg-secondary me-1"-->
+<!--                      th:text="${tag.name}">-->
+<!--                </span>-->
+<!--            </td>-->
             <td>
                 <a class="btn btn-sm btn-outline-secondary"
                    th:href="@{/post/update(id=${post.id})}">수정</a>

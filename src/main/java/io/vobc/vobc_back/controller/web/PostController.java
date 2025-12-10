@@ -5,14 +5,16 @@ import io.vobc.vobc_back.domain.Post;
 import io.vobc.vobc_back.domain.PostTag;
 import io.vobc.vobc_back.domain.Translation;
 import io.vobc.vobc_back.dto.*;
+import io.vobc.vobc_back.dto.post.*;
 import io.vobc.vobc_back.security.CustomUserDetails;
 import io.vobc.vobc_back.service.PostService;
 import io.vobc.vobc_back.service.TagService;
 import io.vobc.vobc_back.service.TranslationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -30,10 +32,12 @@ public class PostController {
     private final TranslationService translationService;
 
     @GetMapping("/list")
-    public String list(Model model) {
-        List<PostForm> posts = postService.getAllPosts().stream()
+    public String list(Model model, @PageableDefault(size = 10) Pageable pageable) {
+
+        List<PostForm> posts = postService.getPosts(pageable).stream()
                 .map(PostForm::from)
                 .toList();
+
         model.addAttribute("posts", posts);
         return "post/list";
     }
@@ -41,7 +45,7 @@ public class PostController {
     @GetMapping("/detail")
     public String detail(@RequestParam Long id, Model model) {
 
-        Post post = postService.getPost(id);
+        Post post = postService.findWithTagsById(id);
         model.addAttribute("post", postService.getPost(id));
         model.addAttribute("allTags", tagService.getAllTags());
 
@@ -127,14 +131,14 @@ public class PostController {
         List<Post> relatedPosts = postService.findRelatedPosts(id);
         LanguageCode language = LanguageCode.from(languageCode);
         return relatedPosts.stream()
-                .map(p -> PostResponse.from(p, language))
+                .map(p -> PostResponse.of(p, null, language))
                 .toList();
     }
 
     @GetMapping("/translate")
-    public String translateView(@RequestParam Long id,
-                                @RequestParam String languageCode,
-                                Model model) {
+    public String translationForm(@RequestParam Long id,
+                                  @RequestParam String languageCode,
+                                  Model model) {
 
         Post post = postService.getPost(id);
         LanguageCode language = LanguageCode.from(languageCode);
@@ -142,20 +146,40 @@ public class PostController {
 
         TranslationForm form = existing
                 .map(TranslationForm::from)
-                .orElseGet(() -> TranslationForm.empty(id, language));
+                .orElseGet(() -> {
+                    TranslationForm tf = TranslationForm.empty(id, language);
+                    tf.setTitle(post.getTitle());
+                    tf.setSummary(post.getSummary());
+                    tf.setContent(post.getContent());
+                    tf.setAuthor(post.getAuthor());
+                    return tf;
+                });
 
         model.addAttribute("post", post);
         model.addAttribute("translationForm", form);
-        model.addAttribute("languageCode", languageCode);
+        model.addAttribute("language", language);
         model.addAttribute("hasTranslation", existing.isPresent());
 
-        return "post/translate";
+        return "post/translationForm";
     }
 
     @PostMapping("/translate")
     public String saveTranslation(@ModelAttribute TranslationForm form) {
         translationService.saveOrUpdate(form);
         return "redirect:/post/detail?id=" + form.getPostId();
+    }
+
+    @PostMapping("/translate/delete")
+    public String deleteTranslation(@RequestParam Long postId,
+                                    @RequestParam String lang) {
+
+        LanguageCode languageCode = LanguageCode.from(lang);
+
+        translationService.deleteByPostIdAndLanguageCode(postId, languageCode);
+
+        return "redirect:/post/detail?id=" + postId;
+
+
     }
 }
 
