@@ -2,8 +2,10 @@ package io.vobc.vobc_back.service;
 
 import io.vobc.vobc_back.domain.*;
 import io.vobc.vobc_back.dto.PagedResponse;
+import io.vobc.vobc_back.dto.TagForm;
 import io.vobc.vobc_back.dto.post.PostResponse;
 import io.vobc.vobc_back.exception.DuplicateTagException;
+import io.vobc.vobc_back.repository.PostRepository;
 import io.vobc.vobc_back.repository.TagRepository;
 import io.vobc.vobc_back.repository.TranslationRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class TagService {
 
     private final TagRepository tagRepository;
     private final TranslationRepository translationRepository;
+    private final PostRepository postRepository;
 
     @Transactional
     public Tag createTag(String name) {
@@ -84,13 +87,12 @@ public class TagService {
     public PagedResponse<PostResponse> getPostsByTagId(Long id,
                                                        LanguageCode languageCode,
                                                        Pageable pageable) {
-        Page<Post> postPage = tagRepository.findPostsByTagId(id, pageable);
+        Page<Post> postPage = postRepository.findByPostTags_Tag_Id(id, pageable);
+        List<Post> posts = postPage.getContent();
 
-        if (postPage.isEmpty()) {
+        if (posts.isEmpty()) {
             return new PagedResponse<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(), postPage.getTotalElements(), postPage.getTotalPages());
         }
-
-        List<Post> posts = postPage.getContent();
 
         //이번 페이지의 post id들
         List<Long> postIds = posts.stream()
@@ -109,7 +111,10 @@ public class TagService {
         List<PostResponse> dtoList = posts.stream()
                 .map(post -> {
                     Translation tr = trMap.get(post.getId());
-                    return PostResponse.of(post, tr, languageCode);
+                    List<TagForm> tags = post.getPostTags().stream()
+                            .map(pt -> new TagForm(pt.getTag().getId(), pt.getTag().getName()))
+                            .toList();
+                    return PostResponse.ofForList(post, tr, languageCode, tags);
                 })
                 .toList();
 

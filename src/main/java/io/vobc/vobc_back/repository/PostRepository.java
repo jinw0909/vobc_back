@@ -28,12 +28,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Override
     @NonNull
     @EntityGraph(attributePaths = {"postTags", "postTags.tag"})
-    List<Post> findAll();
-
-//    @Override
-//    @NonNull
-//    Page<Post> findAll(@NonNull Pageable pageable);
+    Page<Post> findAll(@NonNull Pageable pageable);
 
     @EntityGraph(attributePaths = {"postTags", "postTags.tag"})
     Optional<Post> findWithTagsById(Long id);
+
+    @EntityGraph(attributePaths = {"postTags", "postTags.tag"})
+    Page<Post> findByPostTags_Tag_Id(Long tagId, Pageable pageable);
 }

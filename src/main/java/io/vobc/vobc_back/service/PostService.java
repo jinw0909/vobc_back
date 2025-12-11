@@ -28,7 +28,6 @@ public class PostService {
     private final TagRepository tagRepository;
     private final TranslationRepository translationRepository;
     private final MemberRepository memberRepository;
-    private final PostTagRepository postTagRepository;
 
     @Transactional
     public Long createPost(Long memberId, PostCreateRequest request) {
@@ -52,18 +51,8 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public List<Post> getAllPosts() {
-        return postRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
     public Page<Post> getPosts(Pageable pageable) {
         return postRepository.findAll(pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Post> getAllPosts(Pageable pageable) {
-        return postRepository.findAll();
     }
 
     @Transactional(readOnly = true)
@@ -335,25 +324,14 @@ public class PostService {
                         tr -> tr
                 ));
 
-        // 3) 태그: post_id IN + EntityGraph(tag)
-        Sort tagSort = Sort
-                .by("post_id").ascending()
-                .and(Sort.by("sortOrder").ascending())
-                .and(Sort.by("id").descending());
 
-        List<PostTag> postTags = postTagRepository.findByPost_IdIn(postIds, tagSort);
-
-        Map<Long, List<TagForm>> tagMap = postTags.stream()
-                .collect(Collectors.groupingBy(
-                        pt -> pt.getPost().getId(),
-                        Collectors.mapping(pt -> new TagForm(pt.getTag().getId(), pt.getTag().getName()), Collectors.toList())
-                ));
-
-        // 4) DTO 조립
+        // 3) DTO 조립
         List<PostResponse> dtoList = posts.stream()
                 .map(post -> {
                     Translation tr = trMap.get(post.getId());
-                    List<TagForm> tags = tagMap.getOrDefault(post.getId(), List.of());
+                    List<TagForm> tags = post.getPostTags().stream()
+                            .map(pt -> new TagForm(pt.getTag().getId(), pt.getTag().getName()))
+                            .toList();
                     return PostResponse.ofForList(post, tr, languageCode, tags);
                 })
                 .toList();
@@ -361,10 +339,6 @@ public class PostService {
         return new PagedResponse<>(dtoList, postPage.getNumber(), postPage.getSize(), postPage.getTotalElements(), postPage.getTotalPages());
     }
 
-
-    public Post findPostWithTagsById(Long id) {
-        return null;
-    }
 
     public PostResponse getPostDetail(Long id, LanguageCode languageCode) {
         // 1) 태그까지 한 번에 가져온 Post

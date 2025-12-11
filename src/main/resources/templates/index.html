@@ -3,14 +3,33 @@
 <th:block th:replace="~{layout/head :: head}"></th:block>
 
 <body>
-    <th:block th:replace="~{layout/header :: header}"></th:block>
+<th:block th:replace="~{layout/header :: header}"></th:block>
 
-    <div class="container mt-4">
-        <h1>Welcome!</h1>
-        <button class="btn btn-primary">Bootstrap Button</button>
-        <i class="fa-solid fa-heart text-danger"></i>
+<div class="container mt-4">
+    <h1 class="mb-4">Welcome!</h1>
+
+    <div class="d-flex gap-3 align-items-center">
+        <!-- 게시글 목록 -->
+        <a th:href="@{/post/list}" class="btn btn-primary">
+            <i class="fa-solid fa-file-lines me-1"></i>
+            Post List
+        </a>
+
+        <!-- 태그 목록 -->
+        <a th:href="@{/tag/list}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-tags me-1"></i>
+            Tag List
+        </a>
+
+        <!-- 그냥 예제용 버튼 -->
+        <button class="btn btn-success">
+            Bootstrap Button
+        </button>
+
+        <i class="fa-solid fa-heart text-danger fs-4"></i>
     </div>
+</div>
 
-    <th:block th:replace="~{layout/footer :: footer}"></th:block>
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
 </body>
 </html>
