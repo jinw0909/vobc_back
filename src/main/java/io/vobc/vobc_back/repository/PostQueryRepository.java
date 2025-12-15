@@ -95,6 +95,7 @@ public interface PostQueryRepository extends JpaRepository<Post, Long> {
         from PostTag pt
         join pt.tag t
         where pt.post.id in :postIds
+        order by pt.sortOrder asc, pt.id desc
     """)
     List<PostTagQueryDto> findAllPostTagsByQueryDto(@Param("postIds") List<Long> postIds);
 
@@ -126,7 +127,7 @@ public interface PostQueryRepository extends JpaRepository<Post, Long> {
     Optional<Post> findOneWithMemberById(@Param("postId") Long postId);
 
     @Query("""
-        select p
+        select distinct p
         from Post p
         left join fetch p.postTags pt
         left join fetch pt.tag t

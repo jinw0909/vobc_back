@@ -24,7 +24,7 @@ public class Translation {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String summary;
 
     @Column(length = 32)

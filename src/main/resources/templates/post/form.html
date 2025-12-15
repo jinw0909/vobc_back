@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
-<head th:replace="~{layout/head :: head}"></head>
+<th:block th:replace="~{layout/head :: head}">
+</th:block>
+<style>
+    body {
+        #content figure > img {
+            width: 33%;
+        }
+    }
+</style>
 <body>
 
 <div class="container mt-5" th:with="isNew=${post.id} == null">
