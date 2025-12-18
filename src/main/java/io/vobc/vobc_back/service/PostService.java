@@ -339,7 +339,7 @@ public class PostService {
         return new PagedResponse<>(dtoList, postPage.getNumber(), postPage.getSize(), postPage.getTotalElements(), postPage.getTotalPages());
     }
 
-
+    @Transactional(readOnly = true)
     public PostResponse getPostDetail(Long id, LanguageCode languageCode) {
         // 1) 태그까지 한 번에 가져온 Post
         Post post = postRepository.findWithTagsById(id).orElseThrow(() -> new IllegalArgumentException("Post not found: " + id));
@@ -349,6 +349,11 @@ public class PostService {
 
         // 3) Post + Translation + Tags로 DTO 조립
         return PostResponse.of(post, tr, languageCode);
+    }
+
+    @Transactional(readOnly = true)
+    public Set<LanguageCode> getLanguageCodesById(Long id) {
+        return translationRepository.findLanguageCodesByPostId(id);
     }
 
 }

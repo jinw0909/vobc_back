@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<main class="container py-4">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h3 mb-1"
+                th:text="${form.termId == null ? 'Term 생성' : 'Term 수정'}">
+                Term Form
+            </h1>
+            <div class="text-muted small">
+                코드/제목/내용/제안일을 입력하세요.
+            </div>
+        </div>
+
+        <a class="btn btn-outline-secondary" th:href="@{/term/list}">
+            목록으로
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+
+            <form th:action="@{/term/save}" th:object="${form}" method="post" class="needs-validation" novalidate>
+                <!-- update 시 필수 -->
+                <input type="hidden" th:field="*{termId}" />
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Term Code <span class="text-danger">*</span></label>
+                        <select class="form-select" th:field="*{termCode}" required>
+                            <option value="">-- 선택 --</option>
+                            <option th:each="c : ${T(io.vobc.vobc_back.domain.term.TermCode).values()}"
+                                    th:value="${c}"
+                                    th:text="${c}">
+                            </option>
+                        </select>
+                        <div class="invalid-feedback d-block"
+                             th:if="${#fields.hasErrors('termCode')}"
+                             th:errors="*{termCode}">
+                        </div>
+
+                        <div class="invalid-feedback">Term Code를 선택하세요.</div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" th:field="*{title}" required />
+                        <div class="invalid-feedback">Title을 입력하세요.</div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Content</label>
+                        <textarea class="form-control" th:field="*{content}" rows="10"
+                                  placeholder="약관/용어 내용을 입력하세요."></textarea>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Propose Date</label>
+                        <!-- TermForm.proposeDate: LocalDate -->
+                        <input type="date" class="form-control"
+                               id="proposeDate" name="proposeDate"
+                               th:value="${form.proposeDate != null ? #temporals.format(form.proposeDate, 'yyyy-MM-dd') : ''}" />
+                        <div class="form-text">비워두면 서버에서 자동 설정하도록 서비스에서 처리 가능</div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"
+                            th:text="${form.termId == null ? '생성' : '수정 저장'}">
+                        저장
+                    </button>
+                    <a class="btn btn-outline-secondary" th:href="@{/term/list}">취소</a>
+
+                    <a th:if="${form.termId != null}"
+                       class="btn btn-outline-dark ms-auto"
+                       th:href="@{/term/detail(id=${form.termId})}">
+                        상세 보기
+                    </a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</main>
+
+<!-- Bootstrap validation helper (optional) -->
+<script>
+    (() => {
+        'use strict';
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

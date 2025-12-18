@@ -130,4 +130,5 @@ public class Post {
             this.author = author;
         }
     }
+
 }

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<main class="container py-4">
+
+  <div class="d-flex align-items-start justify-content-between mb-3">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge text-bg-secondary" th:text="${term.termCode}">CODE</span>
+        <span class="text-muted small">#<span th:text="${term.termId}">1</span></span>
+      </div>
+
+      <h1 class="h3 mb-1" th:text="${term.title}">Term Title</h1>
+
+      <div class="text-muted small">
+        Propose Date:
+        <span th:text="${term.proposeDate}">2025-12-16</span>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" th:href="@{/term/list}">목록</a>
+      <a class="btn btn-outline-dark" th:href="@{/term/update(id=${term.termId})}">원문 수정</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- Content -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 mb-0">Content (원문)</h2>
+          </div>
+
+          <!-- Tabs -->
+          <ul class="nav nav-tabs" id="termContentTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active"
+                      id="term-text-tab"
+                      data-bs-toggle="tab"
+                      data-bs-target="#term-text-pane"
+                      type="button"
+                      role="tab"
+                      aria-controls="term-text-pane"
+                      aria-selected="true">
+                Text
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link"
+                      id="term-html-tab"
+                      data-bs-toggle="tab"
+                      data-bs-target="#term-html-pane"
+                      type="button"
+                      role="tab"
+                      aria-controls="term-html-pane"
+                      aria-selected="false">
+                HTML
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content border border-top-0 rounded-bottom p-3 bg-light" id="termContentTabsContent">
+            <!-- Text -->
+            <div class="tab-pane fade show active"
+                 id="term-text-pane"
+                 role="tabpanel"
+                 aria-labelledby="term-text-tab">
+              <div style="white-space: pre-wrap;" th:text="${term.content}">
+                content...
+              </div>
+            </div>
+
+            <!-- HTML -->
+            <div class="tab-pane fade"
+                 id="term-html-pane"
+                 role="tabpanel"
+                 aria-labelledby="term-html-tab">
+              <!-- ⚠️ 신뢰된 HTML일 때만 utext -->
+              <div th:utext="${term.content}">content html...</div>
+            </div>
+          </div>
+
+          <div class="form-text mt-2">
+            HTML 탭은 저장된 HTML을 그대로 렌더링합니다.
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Translations -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <h2 class="h5 mb-2">번역</h2>
+          <p class="text-muted small mb-3">
+            전체 언어 목록입니다. <strong>굵게 표시된 언어는 번역이 존재</strong>합니다.
+          </p>
+
+          <div class="d-flex flex-wrap gap-2">
+            <a th:each="lc : ${T(io.vobc.vobc_back.domain.LanguageCode).values()}"
+               th:with="code=${#strings.toLowerCase(lc.code)}"
+               class="btn btn-sm"
+               th:classappend="${langs.contains(code)}
+                 ? ' btn-primary text-white fw-semibold'
+                 : ' btn-outline-secondary'"
+               th:href="@{/term/translate(termId=${term.termId}, lang=${code})}">
+              <span th:text="${#strings.toUpperCase(code)}">EN</span>
+            </a>
+          </div>
+
+          <div class="form-text mt-3">
+            굵은 버튼: 번역 있음 · 연한 버튼: 번역 없음
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

@@ -45,14 +45,13 @@ public class PostController {
     @GetMapping("/detail")
     public String detail(@RequestParam Long id, Model model) {
 
-        Post post = postService.findWithTagsById(id);
+//        Post post = postService.findWithTagsById(id);
         model.addAttribute("post", postService.getPost(id));
         model.addAttribute("allTags", tagService.getAllTags());
 
-        Set<String> langs = post.getTranslations()
-                .stream()
-                .map(t -> t.getLanguageCode().getCode().toLowerCase())
-                .collect(Collectors.toSet());
+        List<String> langs = postService.getLanguageCodesById(id).stream()
+                .map(lc -> lc.getCode().toLowerCase())
+                .toList();
 
         model.addAttribute("langs", langs);
         return "post/detail";
