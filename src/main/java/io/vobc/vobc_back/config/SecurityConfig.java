@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/auth/join",
-                                "/css/**", "/js/**", "/images/**", "/webjars/**",
+                                "/css/**", "/js/**", "/images/**", "/webjars/**", "/summernote/**",
                                 "/favicon.ico",
                                 "/error", "/error/**"
                         ).permitAll()

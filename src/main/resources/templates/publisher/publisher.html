@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+  .container { max-width: 980px; margin: 0 auto; }
+  .top { display:flex; justify-content: space-between; align-items:center; gap: 10px; }
+  .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; background:#fff; cursor:pointer; text-decoration:none; color:#111; }
+  .btn.danger { border-color:#ffdddd; color:#b00020; }
+  .card { border:1px solid #eee; border-radius: 14px; padding: 16px; margin-top: 14px; }
+  .label { font-size: 12px; color:#666; margin-bottom: 6px; }
+  .value { font-size: 16px; }
+  .langs { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .lang { padding: 8px 10px; border-radius: 999px; border:1px solid #ddd; text-decoration:none; color:#111; font-size: 13px; }
+  .lang.active { font-weight: 800; border-color:#111; }
+  .muted { color:#666; font-size: 14px; }
+  form.inline { display:inline; }
+</style>
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+<div class="container">
+  <div class="top">
+    <div>
+      <h1>Publisher 상세</h1>
+      <div class="muted">ID: <b th:text="${publisher.id}">1</b></div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a class="btn" th:href="@{/publisher/list}">목록</a>
+
+      <!-- ✅ 수정 버튼 -->
+      <a class="btn"
+         th:href="@{/publisher/{id}/edit(id=${publisher.id})}">
+        수정
+      </a>
+      <!-- <a class="btn" th:href="@{/publisher/save(id=${publisher.id})}">수정</a> -->
+
+      <form class="inline" th:action="@{/publisher/{id}/delete(id=${publisher.id})}" method="post">
+        <button class="btn danger" type="submit" onclick="return confirm('정말 삭제할까요?')">삭제</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Name</div>
+    <div class="value" th:text="${publisher.name}">name</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Introduction</div>
+    <div class="value" th:text="${publisher.introduction}">intro</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Translations</div>
+    <div class="muted">굵게 표시된 언어는 이미 번역이 존재합니다.</div>
+
+    <div class="langs">
+      <a class="lang"
+         th:each="lc : ${T(io.vobc.vobc_back.domain.LanguageCode).values()}"
+         th:classappend="${langs != null and langs.contains(lc)} ? 'active' : ''"
+         th:href="@{/publisher/{id}/translate(id=${publisher.id}, lang=${lc.code})}"
+         th:text="${lc.code}">
+        EN
+      </a>
+    </div>
+  </div>
+
+</div>
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

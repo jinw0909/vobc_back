@@ -8,8 +8,8 @@ import io.vobc.vobc_back.dto.term.TermDto;
 import io.vobc.vobc_back.dto.term.TermForm;
 import io.vobc.vobc_back.dto.term.TermResponse;
 import io.vobc.vobc_back.dto.term.TermTranslationForm;
-import io.vobc.vobc_back.repository.TermRepository;
-import io.vobc.vobc_back.repository.TermTranslationRepository;
+import io.vobc.vobc_back.repository.term.TermRepository;
+import io.vobc.vobc_back.repository.term.TermTranslationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,25 +50,48 @@ public class TermService {
         termRepository.save(term);
     }
 
+//    @Transactional
+//    public Long saveOrUpdate(TermForm form) {
+//        if (form.getTermId() == null) {
+//            Term term = Term.create(form.getTermCode(), form.getTitle(), form.getContent(), form.getProposeDate());
+//            termRepository.save(term);
+//            return term.getId();
+//        } else {
+//            Term term = termRepository.findById(form.getTermId()).orElseThrow(() -> new IllegalArgumentException("Term not found: " + form.getTermId()));
+//            term.setTitle(form.getTitle());
+//            term.setContent(form.getContent());
+//            term.setTermCode(form.getTermCode());
+//            term.setProposeDate(form.getProposeDate());
+//            return term.getId();
+//        }
+//    }
     @Transactional
     public Long saveOrUpdate(TermForm form) {
         if (form.getTermId() == null) {
-            Term term = Term.create(form.getTermCode(), form.getTitle(), form.getContent(), form.getProposeDate());
-            termRepository.save(term);
-            return term.getId();
-        } else {
-            Term term = termRepository.findById(form.getTermId()).orElseThrow(() -> new IllegalArgumentException("Term not found: " + form.getTermId()));
-            term.setTitle(form.getTitle());
-            term.setContent(form.getContent());
-            term.setTermCode(form.getTermCode());
-            term.setProposeDate(form.getProposeDate());
-            return term.getId();
+            Term term = Term.create(
+                    form.getTermCode(),
+                    form.getTitle(),
+                    form.getContent(),
+                    form.getProposeDate()
+            );
+            return termRepository.save(term).getId();
         }
+
+        Term term = termRepository.findById(form.getTermId())
+                .orElseThrow(() -> new IllegalArgumentException("Term not found: " + form.getTermId()));
+
+        term.setTitle(form.getTitle());
+        term.setContent(form.getContent());
+        term.setTermCode(form.getTermCode());   // 변경 허용할거면 유지
+        term.setProposeDate(form.getProposeDate());
+        return term.getId();
     }
+
 
     @Transactional(readOnly = true)
     public List<TermForm> findAll() {
-        return termRepository.findAll().stream().map(TermForm::from).toList();
+//        return termRepository.findAll().stream().map(TermForm::from).toList();
+        return termRepository.findAllByOrderByIdAsc().stream().map(TermForm::from).toList();
     }
 
     @Transactional(readOnly = true)

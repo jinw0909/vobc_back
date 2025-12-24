@@ -65,8 +65,8 @@ public class TermController {
     public String save(@ModelAttribute("form") TermForm form,
                        BindingResult bindingResult) {
         try {
-            termService.saveOrUpdate(form);
-            return "redirect:/term/list";
+            Long id = termService.saveOrUpdate(form);
+            return "redirect:/term/detail?id=" + id;
         } catch (DataIntegrityViolationException e) {
             bindingResult.rejectValue("termCode", "duplicate", "이미 존재하는 Term Code 입니다.");
             return "term/form";

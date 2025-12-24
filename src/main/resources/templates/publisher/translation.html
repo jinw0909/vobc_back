@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+  .container { max-width: 980px; margin: 0 auto; }
+  .top { display:flex; justify-content: space-between; align-items:center; gap: 10px; }
+  .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; background:#fff; cursor:pointer; text-decoration:none; color:#111; }
+  .btn.primary { background:#111; color:#fff; border-color:#111; }
+  .btn.danger { border-color:#ffdddd; color:#b00020; }
+  .card { border:1px solid #eee; border-radius: 14px; padding: 16px; margin-top: 14px; }
+  label { display:block; font-weight: 600; margin: 14px 0 6px; }
+  input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; }
+  textarea { min-height: 140px; }
+  .muted { color:#666; font-size: 14px; }
+  .badge { display:inline-block; padding: 3px 8px; border-radius: 999px; background:#f2f2f2; font-size: 12px; }
+  form.inline { display:inline; }
+  .actions { display:flex; gap:10px; align-items:center; margin-top: 16px; }
+</style>
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+<div class="container">
+
+  <div class="top">
+    <div>
+      <h1>Publisher 번역</h1>
+      <div class="muted">
+        Publisher: <b th:text="${publisher.name}">name</b>
+        (ID: <span th:text="${publisher.id}">1</span>)
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a class="btn" th:href="@{/publisher/{id}(id=${publisher.id})}">상세로</a>
+      <a class="btn" th:href="@{/publisher/list}">목록</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div>
+      <span class="badge"
+            th:text="${translation.id == null} ? 'NEW TRANSLATION' : 'EXISTING TRANSLATION'">
+        NEW TRANSLATION
+      </span>
+      <span class="muted" th:if="${translation.id == null}">
+        이 언어의 번역이 아직 없습니다. 아래에서 생성하세요.
+      </span>
+      <span class="muted" th:if="${translation.id != null}">
+        이미 존재하는 번역입니다. 수정 후 저장할 수 있습니다.
+      </span>
+    </div>
+
+    <form th:action="@{/publisher/{id}/translate(id=${publisher.id})}"
+          th:object="${translation}"
+          method="post">
+
+      <!-- create/update 공용 -->
+      <input type="hidden" th:field="*{id}"/>
+      <input type="hidden" th:field="*{languageCode}"/>
+
+      <label>Language</label>
+      <input type="text" th:value="${translation.languageCode.code}" readonly/>
+
+      <label for="tname">Name (translated)</label>
+      <input id="tname" type="text" th:field="*{name}" placeholder="Translated name"/>
+
+      <label for="tintro">Introduction (translated)</label>
+      <textarea id="tintro" th:field="*{introduction}" placeholder="Translated introduction"></textarea>
+
+      <div class="actions">
+        <button class="btn primary" type="submit"
+                th:text="${translation.id == null} ? '번역 생성' : '번역 수정 저장'">
+          번역 생성
+        </button>
+
+        <!-- 번역 삭제 (translation이 있을 때만) -->
+        <form class="inline"
+              th:if="${translation.id != null}"
+              th:action="@{/publisher/{id}/translate/{tid}/delete-translation(id=${publisher.id}, tid=${translation.id}, lang=${translation.languageCode.code})}"
+              method="post">
+          <button class="btn danger" type="submit" onclick="return confirm('이 번역을 삭제할까요?')">
+            번역 삭제
+          </button>
+        </form>
+      </div>
+    </form>
+  </div>
+
+</div>
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

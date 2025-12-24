@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+<style>
+    .card-soft {
+        border: 1px solid rgba(0,0,0,.08);
+        box-shadow: 0 10px 24px rgba(0,0,0,.06);
+        border-radius: 16px;
+    }
+    .form-readonly input[readonly],
+    .form-readonly textarea[readonly]{
+        background: #f8f9fa !important;
+        cursor: not-allowed;
+    }
+    .mono-badge {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+</style>
+<body class="bg-light">
+<th:block th:replace="~{layout/header :: header}"></th:block>
+<div class="container py-4">
+
+    <!-- 상단 -->
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+        <div>
+            <h4 class="mb-1">번역 관리</h4>
+            <div class="text-muted small">
+                Article ID: <span th:text="${article.id}" class="mono-badge">0</span> ·
+                현재 언어: <span class="badge text-bg-dark mono-badge" th:text="${lang}">en</span>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- 언어 선택 -->
+            <select class="form-select" style="min-width:180px"
+                    id="langSelect" th:data-article-id="${article.id}">
+                <option th:each="l : ${langs}"
+                        th:value="${l}"
+                        th:selected="${l == lang}"
+                        th:text="${l}">en</option>
+            </select>
+
+            <!-- 상태 -->
+            <span class="badge"
+                  th:classappend="${translation.id != null} ? ' text-bg-success' : ' text-bg-secondary'">
+        <span th:text="${translation.id != null} ? '번역 있음' : '번역 없음'">번역 있음</span>
+        <span th:if="${translation.id != null}"> · #<span th:text="${translation.id}">1</span></span>
+      </span>
+
+            <a class="btn btn-outline-secondary" th:href="@{/article/detail(id=${article.id})}">
+                ← 돌아가기
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+
+        <!-- 좌: 원문 -->
+        <div class="col-12 col-lg-6">
+            <div class="card card-soft">
+                <div class="card-header bg-white d-flex align-items-start justify-content-between">
+                    <div>
+                        <div class="fw-semibold">원문(Article)</div>
+                        <div class="text-muted small">읽기 전용</div>
+                    </div>
+
+                    <span class="badge text-bg-light border"
+                          th:if="${article.publisher != null}">
+            Publisher: <span class="mono-badge" th:text="${article.publisher.name}">Publisher</span>
+          </span>
+                </div>
+
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-muted">Title</label>
+                            <input class="form-control" th:value="${article.title}" readonly>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-muted">Author</label>
+                            <input class="form-control" th:value="${article.author}" readonly>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-muted">Category</label>
+                            <input class="form-control" th:value="${article.category}" readonly>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-muted">Release Date</label>
+                            <input class="form-control" th:value="${article.releaseDate}" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-muted">Thumbnail</label>
+                            <input class="form-control" th:value="${article.thumbnail}" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-muted">Link</label>
+                            <input class="form-control" th:value="${article.link}" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-muted">Description</label>
+                            <textarea class="form-control" rows="3" readonly th:text="${article.description}"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-muted">Summary</label>
+                            <textarea class="form-control" rows="3" readonly th:text="${article.summary}"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-muted">Content</label>
+                            <textarea class="form-control" rows="8" readonly th:text="${article.content}"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="text-muted small mt-2">
+                        * 원문 수정은 Article 수정 화면에서 진행.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 우: 번역 -->
+        <div class="col-12 col-lg-6">
+            <div class="card card-soft">
+                <div class="card-header bg-white d-flex align-items-start justify-content-between">
+                    <div>
+                        <div class="fw-semibold">
+                            번역(Translation) · <span class="badge text-bg-dark mono-badge" th:text="${lang}">en</span>
+                        </div>
+                        <div class="text-muted small">
+              <span th:text="${translation.id != null} ? '기존 번역: 잠금 상태 (수정 버튼 필요)' : '새 번역: 바로 작성 가능'">
+                새 번역
+              </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <!-- ✅ 1) 번역이 있으면 수정 버튼 필요 -->
+                        <button type="button"
+                                class="btn btn-outline-primary"
+                                id="editBtn"
+                                th:if="${translation.id != null}"
+                                onclick="enableEdit()">
+                            ✏️ 수정
+                        </button>
+
+                        <!-- 저장: 번역 있으면 기본 disabled -->
+                        <button type="button" class="btn btn-primary" id="saveProxyBtn" onclick="submitTranslation()">
+                            💾 저장
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+
+                    <form id="translationForm"
+                          th:action="@{|/article/translate/${article.id}|}"
+                          method="post"
+                          th:object="${translation}"
+                          class="form-readonly">
+
+                        <!-- hidden -->
+                        <input type="hidden" th:field="*{id}">
+                        <input type="hidden" th:field="*{languageCode}">
+
+                        <div id="translationSection" class="row g-2">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small text-muted">Title</label>
+                                <input class="form-control"
+                                       th:field="*{title}"
+                                       th:attr="readonly=${translation.id != null} ? 'readonly' : null">
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label small text-muted">Author</label>
+                                <input class="form-control"
+                                       th:field="*{author}"
+                                       th:attr="readonly=${translation.id != null} ? 'readonly' : null">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small text-muted">Description</label>
+                                <textarea class="form-control" rows="3"
+                                          th:field="*{description}"
+                                          th:attr="readonly=${translation.id != null} ? 'readonly' : null"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small text-muted">Summary</label>
+                                <textarea class="form-control" rows="3"
+                                          th:field="*{summary}"
+                                          th:attr="readonly=${translation.id != null} ? 'readonly' : null"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small text-muted">Content</label>
+                                <textarea class="form-control" rows="8"
+                                          th:field="*{content}"
+                                          th:attr="readonly=${translation.id != null} ? 'readonly' : null"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 실제 submit 버튼은 숨기고, 상단 저장 버튼이 트리거 -->
+                        <button type="submit" id="realSubmitBtn" class="d-none">submit</button>
+
+                        <div class="alert alert-warning mt-3 mb-0"
+                             id="lockHint"
+                             th:if="${translation.id != null}">
+                            현재 번역은 잠겨 있어요. <b>수정</b>을 누른 후 저장할 수 있어요.
+                        </div>
+
+                        <div class="alert alert-info mt-3 mb-0"
+                             th:if="${translation.id == null}">
+                            신규 번역 작성
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+<script>
+    // 언어 변경 -> 쿼리스트링 유지하면서 이동
+    (function () {
+        const sel = document.getElementById('langSelect');
+        if (!sel) return;
+        sel.addEventListener('change', () => {
+            const articleId = sel.dataset.articleId;
+            const lang = sel.value;
+            window.location.href = `/article/translate/${articleId}?lang=${encodeURIComponent(lang)}`;
+        });
+    })();
+
+    // ✅ 1) "수정 전 저장 disabled" 구현:
+    // - 기존 번역(translation.id != null)인 경우: 잠금 상태에서는 저장 불가
+    // - 새 번역이면: 바로 저장 가능
+    const isExistingTranslation = /*[[${translation.id != null}]]*/ false;
+    let editUnlocked = !isExistingTranslation;
+
+    const saveProxyBtn = document.getElementById('saveProxyBtn');
+    const lockHint = document.getElementById('lockHint');
+
+    function refreshSaveState() {
+        if (!saveProxyBtn) return;
+        if (editUnlocked) {
+            saveProxyBtn.classList.remove('disabled');
+            saveProxyBtn.removeAttribute('aria-disabled');
+            saveProxyBtn.style.pointerEvents = '';
+            if (lockHint) lockHint.classList.add('d-none');
+        } else {
+            saveProxyBtn.classList.add('disabled');
+            saveProxyBtn.setAttribute('aria-disabled', 'true');
+            saveProxyBtn.style.pointerEvents = 'none';
+            if (lockHint) lockHint.classList.remove('d-none');
+        }
+    }
+
+    refreshSaveState();
+
+    function enableEdit() {
+        // 번역 섹션만 unlock
+        document.querySelectorAll('#translationSection input[readonly], #translationSection textarea[readonly]')
+            .forEach(el => el.removeAttribute('readonly'));
+
+        // 잠금 상태 해제
+        editUnlocked = true;
+        refreshSaveState();
+
+        const first = document.querySelector('#translationSection input, #translationSection textarea');
+        if (first) first.focus();
+    }
+
+    function submitTranslation() {
+        if (!editUnlocked) return;
+        const real = document.getElementById('realSubmitBtn');
+        if (real) real.click();
+    }
+</script>
+
+</body>
+</html>

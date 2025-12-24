@@ -14,7 +14,7 @@ public class Translation {
     @Column(name = "post_translation_id")
     private Long id;
 
-    @Column(nullable = false, length = 5)
+    @Column(nullable = false, length = 10)
     @Enumerated(EnumType.STRING)
     private LanguageCode languageCode;
 

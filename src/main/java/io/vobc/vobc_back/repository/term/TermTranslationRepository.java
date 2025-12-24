@@ -1,4 +1,4 @@
-package io.vobc.vobc_back.repository;
+package io.vobc.vobc_back.repository.term;
 
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.term.TermTranslation;

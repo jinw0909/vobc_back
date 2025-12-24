@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+  .container { max-width: 980px; margin: 0 auto; }
+  .top { display:flex; justify-content: space-between; align-items:center; gap: 10px; }
+  table { width:100%; border-collapse: collapse; margin-top: 14px; }
+  th, td { text-align:left; padding: 12px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  th { font-size: 13px; color:#444; }
+  a { color:#111; }
+  .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; background:#fff; cursor:pointer; text-decoration:none; color:#111; }
+  .btn.primary { background:#111; color:#fff; border-color:#111; }
+  .muted { color:#666; font-size: 14px; }
+  .pager { display:flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; align-items:center; }
+  .page-btn { padding: 8px 10px; border:1px solid #ddd; border-radius: 10px; text-decoration:none; color:#111; }
+  .page-btn.active { background:#111; color:#fff; border-color:#111; }
+  .page-btn.disabled { color:#aaa; pointer-events:none; border-color:#f0f0f0; }
+</style>
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+<div class="container">
+
+  <div class="top">
+    <div>
+      <h1>Publisher 목록</h1>
+      <div class="muted">
+        총 <b th:text="${page.totalElements}">0</b>개 /
+        <b th:text="${page.number + 1}">1</b> / <span th:text="${page.totalPages}">1</span> 페이지
+      </div>
+    </div>
+    <a class="btn primary" th:href="@{/publisher/save}">새 Publisher</a>
+  </div>
+
+  <table>
+    <thead>
+    <tr>
+      <th style="width:90px;">ID</th>
+      <th>Name</th>
+      <th>Introduction</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="p : ${publishers}">
+      <td th:text="${p.id}">1</td>
+      <td>
+        <a th:href="@{/publisher/{id}(id=${p.id})}" th:text="${p.name}">name</a>
+      </td>
+      <td th:text="${p.introduction}">intro</td>
+    </tr>
+
+    <tr th:if="${#lists.isEmpty(publishers)}">
+      <td colspan="3" class="muted">데이터가 없습니다.</td>
+    </tr>
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div class="pager" th:if="${page.totalPages > 1}">
+    <!-- Prev -->
+    <a class="page-btn"
+       th:classappend="${page.first} ? 'disabled' : ''"
+       th:href="@{/publisher/list(page=${page.number - 1}, size=${page.size}, sort='id,desc')}">
+      이전
+    </a>
+
+    <!-- Page numbers (간단 버전: 전체 페이지 표시) -->
+    <a class="page-btn"
+       th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+       th:classappend="${i == page.number} ? 'active' : ''"
+       th:href="@{/publisher/list(page=${i}, size=${page.size}, sort='id,desc')}"
+       th:text="${i + 1}">
+      1
+    </a>
+
+    <!-- Next -->
+    <a class="page-btn"
+       th:classappend="${page.last} ? 'disabled' : ''"
+       th:href="@{/publisher/list(page=${page.number + 1}, size=${page.size}, sort='id,desc')}">
+      다음
+    </a>
+  </div>
+  <th:block th:replace="~{layout/footer :: footer}"></th:block>
+</div>
+</body>
+</html>

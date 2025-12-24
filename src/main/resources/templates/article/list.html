@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<body class="bg-light">
+<th:block th:replace="~{layout/header :: header}"></th:block>
+<div class="container py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="m-0">기사 목록</h2>
+    <a class="btn btn-primary" th:href="@{/article/create}">
+      <i class="fa-solid fa-pen-to-square me-1"></i> 새 글
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+        <tr>
+          <th style="width: 90px;">ID</th>
+          <th>제목</th>
+          <th style="width: 220px;">퍼블리셔</th>
+          <th style="width: 140px;">카테고리</th>
+          <th style="width: 140px;">출시일</th>
+          <th style="width: 160px;">작업</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:if="${#lists.isEmpty(articles)}">
+          <td colspan="6" class="text-center text-muted py-5">
+            아직 기사가 없습니다.
+          </td>
+        </tr>
+
+        <tr th:each="a : ${articles}">
+          <td class="text-muted" th:text="${a.id}">1</td>
+
+          <td>
+            <div class="fw-semibold">
+              <a th:href="@{/article/detail(id=${a.id})}" th:text="${a.title}">제목</a>
+            </div>
+
+            <!-- summary나 description 있으면 한 줄 미리보기 -->
+            <div class="text-muted small"
+                 th:if="${a.summary != null and !#strings.isEmpty(a.summary)}"
+                 th:text="${#strings.abbreviate(a.summary, 80)}">
+              요약...
+            </div>
+          </td>
+
+          <td>
+            <span class="text-muted" th:if="${a.publisher == null}">-</span>
+            <span th:if="${a.publisher != null}" th:text="${a.publisher.name}">Publisher Name</span>
+          </td>
+
+          <td>
+            <span class="badge text-bg-secondary"
+                  th:if="${a.category != null}"
+                  th:text="${a.category.type}">news</span>
+            <span class="text-muted" th:if="${a.category == null}">-</span>
+          </td>
+
+          <td>
+            <span class="text-muted" th:if="${a.releaseDate == null}">-</span>
+            <span th:if="${a.releaseDate != null}"
+                  th:text="${#temporals.format(a.releaseDate, 'yyyy-MM-dd')}">2025-12-19</span>
+          </td>
+
+          <td class="text-nowrap">
+            <a class="btn btn-sm btn-outline-primary"
+               th:href="@{/article/detail(id=${a.id})}">
+              보기
+            </a>
+            <a class="btn btn-sm btn-outline-secondary"
+               th:href="@{/article/edit(id=${a.id})}">
+              수정
+            </a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ✅ Pagination -->
+  <nav class="mt-4" th:if="${page != null and page.totalPages > 1}" aria-label="Pagination">
+    <ul class="pagination justify-content-center mb-0">
+
+      <!-- Prev -->
+      <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+        <a class="page-link"
+           th:href="@{/article/list(page=${page.number - 1}, size=${page.size})}"
+           aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+
+      <!-- Page Numbers (현재 기준 +-2) -->
+      <li class="page-item"
+          th:each="i : ${#numbers.sequence(T(java.lang.Math).max(0, page.number - 2), T(java.lang.Math).min(page.totalPages - 1, page.number + 2))}"
+          th:classappend="${i == page.number} ? 'active'">
+        <a class="page-link"
+           th:href="@{/article/list(page=${i}, size=${page.size})}"
+           th:text="${i + 1}">1</a>
+      </li>
+
+      <!-- Next -->
+      <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+        <a class="page-link"
+           th:href="@{/article/list(page=${page.number + 1}, size=${page.size})}"
+           aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+
+    </ul>
+
+    <div class="text-center text-muted small mt-2">
+      <span th:text="'총 ' + ${page.totalElements} + '건 · ' + (${page.number} + 1) + '/' + ${page.totalPages} + ' 페이지'">
+        총 0건 · 1/1 페이지
+      </span>
+    </div>
+  </nav>
+
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

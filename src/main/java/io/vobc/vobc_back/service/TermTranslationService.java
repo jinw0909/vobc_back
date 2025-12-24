@@ -2,7 +2,7 @@ package io.vobc.vobc_back.service;
 
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.term.TermTranslation;
-import io.vobc.vobc_back.repository.TermTranslationRepository;
+import io.vobc.vobc_back.repository.term.TermTranslationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

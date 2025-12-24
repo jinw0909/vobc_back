@@ -4,13 +4,25 @@
 
 <body>
 <th:block th:replace="~{layout/header :: header}"></th:block>
-
 <div class="container mt-4">
     <h1 class="mb-4">Welcome!</h1>
 
-    <div class="d-flex gap-3 align-items-center">
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+
+        <!-- ✅ Article 목록 -->
+        <a th:href="@{/article/list}" class="btn btn-primary">
+            <i class="fa-solid fa-newspaper me-1"></i>
+            Article List
+        </a>
+
+        <!-- ✅ Publisher 목록 (오타 수정: publisher) -->
+        <a th:href="@{/publisher/list}" class="btn btn-outline-primary">
+            <i class="fa-solid fa-building me-1"></i>
+            Publisher List
+        </a>
+
         <!-- 게시글 목록 -->
-        <a th:href="@{/post/list}" class="btn btn-primary">
+        <a th:href="@{/post/list}" class="btn btn-outline-secondary">
             <i class="fa-solid fa-file-lines me-1"></i>
             Post List
         </a>
@@ -22,7 +34,7 @@
         </a>
 
         <!-- 그냥 예제용 버튼 -->
-        <button class="btn btn-success">
+        <button class="btn btn-success" type="button">
             Bootstrap Button
         </button>
 

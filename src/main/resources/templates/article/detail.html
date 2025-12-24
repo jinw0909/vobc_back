@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+    .article-wrapper { max-width: 860px; margin: 0 auto; }
+
+    /* ===== Header Card ===== */
+    .article-hero {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 14px;
+        padding: 22px;
+        box-shadow: 0 6px 18px rgba(0,0,0,.04);
+        margin-bottom: 18px;
+    }
+
+    .article-title {
+        font-size: 2.1rem;
+        font-weight: 800;
+        line-height: 1.25;
+        margin: 0 0 10px;
+        letter-spacing: -0.02em;
+    }
+
+    .article-summary {
+        color: #495057;
+        font-size: 1.05rem;
+        line-height: 1.7;
+        margin: 0 0 14px;
+        padding-left: 12px;
+        border-left: 3px solid #dee2e6;
+    }
+
+    .article-meta {
+        font-size: .92rem;
+        color: #6c757d;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .6rem .9rem;
+        align-items: center;
+        margin: 0;
+    }
+    .article-meta .dot::before {
+        content: "•";
+        margin-right: .5rem;
+        color: #adb5bd;
+    }
+    .article-meta .dot:first-child::before { content: ""; margin: 0; }
+
+    /* ===== Thumbnail small ===== */
+    .article-thumb-wrap { margin-top: 16px; }
+    .article-thumb {
+        width: 100%;
+        max-width: 150px;       /* ✅ 작게 */
+        object-fit: cover;      /* ✅ 잘라서 예쁘게 */
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,.06);
+        display: block;
+        margin: 0 auto 0 0;
+        background: #f1f3f5;
+    }
+
+    /* ===== Body Card ===== */
+    .article-body {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 14px;
+        padding: 26px 22px;
+        box-shadow: 0 6px 18px rgba(0,0,0,.04);
+    }
+
+    .article-content { font-size: 1.05rem; line-height: 1.85; color: #212529; }
+    .article-content p { margin-bottom: 1.2rem; }
+    .article-content img { max-width: 100%; height: auto; border-radius: 10px; margin: 1.5rem 0; }
+    .article-content h2 {
+        font-size: 1.55rem; font-weight: 800;
+        margin: 2.4rem 0 1rem;
+        border-left: 4px solid #0d6efd;
+        padding-left: .75rem;
+    }
+    .article-content h3 { font-size: 1.25rem; font-weight: 700; margin: 2rem 0 .75rem; }
+    .article-content ul, .article-content ol { padding-left: 1.4rem; margin-bottom: 1.2rem; }
+    .article-content blockquote {
+        border-left: 4px solid #dee2e6;
+        padding: .85rem 1rem;
+        margin: 1.6rem 0;
+        background: #f8f9fa;
+        color: #495057;
+        border-radius: 10px;
+    }
+
+    .article-actions { display: flex; gap: .5rem; justify-content: space-between; flex-wrap: wrap; margin-top: 22px; }
+
+    .translate-bar{
+        display:flex;
+        flex-wrap:wrap;
+        gap:.5rem;
+        align-items:center;
+        margin-top: 14px;
+    }
+    .translate-label{
+        font-size:.9rem;
+        color:#6c757d;
+        margin-right:.25rem;
+    }
+
+    /* 기본: 안 만들어진 번역(또는 기본 상태) */
+    .btn-lang {
+        border-radius: 999px;
+        padding: .35rem .7rem;
+    }
+
+    /* ✅ 존재하는 번역: 조금 다르게(굵게 + 테두리/배경 살짝) */
+    .btn-lang-exists{
+        font-weight: 800;
+        border-color: rgba(13,110,253,.35) !important;
+        box-shadow: 0 6px 14px rgba(13,110,253,.12);
+    }
+
+</style>
+
+<body class="bg-light">
+<th:block th:replace="~{layout/header :: header}"></th:block>
+<div class="container py-4 article-wrapper">
+
+    <!-- ✅ 헤더(썸네일/요약/메타) -->
+    <div class="article-hero">
+
+        <!-- ✅ 번역 이동 버튼 (LanguageCode Enum 기반) -->
+        <div class="translate-bar" th:if="${allLangs != null}">
+            <span class="translate-label">Translations:</span>
+
+            <a th:each="lc : ${allLangs}"
+               th:href="@{|/article/translate/${article.id}?lang=${#strings.toLowerCase(lc.name())}|}"
+               class="btn btn-sm btn-outline-secondary btn-lang"
+               th:classappend="${langs != null and #sets.contains(langs, lc)} ? ' btn-lang-exists' : ''"
+               th:text="${#strings.toUpperCase(lc.name())}">
+                EN
+            </a>
+        </div>
+
+
+        <h1 class="article-title" th:text="${article.title}">제목</h1>
+
+        <!-- ✅ summary -->
+        <p class="article-summary" th:if="${article.summary != null and !#strings.isEmpty(article.summary)}"
+           th:text="${article.summary}">
+            요약
+        </p>
+
+        <!-- ✅ description -->
+        <p class="article-description" th:if="${article.description != null and !#strings.isEmpty(article.description)}"
+           th:text="${article.description}">
+            상세
+        </p>
+
+        <!-- ✅ meta: author / publisher / date / category -->
+        <div class="article-meta">
+      <span class="dot" th:if="${article.author != null and !#strings.isEmpty(article.author)}"
+            th:text="${'Author: ' + article.author}">Author</span>
+
+            <span class="dot" th:if="${article.publisher != null and article.publisher.name != null and !#strings.isEmpty(article.publisher.name)}"
+                  th:text="${'Publisher: ' + article.publisher.name}">Publisher</span>
+
+            <span class="dot" th:if="${article.releaseDate != null}"
+                  th:text="${'Date: ' + #temporals.format(article.releaseDate, 'yyyy-MM-dd')}">2025-01-01</span>
+
+            <span class="dot" th:if="${article.category != null}"
+                  th:text="${'Category: ' + article.category.type}">news</span>
+        </div>
+
+        <!-- ✅ thumbnail 작게 -->
+        <div class="article-thumb-wrap" th:if="${article.thumbnail != null and !#strings.isEmpty(article.thumbnail)}">
+            <img class="article-thumb" th:src="${article.thumbnail}" alt="thumbnail">
+        </div>
+
+    </div>
+
+    <!-- ✅ 본문(카드로 분리) -->
+    <div class="article-body">
+        <div class="article-content" th:utext="${article.content}">
+            <!-- Summernote HTML -->
+        </div>
+
+        <div class="article-actions">
+            <a th:href="@{/article/list}" class="btn btn-outline-secondary">← 목록</a>
+            <a th:href="@{/article/edit(id=${article.id})}" class="btn btn-outline-primary">수정</a>
+        </div>
+    </div>
+
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

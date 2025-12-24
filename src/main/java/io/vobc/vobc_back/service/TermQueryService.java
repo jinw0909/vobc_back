@@ -1,7 +1,6 @@
 package io.vobc.vobc_back.service;
 
 import io.vobc.vobc_back.domain.term.Term;
-import io.vobc.vobc_back.repository.TermQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
