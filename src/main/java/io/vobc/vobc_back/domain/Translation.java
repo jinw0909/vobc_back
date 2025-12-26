@@ -21,10 +21,11 @@ public class Translation {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Lob
+    @Column(nullable = false)
     private String content;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String summary;
 
     @Column(length = 32)

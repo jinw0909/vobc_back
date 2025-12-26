@@ -37,7 +37,7 @@ public class TermTranslation {
 
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String content;
 
     @CreatedDate

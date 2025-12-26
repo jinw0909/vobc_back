@@ -25,7 +25,7 @@ public class Publisher {
 
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String introduction;
 
     @OneToMany(mappedBy = "publisher", cascade = CascadeType.ALL, orphanRemoval = true)

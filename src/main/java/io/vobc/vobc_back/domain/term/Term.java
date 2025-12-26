@@ -35,7 +35,7 @@ public class Term {
     private String title;
 
     @Setter
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String content;
 
     @Setter

@@ -300,6 +300,8 @@ public class ArticleService {
     }
 
 
+
+
     @Transactional(readOnly = true)
     public Page<ArticleResponse> getArticlesWithPublisherTranslation(Pageable pageable, LanguageCode languageCode) {
         Page<Article> page = articleRepository.findAllByOrderByCreatedAtDesc(pageable);

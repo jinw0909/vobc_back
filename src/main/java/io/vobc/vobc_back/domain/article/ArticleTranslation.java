@@ -27,10 +27,10 @@ public class ArticleTranslation {
 
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String content;
 
-    @Column(length = 512)
+    @Lob
     private String summary;
     private String description;
     private String author;

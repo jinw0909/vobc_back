@@ -30,7 +30,7 @@ public class PublisherTranslation {
 
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String introduction;
 
     @ManyToOne(fetch = FetchType.LAZY)

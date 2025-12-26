@@ -31,7 +31,7 @@ public class Article {
     @Lob
     private String content;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String summary;
 
     private String description;
