@@ -5,9 +5,13 @@ import io.vobc.vobc_back.domain.Post;
 import io.vobc.vobc_back.domain.Translation;
 import io.vobc.vobc_back.dto.post.PostDto;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
+import io.vobc.vobc_back.dto.post.PostTagResponse;
+import io.vobc.vobc_back.dto.post.PostTranslatedResponse;
 import io.vobc.vobc_back.dto.postTag.PostTagQueryDto;
 import io.vobc.vobc_back.dto.translation.TranslationQueryDto;
 import io.vobc.vobc_back.repository.PostQueryRepository;
+import io.vobc.vobc_back.repository.TagRepository;
+import io.vobc.vobc_back.repository.TranslationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +30,8 @@ import java.util.stream.Collectors;
 public class PostQueryService {
 
     private final PostQueryRepository postQueryRepository;
+    private final TagRepository tagRepository;
+    private final TranslationRepository translationRepository;
 
     public List<PostQueryDto> findAllByDto() {
         List<PostQueryDto> result = postQueryRepository.findAllPostsByDto();
@@ -148,4 +154,35 @@ public class PostQueryService {
 
     }
 
+    @Transactional(readOnly = true)
+    public PostTranslatedResponse findFeatured(LanguageCode languageCode) {
+
+        List<Post> posts = postQueryRepository.findTop1ByOrderByReleaseDateDesc();
+        Post post = posts.stream().findFirst().orElseThrow();
+        PostTranslatedResponse postTranslatedResponse = PostTranslatedResponse.from(post);
+        Translation translation = translationRepository.findByPostIdAndLanguageCode(postTranslatedResponse.getId(), languageCode).orElse(null);
+        if (translation != null) {
+            if (translation.getTitle() != null) postTranslatedResponse.setTitle(translation.getTitle());
+            if (translation.getContent() != null) postTranslatedResponse.setContent(translation.getContent());
+            if (translation.getSummary() != null) postTranslatedResponse.setSummary(translation.getSummary());
+            if (translation.getAuthor() != null) postTranslatedResponse.setAuthor(translation.getAuthor());
+        }
+
+
+        return postTranslatedResponse;
+    }
+
+    public Page<PostTranslatedResponse> getRest(Pageable pageable, Long featuredId, LanguageCode languageCode) {
+        Page<PostTranslatedResponse> posts = postQueryRepository.findPagedResponse(pageable, featuredId, languageCode);
+        List<Long> postIds = posts.map(PostTranslatedResponse::getId).toList();
+
+        if (postIds.isEmpty()) return posts;
+
+        List<PostTagResponse> postTags = postQueryRepository.findAllPostTagsByResponse(postIds);
+
+        Map<Long, List<PostTagResponse>> postTagMap = postTags.stream().collect(Collectors.groupingBy(PostTagResponse::getPostId));
+        posts.forEach(dto -> dto.setPostTags(postTagMap.getOrDefault(dto.getId(), List.of())));
+
+        return posts;
+    }
 }

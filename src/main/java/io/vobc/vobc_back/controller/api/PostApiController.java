@@ -6,6 +6,7 @@ import io.vobc.vobc_back.dto.PagedResponse;
 import io.vobc.vobc_back.dto.post.PostDto;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
 import io.vobc.vobc_back.dto.post.PostResponse;
+import io.vobc.vobc_back.dto.post.PostTranslatedResponse;
 import io.vobc.vobc_back.service.PostQueryService;
 import io.vobc.vobc_back.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -55,10 +56,25 @@ public class PostApiController {
     }
 
 
-    @GetMapping("/query/{id}")
+    @GetMapping("/query/{id:\\d+}")
     public PostDto querySingle(@PathVariable Long id,
                                @RequestParam(required = false) String lang) {
         LanguageCode languageCode = LanguageCode.from(lang);
         return postQueryService.findOneById(id, languageCode);
+    }
+
+    @GetMapping("/query/featured")
+    public PostTranslatedResponse featuredPost(@RequestParam(defaultValue = "en") String lang) {
+        LanguageCode languageCode = LanguageCode.from(lang);
+        return postQueryService.findFeatured(languageCode);
+    }
+
+    @GetMapping("/query/rest")
+    public Page<PostTranslatedResponse> rest(@RequestParam(defaultValue = "en") String lang,
+                                             @RequestParam(required = false) Long featuredId,
+                                             @PageableDefault(size = 10) Pageable pageable
+    ) {
+        LanguageCode languageCode = LanguageCode.from(lang);
+        return postQueryService.getRest(pageable, featuredId, languageCode);
     }
 }

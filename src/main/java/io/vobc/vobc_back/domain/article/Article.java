@@ -34,6 +34,7 @@ public class Article {
     @Lob
     private String summary;
 
+    @Column(length = 1024)
     private String description;
 
     private LocalDate releaseDate;

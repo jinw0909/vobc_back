@@ -32,6 +32,7 @@ public class ArticleTranslation {
 
     @Lob
     private String summary;
+    @Column(length = 1024)
     private String description;
     private String author;
 

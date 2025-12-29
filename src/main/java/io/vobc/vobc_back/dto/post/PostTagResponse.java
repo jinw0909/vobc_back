@@ -10,6 +10,7 @@ public class PostTagResponse {
     private Long tagId;
     private String tagName;
     private Integer sortOrder;
+    private Long postId;
 
     public PostTagResponse(Long tagId, String tagName, Integer sortOrder) {
         this.tagId = tagId;
@@ -17,10 +18,17 @@ public class PostTagResponse {
         this.sortOrder = sortOrder;
     }
 
+    public PostTagResponse(Long tagId, String tagName, Integer sortOrder, Long postId) {
+        this(tagId, tagName, sortOrder);
+        this.postId = postId;
+    }
+
     public static PostTagResponse from(PostTag postTag) {
         return new PostTagResponse(
                 postTag.getTag().getId(),
                 postTag.getTag().getName(),
-                postTag.getSortOrder());
+                postTag.getSortOrder(),
+                postTag.getPost().getId()
+        );
     }
 }
