@@ -66,7 +66,7 @@ public class PostApiController {
     @GetMapping("/query/featured")
     public PostTranslatedResponse featuredPost(@RequestParam(defaultValue = "en") String lang) {
         LanguageCode languageCode = LanguageCode.from(lang);
-        return postQueryService.findFeatured(languageCode);
+        return postQueryService.getFeatured(languageCode);
     }
 
     @GetMapping("/query/rest")

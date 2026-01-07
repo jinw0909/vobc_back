@@ -10,10 +10,12 @@ import io.vobc.vobc_back.dto.post.PostTranslatedResponse;
 import io.vobc.vobc_back.dto.postTag.PostTagQueryDto;
 import io.vobc.vobc_back.dto.translation.TranslationQueryDto;
 import io.vobc.vobc_back.repository.PostQueryRepository;
+import io.vobc.vobc_back.repository.PostRepository;
 import io.vobc.vobc_back.repository.TagRepository;
 import io.vobc.vobc_back.repository.TranslationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,7 +34,9 @@ public class PostQueryService {
     private final PostQueryRepository postQueryRepository;
     private final TagRepository tagRepository;
     private final TranslationRepository translationRepository;
+    private final PostRepository postRepository;
 
+    @Transactional(readOnly = true)
     public List<PostQueryDto> findAllByDto() {
         List<PostQueryDto> result = postQueryRepository.findAllPostsByDto();
         attachTags(result);
@@ -48,6 +52,7 @@ public class PostQueryService {
 //        return page;
 //    }
 
+    @Transactional(readOnly = true)
     public Page<PostQueryDto> findAllByDto(Pageable pageable, LanguageCode languageCode, String tagName) {
 
         Page<PostQueryDto> page;
@@ -66,6 +71,7 @@ public class PostQueryService {
         return page;
     }
 
+    @Transactional(readOnly = true)
     public PostDto findOneById(Long postId, LanguageCode languageCode) {
         Post post = postQueryRepository.findOneById(postId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -155,23 +161,18 @@ public class PostQueryService {
     }
 
     @Transactional(readOnly = true)
-    public PostTranslatedResponse findFeatured(LanguageCode languageCode) {
+    public PostTranslatedResponse getFeatured(LanguageCode languageCode) {
 
-        List<Post> posts = postQueryRepository.findTop1ByOrderByReleaseDateDesc();
-        Post post = posts.stream().findFirst().orElseThrow();
-        PostTranslatedResponse postTranslatedResponse = PostTranslatedResponse.from(post);
-        Translation translation = translationRepository.findByPostIdAndLanguageCode(postTranslatedResponse.getId(), languageCode).orElse(null);
-        if (translation != null) {
-            if (translation.getTitle() != null) postTranslatedResponse.setTitle(translation.getTitle());
-            if (translation.getContent() != null) postTranslatedResponse.setContent(translation.getContent());
-            if (translation.getSummary() != null) postTranslatedResponse.setSummary(translation.getSummary());
-            if (translation.getAuthor() != null) postTranslatedResponse.setAuthor(translation.getAuthor());
-        }
+        PostTranslatedResponse post = postQueryRepository.findFeaturedTranslated(languageCode, PageRequest.of(0, 1)).stream()
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        List<PostTagResponse> postTags = postRepository.findAllPostTagsByPostId(post.getId());
+        post.setPostTags(postTags);
 
-
-        return postTranslatedResponse;
+        return post;
     }
 
+    @Transactional(readOnly = true)
     public Page<PostTranslatedResponse> getRest(Pageable pageable, Long featuredId, LanguageCode languageCode) {
         Page<PostTranslatedResponse> posts = postQueryRepository.findPagedResponse(pageable, featuredId, languageCode);
         List<Long> postIds = posts.map(PostTranslatedResponse::getId).toList();

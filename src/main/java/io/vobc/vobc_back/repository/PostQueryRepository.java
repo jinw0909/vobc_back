@@ -184,4 +184,23 @@ public interface PostQueryRepository extends JpaRepository<Post, Long> {
     order by p.id asc, pt.sortOrder asc, pt.id desc
     """)
     List<PostTagResponse> findAllPostTagsByResponse(@Param("postIds") List<Long> postIds);
+
+    @Query("""
+        select new io.vobc.vobc_back.dto.post.PostTranslatedResponse(
+            p.id,
+            coalesce(t.title, p.title),
+            coalesce(t.content, p.content),
+            coalesce(t.summary, p.summary),
+            coalesce(t.author, p.author),
+            p.thumbnail,
+            p.releaseDate
+        )
+        from Post p
+        left join Translation t
+          on t.post.id = p.id
+         and t.languageCode = :languageCode
+        order by p.releaseDate desc
+    """)
+    List<PostTranslatedResponse> findFeaturedTranslated(@Param("languageCode") LanguageCode languageCode,
+                                                        Pageable pageable);
 }
