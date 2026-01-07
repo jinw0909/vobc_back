@@ -1,5 +1,7 @@
 package io.vobc.vobc_back.domain;
 
+import io.vobc.vobc_back.domain.post.Post;
+import io.vobc.vobc_back.domain.post.PostTag;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,5 +45,10 @@ public class Tag {
 
     public List<Post> getPosts() {
         return postTags.stream().map(PostTag::getPost).toList();
+    }
+
+    public void addPostTag(PostTag postTag) {
+        postTags.add(postTag);
+        postTag.setTag(this);
     }
 }

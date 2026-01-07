@@ -1,20 +1,24 @@
 package io.vobc.vobc_back.dto;
 
 import io.vobc.vobc_back.domain.LanguageCode;
-import io.vobc.vobc_back.domain.Translation;
-import lombok.AllArgsConstructor;
+import io.vobc.vobc_back.domain.post.Translation;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Getter
 @Setter
 public class TranslationForm {
     private Long postId;
-    private LanguageCode languageCode;
-    private String content;
     private String title;
+    private String content;
     private String summary;
     private String author;
+    private LanguageCode languageCode;
+
+    private List<MultipartFile> files;
 
     public static TranslationForm from(Translation t) {
         TranslationForm f = new TranslationForm();

@@ -1,6 +1,6 @@
 package io.vobc.vobc_back.controller.web;
 
-import io.vobc.vobc_back.domain.Post;
+import io.vobc.vobc_back.domain.post.Post;
 import io.vobc.vobc_back.domain.Tag;
 import io.vobc.vobc_back.exception.DuplicateTagException;
 import io.vobc.vobc_back.service.TagService;

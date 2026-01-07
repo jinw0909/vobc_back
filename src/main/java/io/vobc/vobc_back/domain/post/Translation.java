@@ -1,5 +1,6 @@
-package io.vobc.vobc_back.domain;
+package io.vobc.vobc_back.domain.post;
 
+import io.vobc.vobc_back.domain.LanguageCode;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

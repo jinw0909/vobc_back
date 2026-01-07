@@ -1,151 +1,262 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <th:block th:replace="~{layout/head :: head}"></th:block>
+
 <style>
-    /* 원본 내용/요약 스크롤 박스 */
     .scroll-box {
-        max-height: 220px;              /* 박스 높이 고정 */
-        overflow-y: auto;               /* 넘치면 세로 스크롤 */
-        white-space: pre-wrap;          /* 줄바꿈/공백 유지 */
+        max-height: 260px;
+        overflow-y: auto;
         border: 1px solid #ced4da;
         border-radius: .375rem;
-        padding: .5rem .75rem;
+        padding: .75rem;
         background-color: #f8f9fa;
         font-size: 0.95rem;
     }
+
+    /* 원본 HTML 렌더링 박스(utext) */
+    .html-box {
+        max-height: 420px;
+        overflow-y: auto;
+        border: 1px solid #ced4da;
+        border-radius: .375rem;
+        padding: .75rem;
+        background-color: #ffffff;
+    }
+
+    .section-title {
+        font-weight: 700;
+        margin-bottom: .5rem;
+    }
+
+    .sub-label {
+        font-weight: 700;
+        font-size: .9rem;
+        margin-bottom: .25rem;
+    }
+
+    .html-view img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* width/height attribute가 있어도 뚫지 못하게 */
+    .html-view img[width] { width: auto !important; }
+    .html-view img[height] { height: auto !important; }
+    /* ✅ Summernote 에디터 내부 이미지가 에디터 폭을 넘지 않도록 강제 */
+    .note-editor .note-editable img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* width/height 속성(HTML attribute)이 박혀 있어도 못 뚫고 나가게 */
+    .note-editor .note-editable img[width] {
+        width: auto !important;
+    }
+    .note-editor .note-editable img[height] { height: auto !important; }
 </style>
+
 <body>
 <th:block th:replace="~{layout/header :: header}"></th:block>
+
 <div class="container mt-5">
-
-    <h2 class="mb-3">
-        번역하기
-        <small class="text-muted" th:text="'(언어: ' + ${language.displayName} + ')'"></small>
-    </h2>
-
-    <p class="mb-2 text-muted">
-        원본 게시글 ID:
-        <span th:text="${post.id}"></span>
-    </p>
-
-    <!-- ✅ releaseDate / thumbnail 은 보기만 (수정 불가) -->
-    <div class="mb-4">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label fw-bold">발행일 (releaseDate)</label>
-                <div class="form-control-plaintext"
-                     th:text="${post.releaseDate}">2025-01-01</div>
-            </div>
-            <div class="col-md-8">
-                <label class="form-label fw-bold">썸네일 이미지 (thumbnail)</label>
-                <div class="form-control-plaintext mb-2 text-truncate"
-                     th:text="${post.thumbnail}">
-                    https://example.com/image.jpg
-                </div>
-                <img th:if="${post.thumbnail}"
-                     th:src="${post.thumbnail}"
-                     alt="Thumbnail preview"
-                     class="img-thumbnail"
-                     style="max-height: 150px;">
+    <div class="d-flex align-items-end justify-content-between mb-3">
+        <div>
+            <h2 class="mb-1">
+                번역하기
+                <small class="text-muted" th:text="'(언어: ' + ${language.displayName} + ')'"></small>
+            </h2>
+            <div class="text-muted">
+                원본 게시글 ID: <span th:text="${post.id}"></span>
             </div>
         </div>
+        <!-- ✅ 뒤로가기(상세로) -->
+        <a class="btn btn-outline-secondary"
+           th:href="@{/post/detail(id=${post.id})}">
+            ← 상세로 돌아가기
+        </a>
     </div>
 
-    <!-- ✅ 여기부터 번역 폼 -->
-    <form th:action="@{/post/translate}" method="post" th:object="${translationForm}">
+    <!-- ✅ 2컬럼: 좌(원본) / 우(번역) -->
+    <div class="row g-4">
 
-        <!-- 숨겨진 필드 -->
-        <input type="hidden" th:field="*{postId}"/>
-        <input type="hidden" th:field="*{languageCode}"/>
+        <!-- =========================
+             LEFT: 원본(읽기전용)
+        ========================== -->
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="section-title">원본</div>
 
-        <!-- 제목 -->
-        <div class="mb-4">
-            <label class="form-label fw-bold">원본 제목</label>
-            <div class="form-control-plaintext" th:text="${post.title}">원본 제목</div>
+                    <!-- releaseDate / thumbnail -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <div class="sub-label">발행일 (releaseDate)</div>
+                            <div class="form-control-plaintext" th:text="${post.releaseDate}">2025-01-01</div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="sub-label">썸네일 (thumbnail)</div>
+                            <div class="form-control-plaintext text-truncate" th:text="${post.thumbnail}">
+                                https://example.com/image.jpg
+                            </div>
+                            <img th:if="${post.thumbnail}"
+                                 th:src="${post.thumbnail}"
+                                 alt="Thumbnail preview"
+                                 class="img-thumbnail mt-2"
+                                 style="max-height: 150px;">
+                        </div>
+                    </div>
 
-            <label class="form-label mt-2">번역 제목</label>
-            <input type="text"
-                   class="form-control translation-input"
-                   th:field="*{title}"/>
-        </div>
+                    <!-- 원본 제목 -->
+                    <div class="mb-3">
+                        <div class="sub-label">제목</div>
+                        <div class="scroll-box" th:text="${post.title}">원본 제목</div>
+                    </div>
 
-        <!-- 요약 -->
-        <div class="mb-4">
-            <label class="form-label fw-bold">원본 요약</label>
-            <div class="scroll-box" th:text="${post.summary}">원본 요약 (HTML)</div>
+                    <!-- 원본 요약 -->
+                    <div class="mb-3">
+                        <div class="sub-label">요약</div>
+                        <div class="scroll-box" th:text="${post.summary}">원본 요약</div>
+                    </div>
 
-            <label class="form-label mt-2">번역 요약</label>
-            <textarea class="form-control translation-input"
-                      rows="4"
-                      th:field="*{summary}"></textarea>
-        </div>
+                    <!-- ✅ 원본 내용: HTML 렌더링 -->
+                    <div class="mb-3">
+                        <div class="sub-label">내용 (HTML 렌더링)</div>
+                        <div class="scroll-box html-view html-box" th:utext="${post.content}">
+                            원본 내용
+                        </div>
+                        <div class="form-text text-muted mt-1">
+                            * 원본 content를 HTML로 렌더링해서 보여줍니다 (th:utext).
+                        </div>
+                    </div>
 
-        <!-- 내용 -->
-        <div class="mb-4">
-            <label class="form-label fw-bold">원본 내용 (HTML)</label>
-            <div class="scroll-box"
-                 th:text="${post.content}">
-                원본 내용
+                    <!-- 원본 작가 -->
+                    <div class="mb-0">
+                        <div class="sub-label">작가</div>
+                        <div class="scroll-box" th:utext="${post.author}">원본 작가</div>
+                    </div>
+                </div>
             </div>
-
-            <label class="form-label mt-2">번역 내용</label>
-            <textarea class="form-control translation-input"
-                      rows="10"
-                      th:field="*{content}"></textarea>
         </div>
 
-        <!-- 작가 -->
-        <div class="mb-4">
-            <label class="form-label fw-bold">원본 작가</label>
-            <div class="form-control-plaintext"
-                 th:utext="${post.author}">원본 작가</div>
+        <!-- =========================
+             RIGHT: 번역(편집)
+        ========================== -->
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="section-title">번역</div>
 
-            <label class="form-label mt-2">번역 작가</label>
-            <textarea class="form-control translation-input"
-                      rows="2"
-                      th:field="*{author}"></textarea>
+                    <!-- 번역 폼 -->
+                    <form id="translationForm"
+                          method="post"
+                          enctype="multipart/form-data"
+                          th:object="${translationForm}"
+                          th:attr="data-post-id=${post.id}, data-lang=${language.code}">
+
+                        <!-- CSRF -->
+                        <input type="hidden"
+                               th:if="${_csrf != null}"
+                               th:name="${_csrf.parameterName}"
+                               th:value="${_csrf.token}"/>
+
+                        <!-- 서버로 항상 보내고 싶은 값들 -->
+                        <input type="hidden" th:field="*{postId}"/>
+                        <input type="hidden" th:field="*{languageCode}"/>
+
+                        <!-- content는 우리가 직접 세팅해서 보낼 hidden 하나만 유지 -->
+                        <input type="hidden" id="contentHidden" name="content" th:value="*{content}"/>
+
+                        <!-- 번역 제목 -->
+                        <div class="mb-3">
+                            <div class="sub-label">번역 제목</div>
+                            <input type="text" class="form-control translation-input" th:field="*{title}" data-lockable/>
+                        </div>
+
+                        <!-- 번역 요약 -->
+                        <div class="mb-3">
+                            <div class="sub-label">번역 요약</div>
+                            <textarea class="form-control translation-input" rows="4" th:field="*{summary}" data-lockable></textarea>
+                        </div>
+
+                        <!-- 번역 내용 -->
+                        <div class="mb-3">
+                            <div class="sub-label">번역 내용</div>
+
+                            <!-- 보기 모드 -->
+                            <div id="translatedContentView"
+                                 class="border rounded p-2 html-view scroll-box html-box"
+                                 style="min-height:220px;"
+                                 th:utext="*{content}">
+                            </div>
+
+                            <!-- 편집 모드(서머노트 textarea) -->
+                            <textarea id="translatedContentEditor"
+                                      class="form-control translation-input"
+                                      rows="10"
+                                      style="display:none;"></textarea>
+
+                            <div class="form-text">
+                                이미지 삽입은 저장 시점에 업로드됩니다. (에디터 내부 미리보기는 blob)
+                            </div>
+                        </div>
+
+                        <!-- 번역 작가 -->
+                        <div class="mb-3">
+                            <div class="sub-label">번역 작가</div>
+                            <textarea class="form-control translation-input" rows="2" th:field="*{author}" data-lockable></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="editBtn"
+                                    th:if="${hasTranslation}">
+                                수정
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="cancelBtn"
+                                    style="display:none;">
+                                취소
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    id="saveBtn">
+                                저장
+                            </button>
+                        </div>
+
+                        <div class="mt-3 text-danger" id="errorBox" style="display:none;"></div>
+                    </form>
+
+                    <!-- 번역이 있을 때만 삭제 버튼 노출(기존 유지) -->
+                    <form th:if="${hasTranslation}"
+                          th:action="@{/post/translate/delete}"
+                          method="post"
+                          class="mt-3">
+
+                        <input type="hidden" name="postId" th:value="${post.id}">
+                        <input type="hidden" name="languageCode" th:value="${languageCode}">
+
+                        <input type="hidden"
+                               th:if="${_csrf != null}"
+                               th:name="${_csrf.parameterName}"
+                               th:value="${_csrf.token}"/>
+
+                        <button type="submit"
+                                class="btn btn-danger btn-sm"
+                                onclick="return confirm('정말 이 언어의 번역을 삭제하시겠습니까?');">
+                            이 번역 삭제
+                        </button>
+                    </form>
+
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex gap-2">
-            <!-- 기존 번역이 있을 때만 '수정' 버튼 보이기 -->
-            <button type="button"
-                    class="btn btn-outline-secondary"
-                    id="editBtn"
-                    th:if="${hasTranslation}">
-                수정
-            </button>
-
-            <button type="submit"
-                    class="btn btn-primary"
-                    id="saveBtn">
-                저장
-            </button>
-        </div>
-
-    </form>
-
-    <!-- 번역이 있을 때만 삭제 버튼 노출 -->
-    <form th:if="${hasTranslation}"
-          th:action="@{/post/translate/delete}"
-          method="post"
-          class="mt-3">
-
-        <input type="hidden" name="postId" th:value="${post.id}">
-        <input type="hidden" name="languageCode" th:value="${languageCode}">
-
-        <!-- CSRF 사용 중이면 추가 -->
-        <input type="hidden"
-               th:if="${_csrf != null}"
-               th:name="${_csrf.parameterName}"
-               th:value="${_csrf.token}"/>
-
-        <button type="submit"
-                class="btn btn-danger btn-sm"
-                onclick="return confirm('정말 이 언어의 번역을 삭제하시겠습니까?');">
-            이 번역 삭제
-        </button>
-    </form>
-
+    </div>
 </div>
 
 <div th:replace="~{layout/footer :: footer}"></div>
@@ -154,23 +265,580 @@
     /*<![CDATA[*/
     const hasTranslation = /*[[${hasTranslation}]]*/ false;
 
-    const inputs = document.querySelectorAll('.translation-input');
+    const formEl = document.getElementById('translationForm');
     const editBtn = document.getElementById('editBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
     const saveBtn = document.getElementById('saveBtn');
 
-    if (hasTranslation && saveBtn) {
-        inputs.forEach(i => i.setAttribute('readonly', 'readonly'));
-        saveBtn.disabled = true;
+    const viewDiv = document.getElementById('translatedContentView');
+    const editorTa = document.getElementById('translatedContentEditor');
+
+    const contentHidden = document.getElementById('contentHidden');
+    const errorBox = document.getElementById('errorBox');
+
+    const pendingFiles = new Map();
+    const blobUrls = new Map();
+
+    let originalHtmlForCancel = '';
+
+    function showError(msg) {
+        if (!errorBox) return;
+        errorBox.style.display = 'block';
+        errorBox.textContent = msg ?? '오류가 발생했습니다.';
+    }
+    function clearError() {
+        if (!errorBox) return;
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
     }
 
-    if (editBtn && saveBtn) {
-        editBtn.addEventListener('click', () => {
-            inputs.forEach(i => i.removeAttribute('readonly'));
-            saveBtn.disabled = false;
+    function isSummernoteInitialized() {
+        return !!($('#translatedContentEditor').next('.note-editor').length);
+    }
+
+    function lockFields() {
+        // 제목/요약/작가 등 잠금
+        const lockables = formEl.querySelectorAll('[data-lockable]');
+        lockables.forEach(el => {
+            // input/textarea readonly
+            el.setAttribute('readonly', 'readonly');
+        });
+
+        // 저장 비활성
+        if (saveBtn) saveBtn.disabled = true;
+    }
+
+    function unlockFields() {
+        const lockables = formEl.querySelectorAll('[data-lockable]');
+        lockables.forEach(el => el.removeAttribute('readonly'));
+
+        if (saveBtn) saveBtn.disabled = false;
+    }
+
+    function initSummernote(initialHtml) {
+        editorTa.style.display = 'block';
+        viewDiv.style.display = 'none';
+
+        $('#translatedContentEditor').summernote({
+            height: 420,
+            placeholder: '번역 내용을 입력하세요...',
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'underline', 'clear']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['picture', 'link']],
+                ['view', ['codeview']]
+            ],
+            callbacks: {
+                onImageUpload: function (files) {
+                    if (!files || files.length === 0) return;
+                    for (const f of files) insertImageToEditor(f);
+                },
+                onChange: function () {
+                    syncPendingFilesWithEditor();
+                }
+            }
+        });
+
+        $('#translatedContentEditor').summernote('code', initialHtml ?? '');
+    }
+
+    function destroySummernote() {
+        if (isSummernoteInitialized()) {
+            $('#translatedContentEditor').summernote('destroy');
+        }
+        editorTa.style.display = 'none';
+        viewDiv.style.display = 'block';
+    }
+
+    // ===== 이미지 업로드 로직 (기존 그대로) =====
+    function uuidv4() {
+        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
         });
     }
+    function getExtFromFile(file) {
+        const name = file.name || '';
+        const idx = name.lastIndexOf('.');
+        if (idx > -1) return name.substring(idx);
+        if (file.type === 'image/png') return '.png';
+        if (file.type === 'image/jpeg') return '.jpg';
+        if (file.type === 'image/webp') return '.webp';
+        return '';
+    }
+    function insertImageToEditor(file) {
+        const assetId = uuidv4();
+        const ext = getExtFromFile(file);
+        const renamed = new File([file], `${assetId}${ext}`, { type: file.type });
+
+        pendingFiles.set(assetId, renamed);
+
+        const blobUrl = URL.createObjectURL(renamed);
+        blobUrls.set(assetId, blobUrl);
+
+        const imgHtml = `<img src="${blobUrl}" data-asset-id="${assetId}" alt="" />`;
+        $('#translatedContentEditor').summernote('pasteHTML', imgHtml);
+    }
+    function syncPendingFilesWithEditor() {
+        const html = $('#translatedContentEditor').summernote('code');
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+
+        const assetIdsInEditor = new Set(
+            Array.from(temp.querySelectorAll('img[data-asset-id]'))
+                .map(img => img.getAttribute('data-asset-id'))
+                .filter(Boolean)
+        );
+
+        for (const assetId of Array.from(pendingFiles.keys())) {
+            if (!assetIdsInEditor.has(assetId)) {
+                pendingFiles.delete(assetId);
+                const url = blobUrls.get(assetId);
+                if (url) URL.revokeObjectURL(url);
+                blobUrls.delete(assetId);
+            }
+        }
+    }
+
+    function enterEditMode() {
+        clearError();
+
+        // ✅ 기존 번역 있을 때만 '수정' 버튼을 통해서 진입
+        originalHtmlForCancel = viewDiv.innerHTML || '';
+
+        unlockFields(); // 제목/요약/작가 잠금 해제
+
+        if (!isSummernoteInitialized()) {
+            initSummernote(originalHtmlForCancel);
+        } else {
+            editorTa.style.display = 'block';
+            viewDiv.style.display = 'none';
+            $('#translatedContentEditor').summernote('code', originalHtmlForCancel);
+        }
+
+        if (editBtn) editBtn.style.display = 'none';
+        if (cancelBtn) cancelBtn.style.display = 'inline-block';
+    }
+
+    function enterViewMode() {
+        clearError();
+
+        // 내용 되돌리기
+        viewDiv.innerHTML = originalHtmlForCancel;
+
+        // 업로드 대기 파일 정리
+        for (const url of blobUrls.values()) {
+            try { URL.revokeObjectURL(url); } catch(e) {}
+        }
+        pendingFiles.clear();
+        blobUrls.clear();
+
+        destroySummernote();
+
+        // ✅ 다시 잠금
+        lockFields();
+
+        if (editBtn) editBtn.style.display = hasTranslation ? 'inline-block' : 'none';
+        if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+
+    function getFinalHtmlForSubmit() {
+        if (isSummernoteInitialized()) {
+            syncPendingFilesWithEditor();
+            return $('#translatedContentEditor').summernote('code');
+        }
+        return viewDiv.innerHTML || '';
+    }
+
+    function getCsrfHeader() {
+        const headerName = /*[[${_csrf?.headerName}]]*/ null;
+        const token = /*[[${_csrf?.token}]]*/ null;
+        if (!headerName || !token) return null;
+        return { headerName, token };
+    }
+
+    function buildSaveUrl() {
+        const postId = formEl?.dataset?.postId;
+        const lang = formEl?.dataset?.lang;
+        if (!postId || !lang) throw new Error('data-post-id / data-lang 가 없습니다.');
+        return `/post/translate/${encodeURIComponent(postId)}?lang=${encodeURIComponent(lang)}`;
+    }
+
+    async function doSave() {
+        clearError();
+
+        // ✅ 기존 번역이고 아직 수정모드 아니면 저장 막기
+        if (hasTranslation && saveBtn && saveBtn.disabled) return;
+
+        const html = getFinalHtmlForSubmit();
+        contentHidden.value = html;
+
+        const fd = new FormData(formEl);
+        fd.delete('content');
+        fd.append('content', html);
+
+        for (const file of pendingFiles.values()) fd.append('files', file);
+
+        const headers = {};
+        const csrf = getCsrfHeader();
+        if (csrf) headers[csrf.headerName] = csrf.token;
+
+        try {
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.dataset._txt = saveBtn.textContent;
+                saveBtn.textContent = '저장 중...';
+            }
+
+            const url = buildSaveUrl();
+            const res = await fetch(url, { method: 'POST', body: fd, headers });
+            if (!res.ok) throw new Error(await res.text());
+
+            const data = await res.json();
+            if (!data?.ok) throw new Error('서버 응답이 ok=false 입니다.');
+
+            window.location.href = `/post/translate?id=${data.postId}&languageCode=${data.lang}`;
+        } catch (err) {
+            console.error(err);
+            showError('저장 실패: ' + (err?.message ?? err));
+            // 수정모드면 다시 활성화
+            if (saveBtn) saveBtn.disabled = false;
+        } finally {
+            if (saveBtn && saveBtn.dataset._txt) {
+                saveBtn.textContent = saveBtn.dataset._txt;
+                delete saveBtn.dataset._txt;
+
+                // 수정모드가 유지되는 동안은 enabled
+                // (저장 성공하면 페이지 이동하니 여기까지 보통 안 옴)
+                if (hasTranslation && (!isSummernoteInitialized() || editorTa.style.display === 'none')) {
+                    saveBtn.disabled = true;
+                } else {
+                    saveBtn.disabled = false;
+                }
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (hasTranslation) {
+            // ✅ 처음에는 잠금 상태
+            lockFields();
+            if (editBtn) editBtn.style.display = 'inline-block';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            destroySummernote(); // 혹시 남아있을까 방어
+        } else {
+            // ✅ 번역이 없으면 바로 입력 가능
+            unlockFields();
+            if (editBtn) editBtn.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'inline-block'; // 원하면 hide 가능
+            enterEditMode(); // 바로 에디터 켜기
+        }
+
+        editBtn?.addEventListener('click', enterEditMode);
+        cancelBtn?.addEventListener('click', enterViewMode);
+        saveBtn?.addEventListener('click', doSave);
+
+        // 엔터 submit 방지
+        formEl?.addEventListener('submit', (e) => e.preventDefault());
+    });
     /*]]>*/
 </script>
+
+
+<!--<script th:inline="javascript">-->
+<!--    /*<![CDATA[*/-->
+<!--    const hasTranslation = /*[[${hasTranslation}]]*/ false;-->
+
+<!--    const formEl = document.getElementById('translationForm');-->
+<!--    const editBtn = document.getElementById('editBtn');-->
+<!--    const cancelBtn = document.getElementById('cancelBtn');-->
+<!--    const saveBtn = document.getElementById('saveBtn');-->
+
+<!--    const viewDiv = document.getElementById('translatedContentView');-->
+<!--    const editorTa = document.getElementById('translatedContentEditor');-->
+
+<!--    const contentHidden = document.getElementById('contentHidden');-->
+<!--    const errorBox = document.getElementById('errorBox');-->
+
+<!--    const pendingFiles = new Map(); // assetId -> File-->
+<!--    const blobUrls = new Map();     // assetId -> blobUrl-->
+
+<!--    let originalHtmlForCancel = '';-->
+
+<!--    function showError(msg) {-->
+<!--        if (!errorBox) return;-->
+<!--        errorBox.style.display = 'block';-->
+<!--        errorBox.textContent = msg ?? '오류가 발생했습니다.';-->
+<!--    }-->
+<!--    function clearError() {-->
+<!--        if (!errorBox) return;-->
+<!--        errorBox.style.display = 'none';-->
+<!--        errorBox.textContent = '';-->
+<!--    }-->
+
+<!--    function uuidv4() {-->
+<!--        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();-->
+<!--        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {-->
+<!--            const r = Math.random() * 16 | 0;-->
+<!--            const v = c === 'x' ? r : (r & 0x3 | 0x8);-->
+<!--            return v.toString(16);-->
+<!--        });-->
+<!--    }-->
+
+<!--    function getExtFromFile(file) {-->
+<!--        const name = file.name || '';-->
+<!--        const idx = name.lastIndexOf('.');-->
+<!--        if (idx > -1) return name.substring(idx);-->
+<!--        if (file.type === 'image/png') return '.png';-->
+<!--        if (file.type === 'image/jpeg') return '.jpg';-->
+<!--        if (file.type === 'image/webp') return '.webp';-->
+<!--        return '';-->
+<!--    }-->
+
+<!--    function insertImageToEditor(file) {-->
+<!--        const assetId = uuidv4();-->
+<!--        const ext = getExtFromFile(file);-->
+<!--        const renamed = new File([file], `${assetId}${ext}`, { type: file.type });-->
+
+<!--        pendingFiles.set(assetId, renamed);-->
+
+<!--        const blobUrl = URL.createObjectURL(renamed);-->
+<!--        blobUrls.set(assetId, blobUrl);-->
+
+<!--        const imgHtml = `<img src="${blobUrl}" data-asset-id="${assetId}" alt="" />`;-->
+<!--        $('#translatedContentEditor').summernote('pasteHTML', imgHtml);-->
+<!--    }-->
+
+<!--    function syncPendingFilesWithEditor() {-->
+<!--        const html = $('#translatedContentEditor').summernote('code');-->
+<!--        const temp = document.createElement('div');-->
+<!--        temp.innerHTML = html;-->
+
+<!--        const assetIdsInEditor = new Set(-->
+<!--            Array.from(temp.querySelectorAll('img[data-asset-id]'))-->
+<!--                .map(img => img.getAttribute('data-asset-id'))-->
+<!--                .filter(Boolean)-->
+<!--        );-->
+
+<!--        for (const assetId of Array.from(pendingFiles.keys())) {-->
+<!--            if (!assetIdsInEditor.has(assetId)) {-->
+<!--                pendingFiles.delete(assetId);-->
+<!--                const url = blobUrls.get(assetId);-->
+<!--                if (url) URL.revokeObjectURL(url);-->
+<!--                blobUrls.delete(assetId);-->
+<!--            }-->
+<!--        }-->
+<!--    }-->
+
+<!--    function isSummernoteInitialized() {-->
+<!--        return !!($('#translatedContentEditor').next('.note-editor').length);-->
+<!--    }-->
+
+<!--    function initSummernote(initialHtml) {-->
+<!--        editorTa.style.display = 'block';-->
+<!--        viewDiv.style.display = 'none';-->
+
+<!--        $('#translatedContentEditor').summernote({-->
+<!--            height: 420,-->
+<!--            placeholder: '번역 내용을 입력하세요...',-->
+<!--            toolbar: [-->
+<!--                ['style', ['style']],-->
+<!--                ['font', ['bold', 'underline', 'clear']],-->
+<!--                ['para', ['ul', 'ol', 'paragraph']],-->
+<!--                ['insert', ['picture', 'link']],-->
+<!--                ['view', ['codeview']]-->
+<!--            ],-->
+<!--            callbacks: {-->
+<!--                onInit: function () {-->
+<!--                    // 에디터 초기화 직후 한번 정리-->
+<!--                    setTimeout(normalizeEditorImages, 0);-->
+<!--                },-->
+<!--                onImageUpload: function (files) {-->
+<!--                    if (!files || files.length === 0) return;-->
+<!--                    for (const f of files) insertImageToEditor(f);-->
+<!--                },-->
+<!--                onPaste: function () {-->
+<!--                    // 붙여넣기 이미지/HTML 들어온 뒤 정리-->
+<!--                    setTimeout(normalizeEditorImages, 0);-->
+<!--                },-->
+<!--                onChange: function () {-->
+<!--                    syncPendingFilesWithEditor();-->
+<!--                }-->
+<!--            }-->
+<!--        });-->
+
+<!--        $('#translatedContentEditor').summernote('code', initialHtml ?? '');-->
+<!--        // 초기 HTML 세팅 후 한번 더-->
+<!--        setTimeout(normalizeEditorImages, 0);-->
+<!--    }-->
+
+<!--    function destroySummernote() {-->
+<!--        if (isSummernoteInitialized()) {-->
+<!--            $('#translatedContentEditor').summernote('destroy');-->
+<!--        }-->
+<!--        editorTa.style.display = 'none';-->
+<!--        viewDiv.style.display = 'block';-->
+<!--    }-->
+
+<!--    function normalizeEditorImages() {-->
+<!--        if (!isSummernoteInitialized()) return;-->
+
+<!--        const $editable = $(formEl).find('.note-editable');-->
+
+<!--        $editable.find('img').each(function () {-->
+<!--            const img = this;-->
+
+<!--            // 1) 너무 큰 width/height attribute 제거(에디터 밖으로 튀는 원인)-->
+<!--            if (img.hasAttribute('width')) img.removeAttribute('width');-->
+<!--            if (img.hasAttribute('height')) img.removeAttribute('height');-->
+
+<!--            // 2) 인라인 style에 width가 있으면 제거하고 max-width로 통일-->
+<!--            //    (기존 width 유지 "시도"는 하되, 컨테이너보다 크면 제한)-->
+<!--            const style = img.getAttribute('style') || '';-->
+<!--            // width: xxxpx / width: xxx% 제거-->
+<!--            const cleaned = style-->
+<!--                .replace(/width\s*:\s*[^;]+;?/gi, '')-->
+<!--                .replace(/height\s*:\s*[^;]+;?/gi, '');-->
+
+<!--            img.setAttribute('style', (cleaned + ';max-width:100%;height:auto;').replace(/;;+/g, ';'));-->
+<!--        });-->
+<!--    }-->
+
+
+<!--    function enterEditMode() {-->
+<!--        clearError();-->
+<!--        originalHtmlForCancel = viewDiv.innerHTML || '';-->
+
+<!--        if (!isSummernoteInitialized()) {-->
+<!--            initSummernote(originalHtmlForCancel);-->
+<!--        } else {-->
+<!--            editorTa.style.display = 'block';-->
+<!--            viewDiv.style.display = 'none';-->
+<!--            $('#translatedContentEditor').summernote('code', originalHtmlForCancel);-->
+<!--        }-->
+
+<!--        if (editBtn) editBtn.style.display = 'none';-->
+<!--        if (cancelBtn) cancelBtn.style.display = 'inline-block';-->
+<!--        if (saveBtn) saveBtn.disabled = false;-->
+<!--    }-->
+
+<!--    function enterViewMode() {-->
+<!--        clearError();-->
+<!--        viewDiv.innerHTML = originalHtmlForCancel;-->
+
+<!--        for (const url of blobUrls.values()) {-->
+<!--            try { URL.revokeObjectURL(url); } catch(e) {}-->
+<!--        }-->
+<!--        pendingFiles.clear();-->
+<!--        blobUrls.clear();-->
+
+<!--        destroySummernote();-->
+
+<!--        if (editBtn) editBtn.style.display = hasTranslation ? 'inline-block' : 'none';-->
+<!--        if (cancelBtn) cancelBtn.style.display = 'none';-->
+<!--        if (saveBtn) saveBtn.disabled = hasTranslation;-->
+<!--    }-->
+
+<!--    // ✅ 핵심: display 상태로 판단하지 않고, summernote 초기화 여부만으로 content 가져오기-->
+<!--    function getFinalHtmlForSubmit() {-->
+<!--        if (isSummernoteInitialized()) {-->
+<!--            syncPendingFilesWithEditor();-->
+<!--            return $('#translatedContentEditor').summernote('code');-->
+<!--        }-->
+<!--        return viewDiv.innerHTML || '';-->
+<!--    }-->
+
+<!--    function getCsrfHeader() {-->
+<!--        const headerName = /*[[${_csrf?.headerName}]]*/ null;-->
+<!--        const token = /*[[${_csrf?.token}]]*/ null;-->
+<!--        if (!headerName || !token) return null;-->
+<!--        return { headerName, token };-->
+<!--    }-->
+
+<!--    function buildSaveUrl() {-->
+<!--        const postId = formEl?.dataset?.postId;-->
+<!--        const lang = formEl?.dataset?.lang;-->
+<!--        if (!postId || !lang) throw new Error('data-post-id / data-lang 가 없습니다.');-->
+<!--        return `/post/translate/${encodeURIComponent(postId)}?lang=${encodeURIComponent(lang)}`;-->
+<!--    }-->
+
+<!--    async function doSave() {-->
+<!--        clearError();-->
+
+<!--        if (hasTranslation && saveBtn && saveBtn.disabled) return;-->
+
+<!--        const html = getFinalHtmlForSubmit();-->
+<!--        contentHidden.value = html;-->
+
+<!--        const fd = new FormData(formEl);-->
+<!--        fd.delete('content');-->
+<!--        fd.append('content', html);-->
+
+<!--        for (const file of pendingFiles.values()) {-->
+<!--            fd.append('files', file);-->
+<!--        }-->
+
+<!--        const headers = {};-->
+<!--        const csrf = getCsrfHeader();-->
+<!--        if (csrf) headers[csrf.headerName] = csrf.token;-->
+
+<!--        try {-->
+<!--            if (saveBtn) {-->
+<!--                saveBtn.disabled = true;-->
+<!--                saveBtn.dataset._txt = saveBtn.textContent;-->
+<!--                saveBtn.textContent = '저장 중...';-->
+<!--            }-->
+
+<!--            const url = buildSaveUrl();-->
+<!--            const res = await fetch(url, { method: 'POST', body: fd, headers });-->
+<!--            if (!res.ok) throw new Error(await res.text());-->
+
+<!--            const data = await res.json();-->
+<!--            if (!data?.ok) throw new Error('서버 응답이 ok=false 입니다.');-->
+
+<!--            window.location.href = `/post/translate?id=${encodeURIComponent(data.postId)}&languageCode=${encodeURIComponent(data.lang)}`;-->
+
+<!--        } catch (err) {-->
+<!--            console.error(err);-->
+<!--            showError('저장 실패: ' + (err?.message ?? err));-->
+<!--            if (saveBtn) saveBtn.disabled = false;-->
+<!--        } finally {-->
+<!--            if (saveBtn && saveBtn.dataset._txt) {-->
+<!--                saveBtn.textContent = saveBtn.dataset._txt;-->
+<!--                delete saveBtn.dataset._txt;-->
+
+<!--                if (hasTranslation && (!isSummernoteInitialized() || editorTa.style.display === 'none')) {-->
+<!--                    saveBtn.disabled = true;-->
+<!--                } else {-->
+<!--                    saveBtn.disabled = false;-->
+<!--                }-->
+<!--            }-->
+<!--        }-->
+<!--    }-->
+
+<!--    document.addEventListener('DOMContentLoaded', () => {-->
+<!--        if (hasTranslation) {-->
+<!--            if (saveBtn) saveBtn.disabled = true;-->
+<!--            if (cancelBtn) cancelBtn.style.display = 'none';-->
+<!--        } else {-->
+<!--            if (editBtn) editBtn.style.display = 'none';-->
+<!--            if (saveBtn) saveBtn.disabled = false;-->
+<!--            enterEditMode();-->
+<!--        }-->
+
+<!--        editBtn?.addEventListener('click', enterEditMode);-->
+<!--        cancelBtn?.addEventListener('click', enterViewMode);-->
+
+<!--        saveBtn?.addEventListener('click', doSave);-->
+
+<!--        // 엔터로 submit 방지-->
+<!--        formEl?.addEventListener('submit', (e) => e.preventDefault());-->
+<!--    });-->
+<!--    /*]]>*/-->
+<!--</script>-->
 
 </body>
 </html>

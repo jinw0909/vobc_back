@@ -1,6 +1,6 @@
 package io.vobc.vobc_back.domain.member;
 
-import io.vobc.vobc_back.domain.Post;
+import io.vobc.vobc_back.domain.post.Post;
 import jakarta.persistence.*;
 import lombok.Getter;
 import org.hibernate.annotations.CreationTimestamp;

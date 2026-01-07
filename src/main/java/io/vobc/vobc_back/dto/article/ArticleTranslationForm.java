@@ -5,6 +5,9 @@ import io.vobc.vobc_back.domain.article.ArticleTranslation;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Getter @Setter
 @NoArgsConstructor
@@ -17,6 +20,8 @@ public class ArticleTranslationForm {
     private String author;
     private String description;
     private LanguageCode languageCode;
+
+    private List<MultipartFile> files;
 
     public ArticleTranslationForm(ArticleTranslation translation) {
         this.id = translation.getId();

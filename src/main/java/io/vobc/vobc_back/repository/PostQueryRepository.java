@@ -1,7 +1,7 @@
 package io.vobc.vobc_back.repository;
 
 import io.vobc.vobc_back.domain.LanguageCode;
-import io.vobc.vobc_back.domain.Post;
+import io.vobc.vobc_back.domain.post.Post;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
 import io.vobc.vobc_back.dto.post.PostTagResponse;
 import io.vobc.vobc_back.dto.post.PostTranslatedResponse;

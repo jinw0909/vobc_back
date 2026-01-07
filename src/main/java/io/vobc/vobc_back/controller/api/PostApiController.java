@@ -1,7 +1,6 @@
 package io.vobc.vobc_back.controller.api;
 
 import io.vobc.vobc_back.domain.LanguageCode;
-import io.vobc.vobc_back.domain.Post;
 import io.vobc.vobc_back.dto.PagedResponse;
 import io.vobc.vobc_back.dto.post.PostDto;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
@@ -39,7 +38,8 @@ public class PostApiController {
                                 @RequestParam(defaultValue = "en") String lang) {
         LanguageCode languageCode = LanguageCode.from(lang);
 
-        return postService.getPostDetail(id, languageCode);
+//        return postService.getPostDetail(id, languageCode);
+        return postService.getTranslatedPost(id, languageCode);
     }
 
     @GetMapping("/query/list")

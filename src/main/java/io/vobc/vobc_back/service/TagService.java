@@ -1,6 +1,9 @@
 package io.vobc.vobc_back.service;
 
 import io.vobc.vobc_back.domain.*;
+import io.vobc.vobc_back.domain.post.Post;
+import io.vobc.vobc_back.domain.post.PostTag;
+import io.vobc.vobc_back.domain.post.Translation;
 import io.vobc.vobc_back.dto.PagedResponse;
 import io.vobc.vobc_back.dto.TagForm;
 import io.vobc.vobc_back.dto.post.PostResponse;

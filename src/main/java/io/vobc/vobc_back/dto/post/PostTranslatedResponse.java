@@ -1,7 +1,6 @@
 package io.vobc.vobc_back.dto.post;
 
-import io.vobc.vobc_back.domain.LanguageCode;
-import io.vobc.vobc_back.domain.Post;
+import io.vobc.vobc_back.domain.post.Post;
 import lombok.Getter;
 import lombok.Setter;
 

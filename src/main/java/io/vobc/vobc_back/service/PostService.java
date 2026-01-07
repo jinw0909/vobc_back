@@ -2,12 +2,15 @@ package io.vobc.vobc_back.service;
 
 import io.vobc.vobc_back.domain.*;
 import io.vobc.vobc_back.domain.member.Member;
+import io.vobc.vobc_back.domain.post.Post;
+import io.vobc.vobc_back.domain.post.PostTag;
+import io.vobc.vobc_back.domain.post.Translation;
 import io.vobc.vobc_back.dto.PagedResponse;
 import io.vobc.vobc_back.dto.TagForm;
-import io.vobc.vobc_back.dto.post.PostCreateRequest;
-import io.vobc.vobc_back.dto.post.PostResponse;
-import io.vobc.vobc_back.dto.post.PostUpdateRequest;
+import io.vobc.vobc_back.dto.post.*;
 import io.vobc.vobc_back.repository.*;
+import io.vobc.vobc_back.service.media.MediaService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Collator;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +32,7 @@ public class PostService {
     private final TagRepository tagRepository;
     private final TranslationRepository translationRepository;
     private final MemberRepository memberRepository;
+    private final MediaService mediaService;
 
     @Transactional
     public Long createPost(Long memberId, PostCreateRequest request) {
@@ -52,7 +57,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public Page<Post> getPosts(Pageable pageable) {
-        return postRepository.findAll(pageable);
+        return postRepository.findAllWithTags(pageable);
     }
 
     @Transactional(readOnly = true)
@@ -63,6 +68,11 @@ public class PostService {
     @Transactional(readOnly = true)
     public Post getPost(Long id) {
         return postRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Post not found: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public Post getPostWithTags(Long id) {
+        return postRepository.findWithTagsById(id).orElseThrow(() -> new IllegalArgumentException("Post not found: " + id));
     }
 
     @Transactional
@@ -301,7 +311,7 @@ public class PostService {
         if (pageable.getSort().isUnsorted()) {
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("createdAt").descending());
         }
-        Page<Post> postPage = postRepository.findAll(pageable);
+        Page<Post> postPage = postRepository.findAllWithTags(pageable);
         List<Post> posts = postPage.getContent();
 
         if (posts.isEmpty()) {
@@ -356,4 +366,150 @@ public class PostService {
         return translationRepository.findLanguageCodesByPostId(id);
     }
 
+    @Transactional
+    public Long save(Long id, PostForm form) {
+        Post post;
+        if (id == null) {
+            post = Post.create(form.getTitle(), form.getContent(), form.getSummary(), form.getAuthor(), form.getReleaseDate(), form.getThumbnail());
+            postRepository.save(post);
+            String finalContent = mediaService.replaceImagesAndSave(post, form.getContent(), form.getFiles());
+            post.setContent(finalContent);
+        } else {
+            post = postRepository.findById(id).orElseThrow();
+            post.setTitle(form.getTitle());
+            post.setContent(form.getContent());
+            post.setSummary(form.getSummary());
+            post.setAuthor(form.getAuthor());
+            post.setReleaseDate(form.getReleaseDate());
+            post.setThumbnail(form.getThumbnail());
+
+            String finalContent = mediaService.replaceImagesAndSave(post, form.getContent(), form.getFiles());
+            post.setContent(finalContent);
+
+//            mediaService.cleanUp(post.getId(), finalContent);
+            boolean hasFiles = form.getFiles() != null && form.getFiles().stream().anyMatch(f -> !f.isEmpty());
+            if (hasFiles) {
+                mediaService.cleanUpPostConsideringAllContents(post.getId());
+            }
+        }
+
+        applyPostTags(post, form);
+
+        return post.getId();
+    }
+
+//    private void applyPostTags(Post post, PostForm form) {
+//        List<PostTagForm> req = form.getPostTags();
+//        if (req == null) {
+//            post.clearPostTags();
+////            postRepository.flush();
+//            return;
+//        }
+//
+//
+//
+//        // 1) 중복 tagId 제거 + sortOrder 정렬(원하면)
+//        //    같은 tagId가 여러번 오면 마지막 값으로 덮어씀
+//        Map<Long, PostTagForm> dedup = new LinkedHashMap<>();
+//        for (PostTagForm pt : req) {
+//            if (pt.getTagId() == null) continue;
+//            dedup.put(pt.getTagId(), pt);
+//        }
+//
+//        // 2) clear → 재생성
+//        post.clearPostTags();
+//        postRepository.flush();
+//
+//        for (PostTagForm ptf : dedup.values()) {
+//            Tag tag = tagRepository.findById(ptf.getTagId()).orElseThrow();
+//
+//            PostTag pt = PostTag.createPostTag(post, tag); // 너가 만든 연관관계 세팅 메서드
+//            pt.setSortOrder(ptf.getSortOrder());
+//            pt.setPrimaryTag(Boolean.TRUE.equals(ptf.getPrimaryTag()));
+//
+//            // ⚠️ createPostTag에서 post.addPostTag()까지 해주는 구조면 여기서 add 필요 없음
+//            // post.addPostTag(pt);
+//        }
+//
+//    }
+
+    private void applyPostTags(Post post, PostForm form) {
+        List<PostTagForm> req = form.getPostTags();
+
+        // 요청이 null이면 전체 삭제
+        if (req == null) {
+            post.clearPostTags();
+            return;
+        }
+
+        // 1) 요청 dedup (tagId 기준)
+        Map<Long, PostTagForm> dedup = new LinkedHashMap<>();
+        for (PostTagForm pt : req) {
+            if (pt.getTagId() == null) continue;
+            dedup.put(pt.getTagId(), pt);
+        }
+
+        // 2) 기존 postTags를 tagId로 인덱싱
+        Map<Long, PostTag> existing = post.getPostTags().stream()
+                .collect(Collectors.toMap(pt -> pt.getTag().getId(), Function.identity()));
+
+        // 3) 요청 tagIds 한 방에 로딩
+        List<Long> reqTagIds = new ArrayList<>(dedup.keySet());
+        Map<Long, Tag> tagMap = tagRepository.findAllById(reqTagIds).stream()
+                .collect(Collectors.toMap(Tag::getId, Function.identity()));
+
+        // 4) 삭제: 기존에 있는데 요청에 없는 것만 제거
+        for (PostTag oldPt : new ArrayList<>(post.getPostTags())) {
+            Long tagId = oldPt.getTag().getId();
+            if (!dedup.containsKey(tagId)) {
+                post.removePostTag(oldPt); // clearPostTags 말고 remove 메서드 추천
+            }
+        }
+
+        // 5) 추가/갱신: 요청 기준으로 처리
+        for (PostTagForm ptf : dedup.values()) {
+            Long tagId = ptf.getTagId();
+            PostTag current = existing.get(tagId);
+
+            if (current == null) {
+                Tag tag = tagMap.get(tagId);
+                if (tag == null) throw new IllegalArgumentException("Tag not found: " + tagId);
+
+                PostTag created = PostTag.createPostTag(post, tag);
+                created.setSortOrder(ptf.getSortOrder());
+                created.setPrimaryTag(Boolean.TRUE.equals(ptf.getPrimaryTag()));
+            } else {
+                // 값만 업데이트 (더티체킹으로 UPDATE or 필요없으면 skip)
+                current.setSortOrder(ptf.getSortOrder());
+                current.setPrimaryTag(Boolean.TRUE.equals(ptf.getPrimaryTag()));
+            }
+        }
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<Post> getAllPosts(Pageable pageable) {
+
+        Page<Post> posts = postRepository.findAll(pageable);
+        List<Long> postIds = posts.stream().map(Post::getId).toList();
+        List<PostTag> postTags = getAllPostTags(postIds);
+        Map<Long, List<PostTag>> postTagMap = postTags.stream().collect(Collectors.groupingBy(pt -> pt.getPost().getId()));
+        posts.getContent().forEach(p -> p.setPostTags(postTagMap.getOrDefault(p.getId(), List.of())));
+        return posts;
+    }
+
+    public List<PostTag> getAllPostTags(List<Long> postIds) {
+        return postRepository.findAllPostTags(postIds);
+    }
+
+    @Transactional(readOnly = true)
+    public PostResponse getTranslatedPost(Long id, LanguageCode languageCode) {
+
+        PostResponse postResponse = postRepository.findPostWithTranslation(id, languageCode).orElseThrow(() -> new EntityNotFoundException("Post not found: " + id));
+
+        List<PostTagResponse> postTagResponses = postRepository.findAllPostTagsByPostId(postResponse.getId());
+        postResponse.setPostTags(postTagResponses);
+
+        return postResponse;
+    }
 }

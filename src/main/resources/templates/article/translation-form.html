@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <th:block th:replace="~{layout/head :: head}"></th:block>
+
 <style>
     .card-soft {
         border: 1px solid rgba(0,0,0,.08);
@@ -15,9 +16,18 @@
     .mono-badge {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
+    .preview-box img { max-width: 100%; height: auto; }
+    .preview-box table { width: 100%; }
+    .preview-box { background: #fff; border: 1px solid rgba(0,0,0,.12); border-radius: 12px; padding: 12px; }
+
+    /* Summernote가 textarea를 노출시키는 상황 대비(초기 깜빡임 방지) */
+    #summernote { visibility: hidden; }
+    .note-editor { visibility: visible; }
 </style>
+
 <body class="bg-light">
 <th:block th:replace="~{layout/header :: header}"></th:block>
+
 <div class="container py-4">
 
     <!-- 상단 -->
@@ -31,21 +41,12 @@
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2">
-            <!-- 언어 선택 -->
-            <select class="form-select" style="min-width:180px"
-                    id="langSelect" th:data-article-id="${article.id}">
-                <option th:each="l : ${langs}"
-                        th:value="${l}"
-                        th:selected="${l == lang}"
-                        th:text="${l}">en</option>
-            </select>
-
             <!-- 상태 -->
             <span class="badge"
                   th:classappend="${translation.id != null} ? ' text-bg-success' : ' text-bg-secondary'">
-        <span th:text="${translation.id != null} ? '번역 있음' : '번역 없음'">번역 있음</span>
-        <span th:if="${translation.id != null}"> · #<span th:text="${translation.id}">1</span></span>
-      </span>
+                <span th:text="${translation.id != null} ? '번역 있음' : '번역 없음'">번역 있음</span>
+                <span th:if="${translation.id != null}"> · #<span th:text="${translation.id}">1</span></span>
+            </span>
 
             <a class="btn btn-outline-secondary" th:href="@{/article/detail(id=${article.id})}">
                 ← 돌아가기
@@ -66,8 +67,8 @@
 
                     <span class="badge text-bg-light border"
                           th:if="${article.publisher != null}">
-            Publisher: <span class="mono-badge" th:text="${article.publisher.name}">Publisher</span>
-          </span>
+                        Publisher: <span class="mono-badge" th:text="${article.publisher.name}">Publisher</span>
+                    </span>
                 </div>
 
                 <div class="card-body">
@@ -96,6 +97,7 @@
                             <label class="form-label small text-muted">Link</label>
                             <input class="form-control" th:value="${article.link}" readonly>
                         </div>
+
                         <div class="col-12">
                             <label class="form-label small text-muted">Description</label>
                             <textarea class="form-control" rows="3" readonly th:text="${article.description}"></textarea>
@@ -104,9 +106,10 @@
                             <label class="form-label small text-muted">Summary</label>
                             <textarea class="form-control" rows="3" readonly th:text="${article.summary}"></textarea>
                         </div>
+
                         <div class="col-12">
-                            <label class="form-label small text-muted">Content</label>
-                            <textarea class="form-control" rows="8" readonly th:text="${article.content}"></textarea>
+                            <label class="form-label small text-muted">Content (Preview)</label>
+                            <div class="preview-box" th:utext="${article.content}"></div>
                         </div>
                     </div>
 
@@ -126,14 +129,13 @@
                             번역(Translation) · <span class="badge text-bg-dark mono-badge" th:text="${lang}">en</span>
                         </div>
                         <div class="text-muted small">
-              <span th:text="${translation.id != null} ? '기존 번역: 잠금 상태 (수정 버튼 필요)' : '새 번역: 바로 작성 가능'">
-                새 번역
-              </span>
+                            <span th:text="${translation.id != null} ? '기존 번역: 잠금 상태 (수정 버튼 필요)' : '새 번역: 원문을 기본값으로 표시'">
+                                새 번역
+                            </span>
                         </div>
                     </div>
 
                     <div class="d-flex gap-2">
-                        <!-- ✅ 1) 번역이 있으면 수정 버튼 필요 -->
                         <button type="button"
                                 class="btn btn-outline-primary"
                                 id="editBtn"
@@ -142,10 +144,9 @@
                             ✏️ 수정
                         </button>
 
-                        <!-- 저장: 번역 있으면 기본 disabled -->
-                        <button type="button" class="btn btn-primary" id="saveProxyBtn" onclick="submitTranslation()">
-                            💾 저장
-                        </button>
+<!--                        <button type="button" class="btn btn-primary" id="saveProxyBtn" onclick="submitTranslation()">-->
+<!--                            💾 저장-->
+<!--                        </button>-->
                     </div>
                 </div>
 
@@ -154,18 +155,21 @@
                     <form id="translationForm"
                           th:action="@{|/article/translate/${article.id}|}"
                           method="post"
+                          enctype="multipart/form-data"
                           th:object="${translation}"
                           class="form-readonly">
 
                         <!-- hidden -->
                         <input type="hidden" th:field="*{id}">
                         <input type="hidden" th:field="*{languageCode}">
+                        <input type="hidden" name="lang" th:value="${lang}">
 
                         <div id="translationSection" class="row g-2">
                             <div class="col-12 col-md-6">
                                 <label class="form-label small text-muted">Title</label>
                                 <input class="form-control"
                                        th:field="*{title}"
+                                       th:value="${translation.id == null ? article.title : translation.title}"
                                        th:attr="readonly=${translation.id != null} ? 'readonly' : null">
                             </div>
 
@@ -173,6 +177,7 @@
                                 <label class="form-label small text-muted">Author</label>
                                 <input class="form-control"
                                        th:field="*{author}"
+                                       th:value="${translation.id == null ? article.author : translation.author}"
                                        th:attr="readonly=${translation.id != null} ? 'readonly' : null">
                             </div>
 
@@ -180,6 +185,7 @@
                                 <label class="form-label small text-muted">Description</label>
                                 <textarea class="form-control" rows="3"
                                           th:field="*{description}"
+                                          th:text="${translation.id == null ? article.description : translation.description}"
                                           th:attr="readonly=${translation.id != null} ? 'readonly' : null"></textarea>
                             </div>
 
@@ -187,19 +193,53 @@
                                 <label class="form-label small text-muted">Summary</label>
                                 <textarea class="form-control" rows="3"
                                           th:field="*{summary}"
+                                          th:text="${translation.id == null ? article.summary : translation.summary}"
                                           th:attr="readonly=${translation.id != null} ? 'readonly' : null"></textarea>
                             </div>
 
                             <div class="col-12">
                                 <label class="form-label small text-muted">Content</label>
-                                <textarea class="form-control" rows="8"
-                                          th:field="*{content}"
-                                          th:attr="readonly=${translation.id != null} ? 'readonly' : null"></textarea>
+
+                                <!-- Preview -->
+                                <div id="translationPreviewBox"
+                                     class="preview-box"
+                                     th:utext="${translation.id == null ? article.content : translation.content}"
+                                     th:style="${translation.id == null} ? 'display:none;' : ''">
+                                </div>
+
+                                <!-- Editor -->
+                                <div id="translationEditorBox"
+                                     class="mt-2"
+                                     th:style="${translation.id != null} ? 'display:none;' : ''">
+                                    <!-- ✅ summernote는 딱 하나만 -->
+                                    <textarea id="summernote"></textarea>
+                                </div>
+                                <!-- ✅ 서버 제출용 (초기값은 JS가 채움) -->
+                                <input type="hidden" name="content" id="contentHidden">
                             </div>
+
                         </div>
 
-                        <!-- 실제 submit 버튼은 숨기고, 상단 저장 버튼이 트리거 -->
-                        <button type="submit" id="realSubmitBtn" class="d-none">submit</button>
+                        <!-- ✅ 번역 하단 버튼 영역 -->
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <!-- 신규는 항상 저장 가능 -->
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    id="saveProxyBtn"
+                                    onclick="submitTranslation()">
+                                💾 저장
+                            </button>
+
+                            <!-- ✅ 취소는 "수정 모드"에서만 표시 -->
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="cancelBtn"
+                                    style="display:none;"
+                                    onclick="cancelEdit()">
+                                ✖️ 취소
+                            </button>
+                        </div>
+
 
                         <div class="alert alert-warning mt-3 mb-0"
                              id="lockHint"
@@ -209,7 +249,7 @@
 
                         <div class="alert alert-info mt-3 mb-0"
                              th:if="${translation.id == null}">
-                            신규 번역 작성
+                            신규 번역 작성: 기본값으로 원문이 채워져 있어요. 수정 후 저장하면 번역이 생성됩니다.
                         </div>
                     </form>
 
@@ -219,63 +259,197 @@
 
     </div>
 </div>
-<th:block th:replace="~{layout/footer :: footer}"></th:block>
-<script>
-    // 언어 변경 -> 쿼리스트링 유지하면서 이동
-    (function () {
-        const sel = document.getElementById('langSelect');
-        if (!sel) return;
-        sel.addEventListener('change', () => {
-            const articleId = sel.dataset.articleId;
-            const lang = sel.value;
-            window.location.href = `/article/translate/${articleId}?lang=${encodeURIComponent(lang)}`;
-        });
-    })();
 
-    // ✅ 1) "수정 전 저장 disabled" 구현:
-    // - 기존 번역(translation.id != null)인 경우: 잠금 상태에서는 저장 불가
-    // - 새 번역이면: 바로 저장 가능
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+
+<script th:inline="javascript">
     const isExistingTranslation = /*[[${translation.id != null}]]*/ false;
+
+    // ✅ 초기 content를 “JS 문자열”로 직접 주입 (가장 안정적)
+    const initialContent = /*[[${translation.id == null ? article.content : translation.content}]]*/ "";
+
     let editUnlocked = !isExistingTranslation;
 
     const saveProxyBtn = document.getElementById('saveProxyBtn');
     const lockHint = document.getElementById('lockHint');
 
+    const previewBox = document.getElementById('translationPreviewBox');
+    const editorBox  = document.getElementById('translationEditorBox');
+    const contentHidden = document.getElementById('contentHidden');
+
+    const cancelBtn = document.getElementById('cancelBtn');
+    const editBtn = document.getElementById('editBtn');
+
+
     function refreshSaveState() {
         if (!saveProxyBtn) return;
         if (editUnlocked) {
             saveProxyBtn.classList.remove('disabled');
-            saveProxyBtn.removeAttribute('aria-disabled');
             saveProxyBtn.style.pointerEvents = '';
             if (lockHint) lockHint.classList.add('d-none');
         } else {
             saveProxyBtn.classList.add('disabled');
-            saveProxyBtn.setAttribute('aria-disabled', 'true');
             saveProxyBtn.style.pointerEvents = 'none';
             if (lockHint) lockHint.classList.remove('d-none');
         }
     }
-
     refreshSaveState();
 
+    // ===== 이미지 로직(그대로) =====
+    const pendingFiles = new Map();
+    function generateAssetId() {
+        const rnd = Math.random().toString(16).slice(2);
+        return `asset_${Date.now()}_${rnd}`;
+    }
+    function fileExtFromMime(file) {
+        const type = (file && file.type) ? file.type.toLowerCase() : '';
+        if (type.includes('png')) return 'png';
+        if (type.includes('jpeg') || type.includes('jpg')) return 'jpg';
+        if (type.includes('gif')) return 'gif';
+        if (type.includes('webp')) return 'webp';
+        return 'png';
+    }
+    function insertImageWithAssetId(file) {
+        const assetId = generateAssetId();
+        const ext = fileExtFromMime(file);
+        const filename = `${assetId}.${ext}`;
+        const renamed = new File([file], filename, { type: file.type });
+        pendingFiles.set(assetId, renamed);
+
+        const objectUrl = URL.createObjectURL(renamed);
+        const imgHtml = `<img src="${objectUrl}" data-asset-id="${assetId}" />`;
+        $('#summernote').summernote('pasteHTML', imgHtml);
+    }
+
+    // ===== Summernote init =====
+    let summernoteReady = false;
+
+    function initSummernote(html) {
+        if (!window.jQuery || !$('#summernote').summernote) {
+            console.warn('Summernote not loaded (check head includes)');
+            return;
+        }
+
+        // 이미 init되어 있으면 재사용
+        if (!summernoteReady) {
+            $('#summernote').summernote({
+                height: 320,
+                callbacks: {
+                    onChange: function(contents) {
+                        if (contentHidden) contentHidden.value = contents;
+                    },
+                    onImageUpload: function(files) {
+                        if (!editUnlocked) return;
+                        if (!files || !files.length) return;
+                        for (const f of files) insertImageWithAssetId(f);
+                    }
+                }
+            });
+            summernoteReady = true;
+        }
+
+        $('#summernote').summernote('code', html || '');
+        $('#summernote').summernote(editUnlocked ? 'enable' : 'disable');
+
+        // 제출 hidden에도 동기화
+        if (contentHidden) contentHidden.value = $('#summernote').summernote('code');
+    }
+
+    // ✅ 신규: 처음부터 editor 모드 + 원문 주입 + 바로 편집 가능
+    window.addEventListener('DOMContentLoaded', () => {
+        if (!isExistingTranslation) {
+            editUnlocked = true;
+            refreshSaveState();
+
+            if (previewBox) previewBox.style.display = 'none';
+            if (editorBox) editorBox.style.display = '';
+
+            // “보이는 상태” 보장 후 init
+            requestAnimationFrame(() => initSummernote(initialContent));
+        } else {
+            // 기존은 preview만, hidden 제출값만 세팅
+            if (contentHidden) contentHidden.value = initialContent;
+        }
+    });
+
+    // ✅ 기존: 수정 누르면 preview 숨기고 editor 보여주고 init + 번역 주입
     function enableEdit() {
-        // 번역 섹션만 unlock
         document.querySelectorAll('#translationSection input[readonly], #translationSection textarea[readonly]')
             .forEach(el => el.removeAttribute('readonly'));
 
-        // 잠금 상태 해제
         editUnlocked = true;
         refreshSaveState();
 
-        const first = document.querySelector('#translationSection input, #translationSection textarea');
-        if (first) first.focus();
-    }
+        if (cancelBtn) cancelBtn.style.display = '';   // ✅ 수정모드에서만 보이기
+        if (editBtn) editBtn.style.display = 'none';   // ✅ 수정 버튼 숨기기(원하면)
 
-    function submitTranslation() {
-        if (!editUnlocked) return;
-        const real = document.getElementById('realSubmitBtn');
-        if (real) real.click();
+        if (previewBox) previewBox.style.display = 'none';
+        if (editorBox) editorBox.style.display = '';
+
+        requestAnimationFrame(() => {
+            initSummernote(contentHidden?.value || initialContent);
+            $('#summernote').summernote('focus');
+        });
+
+
     }
+    window.enableEdit = enableEdit;
+
+    function cancelEdit() {
+        // 기존 번역에서만 동작하도록
+        if (!isExistingTranslation) return;
+
+        // pendingFiles 정리
+        pendingFiles.clear();
+
+        // content 원복
+        if (contentHidden) contentHidden.value = initialContent;
+        if (previewBox) previewBox.innerHTML = initialContent;
+
+        // summernote 원복 + disable
+        if (summernoteReady && window.jQuery && $('#summernote').summernote) {
+            $('#summernote').summernote('code', initialContent);
+            $('#summernote').summernote('disable');
+        }
+
+        // 모드 전환: Editor -> Preview
+        if (editorBox) editorBox.style.display = 'none';
+        if (previewBox) previewBox.style.display = '';
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        if (editBtn) editBtn.style.display = ''; // 다시 수정버튼 보이게(원하면)
+
+        editUnlocked = false;
+        refreshSaveState();
+
+        // readonly 복구(필요시)
+        document.querySelectorAll('#translationSection input, #translationSection textarea')
+            .forEach(el => el.setAttribute('readonly', 'readonly'));
+    }
+    window.cancelEdit = cancelEdit;
+
+
+    async function submitTranslation() {
+        if (!editUnlocked) return;
+
+        // 최종 동기화
+        if (summernoteReady && window.jQuery && $('#summernote').summernote) {
+            const html = $('#summernote').summernote('code');
+            if (contentHidden) contentHidden.value = html;
+        }
+
+        const form = document.getElementById('translationForm');
+        const fd = new FormData(form);
+
+        for (const [, file] of pendingFiles.entries()) {
+            fd.append('files', file, file.name);
+        }
+
+        const res = await fetch(form.action, { method: 'POST', body: fd });
+        if (res.redirected) { window.location.href = res.url; return; }
+        if (res.ok) { window.location.reload(); return; }
+        alert('저장 실패: ' + res.status);
+    }
+    window.submitTranslation = submitTranslation;
 </script>
 
 </body>

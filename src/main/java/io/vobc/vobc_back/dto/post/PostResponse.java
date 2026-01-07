@@ -1,8 +1,8 @@
 package io.vobc.vobc_back.dto.post;
 
 import io.vobc.vobc_back.domain.LanguageCode;
-import io.vobc.vobc_back.domain.Post;
-import io.vobc.vobc_back.domain.Translation;
+import io.vobc.vobc_back.domain.post.Post;
+import io.vobc.vobc_back.domain.post.Translation;
 import io.vobc.vobc_back.dto.TagForm;
 import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
@@ -33,6 +33,18 @@ public class PostResponse {
     private LocalDateTime updatedAt;
 
     private List<TagForm> tags;
+    private List<PostTagResponse> postTags;
+
+    public PostResponse(Long id, String title, String content, String summary, String author,
+                        String thumbnail, LocalDate releaseDate) {
+        this.id = id;
+        this.title = title;
+        this.content = content;
+        this.summary = summary;
+        this.author = author;
+        this.thumbnail = thumbnail;
+        this.releaseDate = releaseDate;
+    }
 
     // 번역이 없는 경우 (상세/리스트 공용으로 쓸 수 있음)
     public static PostResponse from(Post post, LanguageCode requestedLanguage, List<TagForm> tags) {
@@ -69,7 +81,8 @@ public class PostResponse {
                 translated,
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
-                tags
+                tags,
+                List.of()
         );
     }
 
@@ -107,7 +120,12 @@ public class PostResponse {
                 translated,
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
-                tags
+                tags,
+                List.of()
         );
+    }
+
+    public void setPostTags(List<PostTagResponse> postTagResponses) {
+
     }
 }

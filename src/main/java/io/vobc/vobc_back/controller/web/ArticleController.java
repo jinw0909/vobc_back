@@ -10,6 +10,7 @@ import io.vobc.vobc_back.exception.ImageUploadException;
 import io.vobc.vobc_back.repository.article.ArticleRepository;
 import io.vobc.vobc_back.repository.publisher.PublisherRepository;
 import io.vobc.vobc_back.service.ArticleService;
+import io.vobc.vobc_back.service.media.MediaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -83,32 +84,51 @@ public class ArticleController {
     @GetMapping("/translate/{id}")
     public String translationForm(@PathVariable Long id,
                                   @RequestParam("lang") String lang,
-                                  Model model
-    ) {
+                                  Model model) {
+
         LanguageCode languageCode = LanguageCode.from(lang);
 
-        ArticleForm articleForm = articleService.findById(id);
-        ArticleTranslationForm translationForm = articleService.getTranslation(id, languageCode);
+        ArticleForm article = articleService.findById(id);
 
-        boolean hasTranslation = translationForm.getId() != null;
+        // 기존 번역 조회 (없으면 id=null인 빈 폼이 올 것)
+        ArticleTranslationForm tr = articleService.getTranslation(id, languageCode);
 
+        boolean hasTranslation = tr.getId() != null;
 
-        model.addAttribute("article", articleForm);
-        model.addAttribute("translation", translationForm);
-        model.addAttribute("langs", articleService.getLanguages(id));
+        // ✅ 번역이 없으면: 원문값으로 폼 기본값 채움(placeholder처럼)
+        if (!hasTranslation) {
+            // languageCode는 유지
+            tr.setLanguageCode(languageCode);
+
+            // "보여주기용 기본값" 채우기
+            tr.setTitle(article.getTitle());
+            tr.setAuthor(article.getAuthor());
+            tr.setDescription(article.getDescription());
+            tr.setSummary(article.getSummary());
+            tr.setContent(article.getContent());
+        }
+
+        model.addAttribute("article", article);
+        model.addAttribute("translation", tr);
         model.addAttribute("lang", languageCode.getCode());
         model.addAttribute("hasTranslation", hasTranslation);
+
+        // ✅ langs 필요 없으면 제거
+        // model.addAttribute("langs", articleService.getLanguages(id));
 
         return "article/translation-form";
     }
 
-    @PostMapping("/translate/{id}")
+
+
+    @PostMapping(value = "/translate/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String translate(@PathVariable Long id,
+                            @RequestParam("lang") String lang,
                             @ModelAttribute("translation") ArticleTranslationForm form
     ) {
-        LanguageCode languageCode = form.getLanguageCode();
+        form.setLanguageCode(LanguageCode.from(lang));
         articleService.saveTranslation(id, form);
-        return "redirect:/article/translate/" + id + "?lang=" + languageCode.getCode();
+        return "redirect:/article/translate/" + id + "?lang=" + form.getLanguageCode().getCode();
     }
 
     @GetMapping("/feed")

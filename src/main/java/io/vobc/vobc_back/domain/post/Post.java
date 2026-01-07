@@ -1,11 +1,12 @@
-package io.vobc.vobc_back.domain;
+package io.vobc.vobc_back.domain.post;
 
+import io.vobc.vobc_back.domain.Tag;
+import io.vobc.vobc_back.domain.media.Media;
 import io.vobc.vobc_back.domain.member.Member;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Getter
+@Getter @Setter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class Post {
@@ -51,6 +52,9 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Translation> translations = new ArrayList<>();
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Media> media = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
@@ -72,12 +76,19 @@ public class Post {
     }
 
     // 연관관계 메서드
-
     public void addPostTag(PostTag postTag) {
         postTags.add(postTag);
         postTag.setPost(this);
     }
 
+    public void clearPostTags() {
+        postTags.clear(); //orphanRemoval=true
+    }
+
+    public void addMedia(Media media) {
+        this.media.add(media);
+        media.setPost(this);
+    }
 
     public void addTranslation(Translation translation) {
         translations.add(translation);
@@ -101,6 +112,10 @@ public class Post {
         return post;
     }
 
+    public static Post create(String title, String content, String summary, String author, LocalDate releaseDate, String thumbnail) {
+        return new Post(title, content, summary, author, releaseDate, thumbnail);
+    }
+
     // 편의 메서드
     public PostTag addTag(Tag tag) {
         PostTag postTag = new PostTag(this, tag);
@@ -121,6 +136,7 @@ public class Post {
         });
     }
 
+
     public void update(String title, String content, String summary, String author, LocalDate releaseDate, String thumbnail) {
         this.title = title;
         this.content = content;
@@ -132,4 +148,7 @@ public class Post {
         }
     }
 
+    public void removePostTag(PostTag oldPt) {
+        postTags.remove(oldPt);
+    }
 }

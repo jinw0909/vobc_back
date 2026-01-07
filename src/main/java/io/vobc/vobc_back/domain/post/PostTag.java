@@ -1,5 +1,6 @@
-package io.vobc.vobc_back.domain;
+package io.vobc.vobc_back.domain.post;
 
+import io.vobc.vobc_back.domain.Tag;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -56,7 +57,10 @@ public class PostTag {
     }
 
     public static PostTag createPostTag(Post post, Tag tag) {
-        return new PostTag(post, tag);
+        PostTag postTag = new PostTag();
+        post.addPostTag(postTag);
+        tag.addPostTag(postTag);
+        return postTag;
     }
 
 }

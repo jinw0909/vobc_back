@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{layout/head :: head}"></head>
-<link rel="stylesheet" th:href="@{/summernote/summernote-bs5.min.css}" media="all"/>
 <body class="bg-light">
 <th:block th:replace="~{layout/header :: header}"></th:block>
 <div class="container py-4">
@@ -122,8 +121,6 @@
 </div>
 
 <th:block th:replace="~{layout/footer :: footer}"></th:block>
-
-<script th:src="@{/summernote/summernote-bs5.js}"></script>
 
 <script>
   // ===== 썸네일: URL 입력/업로드 공통 =====

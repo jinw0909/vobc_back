@@ -1,15 +1,18 @@
 package io.vobc.vobc_back.dto.post;
 
-import io.vobc.vobc_back.domain.Post;
+import io.vobc.vobc_back.domain.post.Post;
 import io.vobc.vobc_back.dto.TagForm;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter @Setter
+@ToString
 public class PostForm {
 
     private Long id;
@@ -20,7 +23,11 @@ public class PostForm {
     private LocalDate releaseDate;
     private String thumbnail;
 
+    private List<PostTagForm> postTags;
+
     private List<TagForm> tags;
+
+    private List<MultipartFile> files;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

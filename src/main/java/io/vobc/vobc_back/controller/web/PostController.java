@@ -1,9 +1,9 @@
 package io.vobc.vobc_back.controller.web;
 
 import io.vobc.vobc_back.domain.LanguageCode;
-import io.vobc.vobc_back.domain.Post;
-import io.vobc.vobc_back.domain.PostTag;
-import io.vobc.vobc_back.domain.Translation;
+import io.vobc.vobc_back.domain.post.Post;
+import io.vobc.vobc_back.domain.post.PostTag;
+import io.vobc.vobc_back.domain.post.Translation;
 import io.vobc.vobc_back.dto.*;
 import io.vobc.vobc_back.dto.post.*;
 import io.vobc.vobc_back.security.CustomUserDetails;
@@ -12,8 +12,12 @@ import io.vobc.vobc_back.service.TagService;
 import io.vobc.vobc_back.service.TranslationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,28 +29,32 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/post")
 @RequiredArgsConstructor
+@Slf4j
 public class PostController {
 
     private final PostService postService;
     private final TagService tagService;
     private final TranslationService translationService;
 
+
     @GetMapping("/list")
-    public String list(Model model, @PageableDefault(size = 10) Pageable pageable) {
-
-        List<PostForm> posts = postService.getPosts(pageable).stream()
-                .map(PostForm::from)
-                .toList();
-
+    public String postList(Model model,
+                           @PageableDefault(
+                                   size = 10,
+                                   sort = "releaseDate",
+                                   direction = Sort.Direction.DESC
+                           ) Pageable pageable) {
+        Page<Post> posts = postService.getAllPosts(pageable);
         model.addAttribute("posts", posts);
         return "post/list";
     }
+
 
     @GetMapping("/detail")
     public String detail(@RequestParam Long id, Model model) {
 
 //        Post post = postService.findWithTagsById(id);
-        model.addAttribute("post", postService.getPost(id));
+        model.addAttribute("post", postService.getPostWithTags(id));
         model.addAttribute("allTags", tagService.getAllTags());
 
         List<String> langs = postService.getLanguageCodesById(id).stream()
@@ -59,15 +67,40 @@ public class PostController {
 
     @GetMapping("/create")
     public String createForm(Model model) {
-        model.addAttribute("post", new Post());
+        model.addAttribute("post", new PostForm());
         model.addAttribute("allTags", tagService.getAllTags());
         return "post/form";
     }
 
     @GetMapping("/update")
     public String editForm(@RequestParam Long id, Model model) {
-        model.addAttribute("post", postService.getPost(id));
+        Post post = postService.getPostWithTags(id);
+        Long postId = post.getId();
+        List<PostTagForm> list = post.getPostTags().stream().map(pt -> {
+            PostTagForm postTagForm = new PostTagForm();
+            postTagForm.setPostId(postId);
+            postTagForm.setTagId(pt.getTag().getId());
+            postTagForm.setSortOrder(pt.getSortOrder());
+            postTagForm.setPrimaryTag(pt.getPrimaryTag());
+            postTagForm.setPostTagId(pt.getId());
+            return postTagForm;
+        }).toList();
+
+        Map<Long, PostTagForm> postTagByTagId = list.stream()
+                .collect(java.util.stream.Collectors.toMap(PostTagForm::getTagId, x -> x));
+
+        PostForm postForm = new PostForm();
+        postForm.setId(post.getId());
+        postForm.setTitle(post.getTitle());
+        postForm.setSummary(post.getSummary());
+        postForm.setContent(post.getContent());
+        postForm.setAuthor(post.getAuthor());
+        postForm.setThumbnail(post.getThumbnail());
+        postForm.setReleaseDate(post.getReleaseDate());
+        postForm.setPostTags(list);
+        model.addAttribute("post", postForm);
         model.addAttribute("allTags", tagService.getAllTags());
+        model.addAttribute("postTagByTagId", postTagByTagId);
         return "post/form";
     }
 
@@ -82,6 +115,15 @@ public class PostController {
     public String update(@RequestParam Long id, @Valid PostUpdateRequest request) {
         Post post = postService.updatePost(id, request);
         return "redirect:/post/detail?id=" + post.getId();
+    }
+
+    @PostMapping(value = "/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public Map<String, Long> save(@ModelAttribute PostForm form) {
+        log.info("PostForm: {}", form);
+        Long savedId = postService.save(form.getId(), form);
+        log.info("=== SAVE DONE postId={} ===", savedId);
+        return Map.of("id", savedId);
     }
 
     @PostMapping("/delete")
@@ -124,6 +166,7 @@ public class PostController {
 
     }
 
+
     @GetMapping("/related")
     @ResponseBody
     public List<PostResponse> related(@RequestParam Long id, @RequestParam String languageCode) {
@@ -162,11 +205,31 @@ public class PostController {
         return "post/translationForm";
     }
 
-    @PostMapping("/translate")
-    public String saveTranslation(@ModelAttribute TranslationForm form) {
-        translationService.saveOrUpdate(form);
-        return "redirect:/post/detail?id=" + form.getPostId();
+//    @PostMapping(value = "/translate/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public String saveTranslation(@PathVariable Long id,
+//                                  @ModelAttribute TranslationForm form) {
+//        translationService.saveTranslation(form);
+//        return "redirect:/post/translate?id=" + form.getPostId() + "&languageCode=" + form.getLanguageCode().getCode();
+//    }
+
+    @PostMapping(value="/translate/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public Map<String, Object> saveTranslation(@PathVariable Long id,
+                                               @RequestParam("lang") String lang,
+                                               @ModelAttribute TranslationForm form) {
+        form.setLanguageCode(LanguageCode.from(lang));
+        Long savedId = translationService.saveTranslation(form);
+
+        log.info("=== TRANSLATION DONE translationId={} ===", savedId);
+
+        return Map.of(
+                "ok", true,
+                "postId", form.getPostId(),
+                "lang", form.getLanguageCode().getCode(),
+                "id", savedId
+        );
     }
+
 
     @PostMapping("/translate/delete")
     public String deleteTranslation(@RequestParam Long postId,

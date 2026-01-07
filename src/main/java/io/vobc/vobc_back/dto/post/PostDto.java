@@ -2,9 +2,9 @@ package io.vobc.vobc_back.dto.post;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vobc.vobc_back.domain.LanguageCode;
-import io.vobc.vobc_back.domain.Post;
-import io.vobc.vobc_back.domain.PostTag;
-import io.vobc.vobc_back.domain.Translation;
+import io.vobc.vobc_back.domain.post.Post;
+import io.vobc.vobc_back.domain.post.PostTag;
+import io.vobc.vobc_back.domain.post.Translation;
 import lombok.Data;
 
 import java.time.LocalDate;

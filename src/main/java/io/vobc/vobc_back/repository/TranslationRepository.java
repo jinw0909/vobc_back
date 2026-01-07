@@ -1,7 +1,7 @@
 package io.vobc.vobc_back.repository;
 
 import io.vobc.vobc_back.domain.LanguageCode;
-import io.vobc.vobc_back.domain.Translation;
+import io.vobc.vobc_back.domain.post.Translation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +12,9 @@ import java.util.Set;
 
 public interface TranslationRepository extends JpaRepository<Translation, Long> {
 
-    Optional<Translation> findByPostIdAndLanguageCode(Long postId, LanguageCode languageCode);
+    @Query("select t from Translation t where t.post.id = :postId and t.languageCode = :lang")
+    Optional<Translation> findByPostIdAndLanguageCode(@Param("postId") Long postId,
+                                                      @Param("lang") LanguageCode languageCode);
 
     List<Translation> findAllByPostIdInAndLanguageCode(List<Long> postIds, LanguageCode languageCode);
 

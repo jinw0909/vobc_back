@@ -21,23 +21,28 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="post : ${posts}">
+        <tr th:each="post : ${posts.content}">
             <td th:text="${post.id}"></td>
             <td>
                 <a th:href="@{/post/detail(id=${post.id})}"
                    th:text="${post.title}"></a>
             </td>
             <td th:text="${post.author}"></td>
-            <td th:text="${#temporals.format(post.releaseDate, 'yyyy-MM-dd')}"></td>
+
+            <!-- releaseDate null이면 에러나니까 가드 -->
+            <td th:text="${post.releaseDate != null ? #temporals.format(post.releaseDate, 'yyyy-MM-dd') : '-'}"></td>
+
             <td>
-                <span th:each="tag : ${post.tags}"
-                      class="badge text-bg-secondary me-1"
-                      th:text="${tag.name}">
-                </span>
+        <span th:each="pt : ${post.postTags}"
+              class="badge text-bg-secondary me-1"
+              th:text="${pt.tag.name}">
+        </span>
             </td>
+
             <td>
                 <a class="btn btn-sm btn-outline-secondary"
                    th:href="@{/post/update(id=${post.id})}">수정</a>
+
                 <form th:action="@{/post/delete}" method="post" style="display:inline-block;"
                       onsubmit="return confirm('정말 삭제하시겠습니까?');">
                     <input type="hidden" name="id" th:value="${post.id}">
@@ -45,11 +50,39 @@
                 </form>
             </td>
         </tr>
-        <tr th:if="${#lists.isEmpty(posts)}">
+
+        <tr th:if="${posts.empty}">
             <td colspan="6" class="text-center text-muted">등록된 게시글이 없습니다.</td>
         </tr>
         </tbody>
+
     </table>
+    <nav class="mt-4" th:if="${posts.totalPages > 1}">
+        <ul class="pagination justify-content-center">
+
+            <!-- 이전 -->
+            <li class="page-item" th:classappend="${posts.first} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/post/list(page=${posts.number - 1}, size=${posts.size})}">Prev</a>
+            </li>
+
+            <!-- 페이지 번호 -->
+            <li class="page-item"
+                th:each="i : ${#numbers.sequence(0, posts.totalPages - 1)}"
+                th:classappend="${i == posts.number} ? 'active'">
+                <a class="page-link"
+                   th:text="${i + 1}"
+                   th:href="@{/post/list(page=${i}, size=${posts.size})}"></a>
+            </li>
+
+            <!-- 다음 -->
+            <li class="page-item" th:classappend="${posts.last} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/post/list(page=${posts.number + 1}, size=${posts.size})}">Next</a>
+            </li>
+        </ul>
+    </nav>
+
 </div>
 
 <div th:replace="~{layout/footer :: footer}"></div>
