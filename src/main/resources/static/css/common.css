@@ -13,3 +13,50 @@
 .logout-btn {
     margin-left: 12px;
 }
+
+
+/* =========================
+   Summernote (common)
+   ========================= */
+
+/* 에디터 전체 기본 타이포 */
+.note-editor .note-editable {
+    font-size: 16px;
+    line-height: 1.7;
+    word-break: break-word;
+}
+
+/* 문단/헤딩 기본 간격 (원하면) */
+.note-editor .note-editable p { margin: 0 0 1rem; }
+.note-editor .note-editable h1,
+.note-editor .note-editable h2,
+.note-editor .note-editable h3,
+.note-editor .note-editable h4,
+.note-editor .note-editable h5,
+.note-editor .note-editable h6 {
+    margin-top: 1.6rem;
+    margin-bottom: .8rem;
+}
+
+/* 이미지 폭 안전장치 */
+.note-editor .note-editable img {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* 기존 콘텐츠에 width/height 속성이 있어도 깨지지 않게 */
+.note-editor .note-editable img[width] { width: auto !important; }
+.note-editor .note-editable img[height] { height: auto !important; }
+
+/* 테이블이 에디터 폭을 넘지 않게 */
+.note-editor .note-editable table {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* 코드 블럭/프리 태그 가독성 */
+.note-editor .note-editable pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+

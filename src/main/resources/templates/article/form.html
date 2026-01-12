@@ -1,44 +1,491 @@
+<!--<!doctype html>-->
+<!--<html lang="ko" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head th:replace="~{layout/head :: head}"></head>-->
+<!--<style>-->
+<!--  .note-editor .note-editable {-->
+<!--    font-size: 16px;-->
+<!--    line-height: 1.7; /* 기본값 */-->
+<!--    word-break: break-word;-->
+<!--  }-->
+<!--  .note-editor .note-editable img {-->
+<!--    max-width: 100% !important;-->
+<!--    height: auto !important;-->
+<!--  }-->
+<!--  .note-editor .note-editable img[width] { width: auto !important; }-->
+<!--  .note-editor .note-editable img[height] { height: auto !important; }-->
+<!--</style>-->
+
+<!--<body class="bg-light">-->
+<!--<th:block th:replace="~{layout/header :: header}"></th:block>-->
+<!--<div class="container py-4">-->
+<!--  <h2 class="mb-3" th:text="${mode == 'edit' ? '기사 수정' : '기사 작성'}">기사 작성</h2>-->
+
+<!--  <form id="articleForm" class="card p-3" enctype="multipart/form-data">-->
+
+<!--    <input type="hidden" id="mode" th:value="${mode}">-->
+<!--    <input type="hidden" id="articleId" th:value="${articleId}">-->
+
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">제목</label>-->
+<!--      <input class="form-control" name="title" id="title" required-->
+<!--             th:value="${form.title}">-->
+<!--    </div>-->
+
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">요약</label>-->
+<!--      <textarea class="form-control" name="summary" id="summary" rows="2"-->
+<!--                th:text="${form.summary}"></textarea>-->
+<!--    </div>-->
+
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">상세</label>-->
+<!--      <textarea class="form-control" name="description" id="description" rows="2"-->
+<!--                th:text="${form.description}"></textarea>-->
+<!--    </div>-->
+
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">작성자</label>-->
+<!--      <input class="form-control" name="author" id="author"-->
+<!--             th:value="${form.author}">-->
+<!--    </div>-->
+
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">출시일</label>-->
+<!--      <input type="date" class="form-control" name="releaseDate" id="releaseDate"-->
+<!--             th:value="${form.releaseDate}">-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; ✅ 썸네일: URL 직접 입력 + 파일 업로드 &ndash;&gt;-->
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">썸네일</label>-->
+
+<!--      <div class="input-group mb-2">-->
+<!--        <input class="form-control" name="thumbnail" id="thumbnail" placeholder="https://... 또는 업로드"-->
+<!--               th:value="${form.thumbnail}">-->
+<!--        <button type="button" class="btn btn-outline-secondary" id="btnThumbPreview">미리보기</button>-->
+<!--        <button type="button" class="btn btn-outline-danger" id="btnThumbClear">지우기</button>-->
+<!--      </div>-->
+
+<!--      <div class="d-flex gap-2 align-items-center">-->
+<!--        <input type="file" class="form-control" id="thumbnailFile" accept="image/*">-->
+<!--        <button type="button" class="btn btn-primary" id="btnUploadThumb">업로드</button>-->
+<!--      </div>-->
+
+<!--      <div class="form-text">-->
+<!--        URL을 직접 입력해도 되고, 파일 업로드하면 URL이 자동으로 입력됩니다.-->
+<!--      </div>-->
+
+<!--      <div class="mt-2" style="max-width: 420px;">-->
+<!--        <img id="thumbPreview" src="" alt="thumbnail preview"-->
+<!--             style="display:none; width:100%; border-radius:8px; border:1px solid #e5e7eb;">-->
+<!--      </div>-->
+<!--    </div>-->
+
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">링크</label>-->
+<!--      <input class="form-control" name="link" id="link" placeholder="https://..."-->
+<!--             th:value="${form.link}">-->
+<!--    </div>-->
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">Publisher</label>-->
+
+<!--      &lt;!&ndash; name은 publisherId로 보내는 걸 추천 &ndash;&gt;-->
+<!--      <select class="form-select" name="publisherId" id="publisherId" required>-->
+<!--        <option value="" th:selected="${form.publisher == null}">선택</option>-->
+
+<!--        <option th:each="e : ${publishers.entrySet()}"-->
+<!--                th:value="${e.key}"-->
+<!--                th:text="${e.value}"-->
+<!--                th:selected="${form.publisher != null and form.publisher.id == e.key}">-->
+<!--        </option>-->
+<!--      </select>-->
+
+<!--      <div class="form-text">저장값은 Publisher ID 입니다.</div>-->
+<!--    </div>-->
+
+
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">카테고리</label>-->
+<!--      <select class="form-select" name="category" id="category">-->
+<!--        <option value="" th:selected="${form.category == null}">선택</option>-->
+<!--        <option value="news" th:selected="${form.category != null and form.category.type == 'news'}">news</option>-->
+<!--        <option value="event" th:selected="${form.category != null and form.category.type == 'event'}">event</option>-->
+<!--        <option value="interview" th:selected="${form.category != null and form.category.type == 'interview'}">interview</option>-->
+<!--        <option value="publicity" th:selected="${form.category != null and form.category.type == 'publicity'}">publicity</option>-->
+<!--        <option value="editorial" th:selected="${form.category != null and form.category.type == 'editorial'}">editorial</option>-->
+<!--      </select>-->
+<!--    </div>-->
+
+<!--    <div class="mb-2">-->
+<!--      <label class="form-label">내용</label>-->
+<!--      <textarea id="content"-->
+<!--                name="content"-->
+<!--                rows="12"-->
+<!--                class="form-control"-->
+<!--                data-summernote-->
+<!--                th:text="${article.content}"></textarea>-->
+<!--      <div class="form-text">-->
+<!--        이미지 삽입은 저장 시점에 업로드됩니다. (에디터 내부 미리보기는 blob)-->
+<!--      </div>-->
+<!--    </div>-->
+
+<!--    <div class="d-flex gap-2 mt-3">-->
+<!--      <button type="button" class="btn btn-primary" id="btnSave"-->
+<!--              th:text="${mode == 'edit' ? '수정' : '저장'}">저장</button>-->
+<!--      <a class="btn btn-outline-secondary" th:href="@{/article/list}">취소</a>-->
+<!--    </div>-->
+
+<!--    <div class="mt-3 text-danger" id="errorBox" style="display:none;"></div>-->
+<!--  </form>-->
+<!--</div>-->
+
+<!--<th:block th:replace="~{layout/footer :: footer}"></th:block>-->
+
+<!--<script>-->
+<!--  // ===== 썸네일: URL 입력/업로드 공통 =====-->
+<!--  function setThumbPreview(url) {-->
+<!--    const img = document.getElementById('thumbPreview');-->
+<!--    if (!url) {-->
+<!--      img.style.display = 'none';-->
+<!--      img.src = '';-->
+<!--      return;-->
+<!--    }-->
+<!--    img.src = url;-->
+<!--    img.style.display = 'block';-->
+<!--  }-->
+
+<!--  async function uploadThumbnail() {-->
+<!--    const fileInput = document.getElementById('thumbnailFile');-->
+<!--    const file = fileInput.files?.[0];-->
+<!--    if (!file) throw new Error('썸네일 파일을 선택해주세요.');-->
+
+<!--    const fd = new FormData();-->
+<!--    fd.append('file', file);-->
+
+<!--    const res = await fetch('/api/upload/thumbnail', {-->
+<!--      method: 'POST',-->
+<!--      body: fd-->
+<!--    });-->
+
+<!--    if (!res.ok) throw new Error(await res.text());-->
+<!--    const data = await res.json();-->
+
+<!--    const url = data.url;-->
+<!--    document.getElementById('thumbnail').value = url;-->
+<!--    setThumbPreview(url);-->
+
+<!--    // 업로드 성공 후 파일 선택값 초기화(선택)-->
+<!--    fileInput.value = '';-->
+<!--  }-->
+<!--</script>-->
+
+<!--<script>-->
+<!--  // ===== 본문 이미지 pendingFiles 로직(기존 그대로) =====-->
+<!--  const pendingFiles = new Map();-->
+
+<!--  function uuidv4() {-->
+<!--    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();-->
+<!--    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {-->
+<!--      const r = Math.random() * 16 | 0;-->
+<!--      const v = c === 'x' ? r : (r & 0x3 | 0x8);-->
+<!--      return v.toString(16);-->
+<!--    });-->
+<!--  }-->
+
+<!--  function getExtFromFile(file) {-->
+<!--    const name = file.name || '';-->
+<!--    const idx = name.lastIndexOf('.');-->
+<!--    if (idx > -1) return name.substring(idx);-->
+<!--    if (file.type === 'image/png') return '.png';-->
+<!--    if (file.type === 'image/jpeg') return '.jpg';-->
+<!--    if (file.type === 'image/webp') return '.webp';-->
+<!--    return '';-->
+<!--  }-->
+
+<!--  function insertImageToEditor(file) {-->
+<!--    const assetId = uuidv4();-->
+<!--    const ext = getExtFromFile(file);-->
+<!--    const renamed = new File([file], `${assetId}${ext}`, { type: file.type });-->
+
+<!--    pendingFiles.set(assetId, renamed);-->
+
+<!--    const blobUrl = URL.createObjectURL(renamed);-->
+<!--    const imgHtml = `<img src="${blobUrl}" data-asset-id="${assetId}" alt="" />`;-->
+<!--    $('#content').summernote('pasteHTML', imgHtml);-->
+<!--  }-->
+
+<!--  function syncPendingFilesWithEditor() {-->
+<!--    const html = $('#content').summernote('code');-->
+<!--    const temp = document.createElement('div');-->
+<!--    temp.innerHTML = html;-->
+
+<!--    const assetIdsInEditor = new Set(-->
+<!--            Array.from(temp.querySelectorAll('img[data-asset-id]'))-->
+<!--                    .map(img => img.getAttribute('data-asset-id'))-->
+<!--                    .filter(Boolean)-->
+<!--    );-->
+
+<!--    for (const assetId of pendingFiles.keys()) {-->
+<!--      if (!assetIdsInEditor.has(assetId)) pendingFiles.delete(assetId);-->
+<!--    }-->
+<!--  }-->
+
+<!--  function getSaveUrl() {-->
+<!--    const mode = document.getElementById('mode')?.value || 'create';-->
+<!--    const articleId = document.getElementById('articleId')?.value;-->
+
+<!--    if (mode === 'edit' && articleId && articleId !== 'null' && articleId !== 'undefined' && articleId !== '') {-->
+<!--      return `/article/save?id=${encodeURIComponent(articleId)}`;-->
+<!--    }-->
+<!--    return '/article/save';-->
+<!--  }-->
+
+<!--  // ===== LH(행간) 드롭다운 + 적용 =====-->
+<!--  function applyLineHeightToEditor(context, value) {-->
+<!--    const range = context.invoke('editor.createRange');-->
+<!--    if (!range) return;-->
+
+<!--    const selector = 'p, li, div, h1, h2, h3, h4, h5, h6, blockquote';-->
+
+<!--    // selection이 없으면 커서 문단에만-->
+<!--    if (range.isCollapsed()) {-->
+<!--      const $block = $(range.sc).closest(selector);-->
+<!--      if ($block.length) $block.css('line-height', value);-->
+<!--      return;-->
+<!--    }-->
+
+<!--    // selection이 있으면 start~end 블록에 적용-->
+<!--    const nativeRange = range.nativeRange ? range.nativeRange() : range;-->
+<!--    const startNode = nativeRange.startContainer;-->
+<!--    const endNode = nativeRange.endContainer;-->
+
+<!--    const $startBlock = $(startNode).closest(selector);-->
+<!--    const $endBlock   = $(endNode).closest(selector);-->
+
+<!--    const editable = $(range.sc).closest('.note-editable').get(0);-->
+<!--    if (!editable) return;-->
+
+<!--    if ($startBlock.length) $startBlock.css('line-height', value);-->
+
+<!--    if ($startBlock.length && $endBlock.length && !$startBlock.is($endBlock)) {-->
+<!--      const blocks = $(editable).find(selector);-->
+<!--      let started = false;-->
+<!--      blocks.each(function () {-->
+<!--        const $b = $(this);-->
+<!--        if ($b.is($startBlock)) started = true;-->
+<!--        if (started) $b.css('line-height', value);-->
+<!--        if ($b.is($endBlock)) return false;-->
+<!--      });-->
+<!--    }-->
+<!--  }-->
+
+<!--  function lineHeightButtonForContent(context) {-->
+<!--    const ui = $.summernote.ui;-->
+
+<!--    const saveRange = () => context.invoke('editor.saveRange');-->
+<!--    const restoreRange = () => context.invoke('editor.restoreRange');-->
+
+<!--    const values = ['1.0', '1.2', '1.4', '1.6', '1.8', '2.0'];-->
+
+<!--    const dropdown = ui.dropdown({-->
+<!--      items: values,-->
+<!--      callback: function($dropdownNode) {-->
+<!--        // Summernote가 만든 a 태그에 1회만 바인딩(중복 방지)-->
+<!--        $dropdownNode.find('a').off('click.lineheight').on('click.lineheight', function(e) {-->
+<!--          e.preventDefault();-->
+<!--          e.stopPropagation();-->
+
+<!--          const value = $(this).text().trim();-->
+
+<!--          restoreRange();-->
+<!--          context.invoke('editor.focus');-->
+<!--          applyLineHeightToEditor(context, value);-->
+<!--        });-->
+<!--      }-->
+<!--    });-->
+
+<!--    const button = ui.button({-->
+<!--      className: 'dropdown-toggle',-->
+<!--      contents: 'LH',-->
+<!--      tooltip: 'Line height',-->
+<!--      data: { toggle: 'dropdown', 'bs-toggle': 'dropdown' },-->
+<!--      click: function() {-->
+<!--        saveRange(); // 드롭다운 열기 전에 selection 보존-->
+<!--      }-->
+<!--    });-->
+
+<!--    return ui.buttonGroup([button, dropdown]).render();-->
+<!--  }-->
+
+<!--  // ===== 붙여넣기: 스타일 제거(plain text만) =====-->
+<!--  function pastePlainText(e) {-->
+<!--    e.preventDefault();-->
+<!--    const text = (e.originalEvent || e).clipboardData.getData('text/plain');-->
+<!--    document.execCommand('insertText', false, text);-->
+<!--  }-->
+
+
+<!--  $(function () {-->
+<!--    // ✅ 썸네일 초기 프리뷰-->
+<!--    const initialThumb = document.getElementById('thumbnail')?.value?.trim();-->
+<!--    if (initialThumb) setThumbPreview(initialThumb);-->
+
+<!--    // 썸네일 버튼들-->
+<!--    $('#btnThumbPreview').on('click', function () {-->
+<!--      const url = ($('#thumbnail').val() ?? '').toString().trim();-->
+<!--      setThumbPreview(url);-->
+<!--    });-->
+
+<!--    $('#btnThumbClear').on('click', function () {-->
+<!--      $('#thumbnail').val('');-->
+<!--      setThumbPreview('');-->
+<!--    });-->
+
+<!--    // 업로드 버튼-->
+<!--    $('#btnUploadThumb').on('click', async function () {-->
+<!--      $('#errorBox').hide().text('');-->
+<!--      try {-->
+<!--        await uploadThumbnail();-->
+<!--      } catch (e) {-->
+<!--        console.error(e);-->
+<!--        $('#errorBox').show().text('썸네일 업로드 실패: ' + (e.message ?? e));-->
+<!--      }-->
+<!--    });-->
+
+<!--    // (선택) 파일 선택하면 자동 업로드-->
+<!--    // $('#thumbnailFile').on('change', async function () { ... });-->
+
+<!--    // ✅ summernote 초기화-->
+<!--    // ✅ summernote 초기화 (post translate에서 쓰던 패턴 적용)-->
+<!--    $('#content').summernote({-->
+<!--      height: 420,-->
+<!--      placeholder: '내용을 입력하세요',-->
+
+<!--      fontSizes: ['12', '14', '16', '18', '20', '24', '28', '32'],-->
+
+<!--      toolbar: [-->
+<!--        ['style', ['style']],-->
+<!--        ['font', ['bold', 'italic', 'underline', 'clear']],-->
+<!--        ['fontsize', ['fontsize']],-->
+<!--        ['para', ['ul', 'ol', 'paragraph']],-->
+<!--        ['insert', ['picture', 'link', 'table']],-->
+<!--        ['custom', ['lineHeight']], // ✅ 행간-->
+<!--        ['view', ['codeview']]-->
+<!--      ],-->
+
+<!--      // ✅ 커스텀 버튼 등록-->
+<!--      buttons: {-->
+<!--        lineHeight: lineHeightButtonForContent-->
+<!--      },-->
+
+<!--      callbacks: {-->
+<!--        onImageUpload: function (files) {-->
+<!--          if (!files || files.length === 0) return;-->
+<!--          for (const f of files) insertImageToEditor(f);-->
+<!--        },-->
+<!--        onChange: function () {-->
+<!--          syncPendingFilesWithEditor();-->
+<!--        },-->
+<!--        onPaste: pastePlainText,-->
+
+<!--        // ✅ 드롭다운 클릭 시 selection 날아가는 문제 방지-->
+<!--        onKeyup: function () { $('#content').summernote('saveRange'); },-->
+<!--        onMouseup: function () { $('#content').summernote('saveRange'); },-->
+<!--      }-->
+<!--    });-->
+
+<!--    $('#btnSave').on('click', async function () {-->
+<!--      $('#errorBox').hide().text('');-->
+<!--      syncPendingFilesWithEditor();-->
+
+<!--      const formData = new FormData();-->
+<!--      formData.append('title', $('#title').val() ?? '');-->
+<!--      formData.append('summary', $('#summary').val() ?? '');-->
+<!--      formData.append('description', $('#description').val() ?? '');-->
+<!--      formData.append('author', $('#author').val() ?? '');-->
+<!--      formData.append('releaseDate', $('#releaseDate').val() ?? '');-->
+<!--      formData.append('thumbnail', $('#thumbnail').val() ?? ''); // ✅ URL 직접입력/업로드 모두 여기로 감-->
+<!--      formData.append('link', $('#link').val() ?? '');-->
+<!--      formData.append('publisherId', $('#publisherId').val() ?? '');-->
+<!--      formData.append('category', $('#category').val() ?? '');-->
+
+<!--      formData.append('content', $('#content').summernote('code'));-->
+
+<!--      for (const file of pendingFiles.values()) {-->
+<!--        formData.append('files', file);-->
+<!--      }-->
+
+<!--      const saveUrl = getSaveUrl();-->
+<!--      console.log('[save]', { saveUrl, mode: $('#mode').val(), articleId: $('#articleId').val(), files: pendingFiles.size });-->
+
+<!--      try {-->
+<!--        const res = await fetch(saveUrl, { method: 'POST', body: formData });-->
+<!--        if (!res.ok) throw new Error(await res.text());-->
+
+<!--        const data = await res.json();-->
+<!--        window.location.href = `/article/detail?id=${data.id}`;-->
+<!--      } catch (e) {-->
+<!--        console.error(e);-->
+<!--        $('#errorBox').show().text('저장 실패: ' + (e.message ?? e));-->
+<!--      }-->
+<!--    });-->
+<!--  });-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{layout/head :: head}"></head>
+
+<style>
+  /* 에디터 본문 타이포 */
+  .note-editor .note-editable {
+    font-size: 16px;
+    line-height: 1.7;
+    word-break: break-word;
+  }
+  .note-editor .note-editable img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  .note-editor .note-editable img[width]  { width: auto !important; }
+  .note-editor .note-editable img[height] { height: auto !important; }
+</style>
+
 <body class="bg-light">
 <th:block th:replace="~{layout/header :: header}"></th:block>
+
 <div class="container py-4">
   <h2 class="mb-3" th:text="${mode == 'edit' ? '기사 수정' : '기사 작성'}">기사 작성</h2>
 
+  <!-- ✅ fetch로 저장하므로 action/method 필수는 아니지만, enctype은 유지 -->
   <form id="articleForm" class="card p-3" enctype="multipart/form-data">
-
     <input type="hidden" id="mode" th:value="${mode}">
     <input type="hidden" id="articleId" th:value="${articleId}">
 
     <div class="mb-3">
       <label class="form-label">제목</label>
-      <input class="form-control" name="title" id="title" required
-             th:value="${form.title}">
+      <input class="form-control" name="title" id="title" required th:value="${form.title}">
     </div>
 
     <div class="mb-3">
       <label class="form-label">요약</label>
-      <textarea class="form-control" name="summary" id="summary" rows="2"
-                th:text="${form.summary}"></textarea>
+      <textarea class="form-control" name="summary" id="summary" rows="2" th:text="${form.summary}"></textarea>
     </div>
 
     <div class="mb-3">
       <label class="form-label">상세</label>
-      <textarea class="form-control" name="description" id="description" rows="2"
-                th:text="${form.description}"></textarea>
+      <textarea class="form-control" name="description" id="description" rows="2" th:text="${form.description}"></textarea>
     </div>
 
     <div class="mb-3">
       <label class="form-label">작성자</label>
-      <input class="form-control" name="author" id="author"
-             th:value="${form.author}">
+      <input class="form-control" name="author" id="author" th:value="${form.author}">
     </div>
 
     <div class="mb-3">
       <label class="form-label">출시일</label>
-      <input type="date" class="form-control" name="releaseDate" id="releaseDate"
-             th:value="${form.releaseDate}">
+      <input type="date" class="form-control" name="releaseDate" id="releaseDate" th:value="${form.releaseDate}">
     </div>
 
     <!-- ✅ 썸네일: URL 직접 입력 + 파일 업로드 -->
@@ -69,16 +516,14 @@
 
     <div class="mb-3">
       <label class="form-label">링크</label>
-      <input class="form-control" name="link" id="link" placeholder="https://..."
-             th:value="${form.link}">
+      <input class="form-control" name="link" id="link" placeholder="https://..." th:value="${form.link}">
     </div>
+
     <div class="mb-3">
       <label class="form-label">Publisher</label>
 
-      <!-- name은 publisherId로 보내는 걸 추천 -->
       <select class="form-select" name="publisherId" id="publisherId" required>
         <option value="" th:selected="${form.publisher == null}">선택</option>
-
         <option th:each="e : ${publishers.entrySet()}"
                 th:value="${e.key}"
                 th:text="${e.value}"
@@ -89,13 +534,12 @@
       <div class="form-text">저장값은 Publisher ID 입니다.</div>
     </div>
 
-
     <div class="mb-3">
       <label class="form-label">카테고리</label>
       <select class="form-select" name="category" id="category">
         <option value="" th:selected="${form.category == null}">선택</option>
-        <option value="news" th:selected="${form.category != null and form.category.type == 'news'}">news</option>
-        <option value="event" th:selected="${form.category != null and form.category.type == 'event'}">event</option>
+        <option value="news"      th:selected="${form.category != null and form.category.type == 'news'}">news</option>
+        <option value="event"     th:selected="${form.category != null and form.category.type == 'event'}">event</option>
         <option value="interview" th:selected="${form.category != null and form.category.type == 'interview'}">interview</option>
         <option value="publicity" th:selected="${form.category != null and form.category.type == 'publicity'}">publicity</option>
         <option value="editorial" th:selected="${form.category != null and form.category.type == 'editorial'}">editorial</option>
@@ -104,7 +548,15 @@
 
     <div class="mb-2">
       <label class="form-label">내용</label>
-      <textarea name="content" id="content" th:text="${form.content}"></textarea>
+
+      <!-- ✅ app.js가 [data-summernote]를 자동 init -->
+      <textarea id="content"
+                name="content"
+                rows="12"
+                class="form-control"
+                data-summernote
+                th:text="${form.content}"></textarea>
+
       <div class="form-text">
         이미지 삽입은 저장 시점에 업로드됩니다. (에디터 내부 미리보기는 blob)
       </div>
@@ -122,10 +574,14 @@
 
 <th:block th:replace="~{layout/footer :: footer}"></th:block>
 
-<script>
-  // ===== 썸네일: URL 입력/업로드 공통 =====
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  // -------------------------
+  // 썸네일 유틸
+  // -------------------------
   function setThumbPreview(url) {
     const img = document.getElementById('thumbPreview');
+    if (!img) return;
     if (!url) {
       img.style.display = 'none';
       img.src = '';
@@ -137,80 +593,37 @@
 
   async function uploadThumbnail() {
     const fileInput = document.getElementById('thumbnailFile');
-    const file = fileInput.files?.[0];
+    const file = fileInput?.files?.[0];
     if (!file) throw new Error('썸네일 파일을 선택해주세요.');
 
     const fd = new FormData();
     fd.append('file', file);
 
+    // 🔐 CSRF를 쓰고 있다면 여기서 헤더 추가
+    // const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    // const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+
     const res = await fetch('/api/upload/thumbnail', {
       method: 'POST',
-      body: fd
+      body: fd,
+      // headers: csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {}
     });
 
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
 
     const url = data.url;
-    document.getElementById('thumbnail').value = url;
+    const thumbInput = document.getElementById('thumbnail');
+    if (thumbInput) thumbInput.value = url;
     setThumbPreview(url);
 
-    // 업로드 성공 후 파일 선택값 초기화(선택)
+    // 업로드 성공 후 파일 선택값 초기화
     fileInput.value = '';
   }
-</script>
 
-<script>
-  // ===== 본문 이미지 pendingFiles 로직(기존 그대로) =====
-  const pendingFiles = new Map();
-
-  function uuidv4() {
-    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  }
-
-  function getExtFromFile(file) {
-    const name = file.name || '';
-    const idx = name.lastIndexOf('.');
-    if (idx > -1) return name.substring(idx);
-    if (file.type === 'image/png') return '.png';
-    if (file.type === 'image/jpeg') return '.jpg';
-    if (file.type === 'image/webp') return '.webp';
-    return '';
-  }
-
-  function insertImageToEditor(file) {
-    const assetId = uuidv4();
-    const ext = getExtFromFile(file);
-    const renamed = new File([file], `${assetId}${ext}`, { type: file.type });
-
-    pendingFiles.set(assetId, renamed);
-
-    const blobUrl = URL.createObjectURL(renamed);
-    const imgHtml = `<img src="${blobUrl}" data-asset-id="${assetId}" alt="" />`;
-    $('#content').summernote('pasteHTML', imgHtml);
-  }
-
-  function syncPendingFilesWithEditor() {
-    const html = $('#content').summernote('code');
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
-
-    const assetIdsInEditor = new Set(
-            Array.from(temp.querySelectorAll('img[data-asset-id]'))
-                    .map(img => img.getAttribute('data-asset-id'))
-                    .filter(Boolean)
-    );
-
-    for (const assetId of pendingFiles.keys()) {
-      if (!assetIdsInEditor.has(assetId)) pendingFiles.delete(assetId);
-    }
-  }
-
+  // -------------------------
+  // 저장 URL
+  // -------------------------
   function getSaveUrl() {
     const mode = document.getElementById('mode')?.value || 'create';
     const articleId = document.getElementById('articleId')?.value;
@@ -221,81 +634,75 @@
     return '/article/save';
   }
 
-  $(function () {
-    // ✅ 썸네일 초기 프리뷰
-    const initialThumb = document.getElementById('thumbnail')?.value?.trim();
+  // -------------------------
+  // 화면 바인딩
+  // -------------------------
+  document.addEventListener('DOMContentLoaded', () => {
+    const errorBox = document.getElementById('errorBox');
+    const btnSave = document.getElementById('btnSave');
+    const formEl = document.getElementById('articleForm');
+
+    const thumbInput = document.getElementById('thumbnail');
+    const btnThumbPreview = document.getElementById('btnThumbPreview');
+    const btnThumbClear = document.getElementById('btnThumbClear');
+    const btnUploadThumb = document.getElementById('btnUploadThumb');
+
+    // 초기 썸네일 프리뷰
+    const initialThumb = thumbInput?.value?.trim();
     if (initialThumb) setThumbPreview(initialThumb);
 
-    // 썸네일 버튼들
-    $('#btnThumbPreview').on('click', function () {
-      const url = ($('#thumbnail').val() ?? '').toString().trim();
+    btnThumbPreview?.addEventListener('click', () => {
+      const url = (thumbInput?.value ?? '').toString().trim();
       setThumbPreview(url);
     });
 
-    $('#btnThumbClear').on('click', function () {
-      $('#thumbnail').val('');
+    btnThumbClear?.addEventListener('click', () => {
+      if (thumbInput) thumbInput.value = '';
       setThumbPreview('');
     });
 
-    // 업로드 버튼
-    $('#btnUploadThumb').on('click', async function () {
-      $('#errorBox').hide().text('');
+    btnUploadThumb?.addEventListener('click', async () => {
+      if (errorBox) { errorBox.style.display = 'none'; errorBox.textContent = ''; }
+      btnUploadThumb.disabled = true;
+      const original = btnUploadThumb.textContent;
+      btnUploadThumb.textContent = '업로드 중...';
+
       try {
         await uploadThumbnail();
       } catch (e) {
         console.error(e);
-        $('#errorBox').show().text('썸네일 업로드 실패: ' + (e.message ?? e));
-      }
-    });
-
-    // (선택) 파일 선택하면 자동 업로드
-    // $('#thumbnailFile').on('change', async function () { ... });
-
-    // ✅ summernote 초기화
-    $('#content').summernote({
-      height: 420,
-      placeholder: '내용을 입력하세요',
-      toolbar: [
-        ['style', ['style']],
-        ['font', ['bold', 'underline', 'clear']],
-        ['para', ['ul', 'ol', 'paragraph']],
-        ['insert', ['picture', 'link']],
-        ['view', ['codeview']]
-      ],
-      callbacks: {
-        onImageUpload: function (files) {
-          if (!files || files.length === 0) return;
-          for (const f of files) insertImageToEditor(f);
-        },
-        onChange: function () {
-          syncPendingFilesWithEditor();
+        if (errorBox) {
+          errorBox.style.display = 'block';
+          errorBox.textContent = '썸네일 업로드 실패: ' + (e?.message ?? e);
         }
+      } finally {
+        btnUploadThumb.disabled = false;
+        btnUploadThumb.textContent = original;
       }
     });
 
-    $('#btnSave').on('click', async function () {
-      $('#errorBox').hide().text('');
-      syncPendingFilesWithEditor();
+    // 폼 submit 기본 동작 방지
+    formEl?.addEventListener('submit', (e) => e.preventDefault());
 
-      const formData = new FormData();
-      formData.append('title', $('#title').val() ?? '');
-      formData.append('summary', $('#summary').val() ?? '');
-      formData.append('description', $('#description').val() ?? '');
-      formData.append('author', $('#author').val() ?? '');
-      formData.append('releaseDate', $('#releaseDate').val() ?? '');
-      formData.append('thumbnail', $('#thumbnail').val() ?? ''); // ✅ URL 직접입력/업로드 모두 여기로 감
-      formData.append('link', $('#link').val() ?? '');
-      formData.append('publisherId', $('#publisherId').val() ?? '');
-      formData.append('category', $('#category').val() ?? '');
+    // 저장
+    btnSave?.addEventListener('click', async () => {
+      if (errorBox) { errorBox.style.display = 'none'; errorBox.textContent = ''; }
 
-      formData.append('content', $('#content').summernote('code'));
+      const formData = new FormData(formEl);
 
-      for (const file of pendingFiles.values()) {
-        formData.append('files', file);
-      }
+      // ✅ app.js가 관리하는 Summernote payload (content + files)
+      const payload = window.getSummernotePayload({
+        editorSelector: '#content'
+      });
+
+      formData.set('content', payload.content);
+      for (const f of payload.files) formData.append('files', f);
 
       const saveUrl = getSaveUrl();
-      console.log('[save]', { saveUrl, mode: $('#mode').val(), articleId: $('#articleId').val(), files: pendingFiles.size });
+
+      btnSave.disabled = true;
+      const originalText = btnSave.textContent;
+      btnSave.textContent = '저장 중...';
 
       try {
         const res = await fetch(saveUrl, { method: 'POST', body: formData });
@@ -305,10 +712,18 @@
         window.location.href = `/article/detail?id=${data.id}`;
       } catch (e) {
         console.error(e);
-        $('#errorBox').show().text('저장 실패: ' + (e.message ?? e));
+        if (errorBox) {
+          errorBox.style.display = 'block';
+          errorBox.textContent = '저장 실패: ' + (e?.message ?? e);
+        }
+      } finally {
+        btnSave.disabled = false;
+        btnSave.textContent = originalText;
       }
     });
   });
+  /*]]>*/
 </script>
+
 </body>
 </html>

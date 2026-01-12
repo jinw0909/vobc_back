@@ -5,6 +5,7 @@
 <style>
     #content figure > img { width: 33%; }
 </style>
+
 <body>
 <th:block th:replace="~{layout/header :: header}"></th:block>
 <div class="container mt-5" th:with="isNew=${post.id} == null">
@@ -110,6 +111,7 @@
                       name="content"
                       rows="12"
                       class="form-control"
+                      data-summernote
                       th:text="${post.content}"></textarea>
         </div>
 
@@ -119,28 +121,7 @@
             <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
                 <div class="form-check"
                      th:each="tag : ${allTags}">
-<!--                    <input class="form-check-input"-->
-<!--                           type="checkbox"-->
-<!--                           name="tagIds"-->
-<!--                           th:id="${'tag-' + tag.id}"-->
-<!--                           th:value="${tag.id}"-->
-<!--                           th:checked="${-->
-<!--                               post != null and-->
-<!--                               #lists.contains(post.postTags.![tag.id], tag.id)-->
-<!--                           }">-->
-<!--                    <input class="form-check-input"-->
-<!--                           type="checkbox"-->
-<!--                           name="tagIds"-->
-<!--                           th:id="${'tag-' + tag.id}"-->
-<!--                           th:value="${tag.id}"-->
-<!--                           th:with="pt=${post.postTags.?[tagId == tag.id]}"-->
-<!--                           th:checked="${!#lists.isEmpty(pt)}"-->
-<!--                           th:attr="-->
-<!--                             data-post-id=${post.id},-->
-<!--                             data-post-tag-id=${#lists.isEmpty(pt) ? '' : pt[0].postTagId},-->
-<!--                             data-sort-order=${#lists.isEmpty(pt) ? '' : pt[0].sortOrder},-->
-<!--                             data-primary-tag=${#lists.isEmpty(pt) ? '' : pt[0].primaryTag}-->
-<!--                           ">-->
+
                     <input class="form-check-input"
                            type="checkbox"
                            name="tagIds"
@@ -253,57 +234,45 @@
 </script>
 
 <script th:inline="javascript">
-    // ===== 본문 이미지 pendingFiles 로직 =====
-    const pendingFiles = new Map();
+    document.addEventListener('DOMContentLoaded', () => {
+        // ✅ app.js가 [data-summernote] 자동 init 한다면 여기 호출 제거
+        // initiateSummernote();
 
-    function uuidv4() {
-        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
+        const formEl = document.getElementById('postForm');
+        const btnSave = document.getElementById('btnSave');
+
+        btnSave?.addEventListener('click', async () => {
+            const formData = new FormData(formEl);
+
+            const payload = window.getSummernotePayload({
+                editorSelector: '#content'
+            });
+
+            formData.set('content', payload.content);
+
+            // ✅ files는 1번만 append
+            for (const f of payload.files) formData.append('files', f);
+
+            fillPostTagsToFormData(formData);
+
+            btnSave.disabled = true;
+            const originalText = btnSave.textContent;
+            btnSave.textContent = '저장 중...';
+
+            try {
+                const res = await fetch('/post/save', { method: 'POST', body: formData });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                window.location.href = `/post/detail?id=${data.id}`;
+            } catch (e) {
+                console.error(e);
+                alert('저장 중 오류가 발생했습니다.\n' + (e.message ?? e));
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = originalText;
+            }
         });
-    }
-
-    function getExtFromFile(file) {
-        const name = file.name || '';
-        const idx = name.lastIndexOf('.');
-        if (idx > -1) return name.substring(idx);
-        if (file.type === 'image/png') return '.png';
-        if (file.type === 'image/jpeg') return '.jpg';
-        if (file.type === 'image/webp') return '.webp';
-        return '';
-    }
-
-    function insertImageToEditor(file) {
-        const assetId = uuidv4();
-        const ext = getExtFromFile(file);
-
-        // 파일명 = assetId.ext 로 바꿔서 서버 buildFileMap과 매칭
-        const renamed = new File([file], `${assetId}${ext}`, { type: file.type });
-        pendingFiles.set(assetId, renamed);
-
-        const blobUrl = URL.createObjectURL(renamed);
-        const imgHtml = `<img src="${blobUrl}" data-asset-id="${assetId}" alt="" />`;
-        $('#content').summernote('pasteHTML', imgHtml);
-    }
-
-    function syncPendingFilesWithEditor() {
-        const html = $('#content').summernote('code');
-        const temp = document.createElement('div');
-        temp.innerHTML = html;
-
-        const assetIdsInEditor = new Set(
-            Array.from(temp.querySelectorAll('img[data-asset-id]'))
-                .map(img => img.getAttribute('data-asset-id'))
-                .filter(Boolean)
-        );
-
-        for (const assetId of pendingFiles.keys()) {
-            if (!assetIdsInEditor.has(assetId)) pendingFiles.delete(assetId);
-        }
-    }
-
+    });
     function fillPostTagsToFormData(formData) {
         formData.delete('tagIds'); // 체크박스 값은 이제 안 쓰고, postTags로 보낼거라 제거
 
@@ -331,85 +300,6 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-
-        // ✅ summernote 초기화 + 이미지 콜백
-        if (window.jQuery && $('#content').summernote) {
-            $('#content').summernote({
-                height: 420,
-                placeholder: '내용을 입력하세요...',
-                toolbar: [
-                    ['style', ['style']],
-                    ['font', ['bold', 'underline', 'clear']],
-                    ['para', ['ul', 'ol', 'paragraph']],
-                    ['insert', ['picture', 'link']],
-                    ['view', ['codeview']]
-                ],
-                callbacks: {
-                    onImageUpload: function (files) {
-                        if (!files || files.length === 0) return;
-                        for (const f of files) insertImageToEditor(f);
-                    },
-                    onChange: function () {
-                        syncPendingFilesWithEditor();
-                    }
-                }
-            });
-        } else {
-            console.warn('Summernote not loaded');
-        }
-
-        const formEl = document.getElementById('postForm');
-        const btnSave = document.getElementById('btnSave');
-
-        btnSave?.addEventListener('click', async () => {
-            syncPendingFilesWithEditor();
-
-            // ✅ summernote html을 content로 반영
-            const html = (window.jQuery && $('#content').summernote)
-                ? $('#content').summernote('code')
-                : (document.getElementById('content')?.value ?? '');
-
-            // FormData 구성
-            const formData = new FormData(formEl);
-
-            // content는 summernote code로 덮어쓰기 (textarea 값 신뢰 X)
-            formData.set('content', html);
-
-            fillPostTagsToFormData(formData);
-
-            // ✅ pendingFiles -> files 로 추가
-            for (const file of pendingFiles.values()) {
-                formData.append('files', file);
-            }
-
-            btnSave.disabled = true;
-            const originalText = btnSave.textContent;
-            btnSave.textContent = '저장 중...';
-
-            try {
-                const res = await fetch('/post/save', {
-                    method: 'POST',
-                    body: formData
-                    // CSRF 쓰면 headers 추가
-                });
-
-                if (!res.ok) throw new Error(await res.text());
-                const data = await res.json();
-                const savedId = data.id;
-
-                // 저장 후 이동 (너 라우팅에 맞게 수정)
-                window.location.href = `/post/detail?id=${savedId}`;
-
-            } catch (e) {
-                console.error(e);
-                alert('저장 중 오류가 발생했습니다.\n' + (e.message ?? e));
-            } finally {
-                btnSave.disabled = false;
-                btnSave.textContent = originalText;
-            }
-        });
-    });
 </script>
 
 

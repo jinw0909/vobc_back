@@ -19,10 +19,6 @@
     .preview-box img { max-width: 100%; height: auto; }
     .preview-box table { width: 100%; }
     .preview-box { background: #fff; border: 1px solid rgba(0,0,0,.12); border-radius: 12px; padding: 12px; }
-
-    /* Summernote가 textarea를 노출시키는 상황 대비(초기 깜빡임 방지) */
-    #summernote { visibility: hidden; }
-    .note-editor { visibility: visible; }
 </style>
 
 <body class="bg-light">
@@ -139,8 +135,7 @@
                         <button type="button"
                                 class="btn btn-outline-primary"
                                 id="editBtn"
-                                th:if="${translation.id != null}"
-                                onclick="enableEdit()">
+                                th:if="${translation.id != null}">
                             ✏️ 수정
                         </button>
 
@@ -200,22 +195,25 @@
                             <div class="col-12">
                                 <label class="form-label small text-muted">Content</label>
 
-                                <!-- Preview -->
-                                <div id="translationPreviewBox"
+                                <!-- ✅ 보기 모드 -->
+                                <div id="translatedContentView"
                                      class="preview-box"
                                      th:utext="${translation.id == null ? article.content : translation.content}"
                                      th:style="${translation.id == null} ? 'display:none;' : ''">
                                 </div>
 
-                                <!-- Editor -->
-                                <div id="translationEditorBox"
+                                <!-- ✅ 편집 모드(서머노트 textarea) -->
+                                <div id="translatedContentEditorWrap"
                                      class="mt-2"
                                      th:style="${translation.id != null} ? 'display:none;' : ''">
-                                    <!-- ✅ summernote는 딱 하나만 -->
-                                    <textarea id="summernote"></textarea>
+                                     <textarea id="translatedContentEditor"
+                                               class="form-control"
+                                               style="display:none;"></textarea>
                                 </div>
-                                <!-- ✅ 서버 제출용 (초기값은 JS가 채움) -->
-                                <input type="hidden" name="content" id="contentHidden">
+
+                                <!-- ✅ 서버 제출용 hidden (초기값은 thymeleaf로 채우고, JS가 계속 갱신) -->
+                                <input type="hidden" name="content" id="contentHidden"
+                                       th:value="${translation.id == null ? article.content : translation.content}">
                             </div>
 
                         </div>
@@ -261,195 +259,184 @@
 </div>
 
 <th:block th:replace="~{layout/footer :: footer}"></th:block>
-
 <script th:inline="javascript">
-    const isExistingTranslation = /*[[${translation.id != null}]]*/ false;
-
-    // ✅ 초기 content를 “JS 문자열”로 직접 주입 (가장 안정적)
+    /*<![CDATA[*/
+    const hasTranslation = /*[[${translation.id != null}]]*/ false;
     const initialContent = /*[[${translation.id == null ? article.content : translation.content}]]*/ "";
 
-    let editUnlocked = !isExistingTranslation;
+    const formEl = document.getElementById('translationForm');
 
-    const saveProxyBtn = document.getElementById('saveProxyBtn');
+    const editBtn = document.getElementById('editBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const saveBtn = document.getElementById('saveProxyBtn');
+
+    const viewDiv = document.getElementById('translatedContentView');
+    const editorWrap = document.getElementById('translatedContentEditorWrap');
+    const editorTa = document.getElementById('translatedContentEditor');
+
+    const contentHidden = document.getElementById('contentHidden');
     const lockHint = document.getElementById('lockHint');
 
-    const previewBox = document.getElementById('translationPreviewBox');
-    const editorBox  = document.getElementById('translationEditorBox');
-    const contentHidden = document.getElementById('contentHidden');
+    let originalHtmlForCancel = '';
+    let sn = null; // app.js initSummernote 반환 api
 
-    const cancelBtn = document.getElementById('cancelBtn');
-    const editBtn = document.getElementById('editBtn');
+    // ✅ 기존 번역일 때: 입력 잠금 + 저장 비활성
+    function lockFields() {
+        // title/author/description/summary 등 readonly로 만들기
+        const lockTargets = formEl.querySelectorAll('#translationSection input, #translationSection textarea');
+        lockTargets.forEach(el => el.setAttribute('readonly', 'readonly'));
+        if (saveBtn) saveBtn.disabled = true;
+        if (lockHint) lockHint.classList.remove('d-none');
+    }
 
+    // ✅ 수정 모드일 때: 잠금 해제 + 저장 활성
+    function unlockFields() {
+        const lockTargets = formEl.querySelectorAll('#translationSection input, #translationSection textarea');
+        lockTargets.forEach(el => el.removeAttribute('readonly'));
+        if (saveBtn) saveBtn.disabled = false;
+        if (lockHint) lockHint.classList.add('d-none');
+    }
 
-    function refreshSaveState() {
-        if (!saveProxyBtn) return;
-        if (editUnlocked) {
-            saveProxyBtn.classList.remove('disabled');
-            saveProxyBtn.style.pointerEvents = '';
-            if (lockHint) lockHint.classList.add('d-none');
-        } else {
-            saveProxyBtn.classList.add('disabled');
-            saveProxyBtn.style.pointerEvents = 'none';
-            if (lockHint) lockHint.classList.remove('d-none');
+    function destroySummernote() {
+        if (sn) {
+            sn.destroy();
+            sn = null;
         }
-    }
-    refreshSaveState();
-
-    // ===== 이미지 로직(그대로) =====
-    const pendingFiles = new Map();
-    function generateAssetId() {
-        const rnd = Math.random().toString(16).slice(2);
-        return `asset_${Date.now()}_${rnd}`;
-    }
-    function fileExtFromMime(file) {
-        const type = (file && file.type) ? file.type.toLowerCase() : '';
-        if (type.includes('png')) return 'png';
-        if (type.includes('jpeg') || type.includes('jpg')) return 'jpg';
-        if (type.includes('gif')) return 'gif';
-        if (type.includes('webp')) return 'webp';
-        return 'png';
-    }
-    function insertImageWithAssetId(file) {
-        const assetId = generateAssetId();
-        const ext = fileExtFromMime(file);
-        const filename = `${assetId}.${ext}`;
-        const renamed = new File([file], filename, { type: file.type });
-        pendingFiles.set(assetId, renamed);
-
-        const objectUrl = URL.createObjectURL(renamed);
-        const imgHtml = `<img src="${objectUrl}" data-asset-id="${assetId}" />`;
-        $('#summernote').summernote('pasteHTML', imgHtml);
+        if (editorTa) editorTa.style.display = 'none';
+        if (editorWrap) editorWrap.style.display = 'none';
+        if (viewDiv) viewDiv.style.display = 'block';
     }
 
-    // ===== Summernote init =====
-    let summernoteReady = false;
+    function enterEditMode({ showCancelBtn = true } = {}) {
+        // 취소를 위한 원본 스냅샷
+        originalHtmlForCancel = viewDiv?.innerHTML || initialContent || '';
+        if (contentHidden) contentHidden.value = originalHtmlForCancel;
 
-    function initSummernote(html) {
-        if (!window.jQuery || !$('#summernote').summernote) {
-            console.warn('Summernote not loaded (check head includes)');
-            return;
-        }
+        unlockFields();
 
-        // 이미 init되어 있으면 재사용
-        if (!summernoteReady) {
-            $('#summernote').summernote({
-                height: 320,
-                callbacks: {
-                    onChange: function(contents) {
-                        if (contentHidden) contentHidden.value = contents;
-                    },
-                    onImageUpload: function(files) {
-                        if (!editUnlocked) return;
-                        if (!files || !files.length) return;
-                        for (const f of files) insertImageWithAssetId(f);
-                    }
-                }
-            });
-            summernoteReady = true;
-        }
+        if (viewDiv) viewDiv.style.display = 'none';
+        if (editorWrap) editorWrap.style.display = 'block';
+        if (editorTa) editorTa.style.display = 'block';
 
-        $('#summernote').summernote('code', html || '');
-        $('#summernote').summernote(editUnlocked ? 'enable' : 'disable');
-
-        // 제출 hidden에도 동기화
-        if (contentHidden) contentHidden.value = $('#summernote').summernote('code');
-    }
-
-    // ✅ 신규: 처음부터 editor 모드 + 원문 주입 + 바로 편집 가능
-    window.addEventListener('DOMContentLoaded', () => {
-        if (!isExistingTranslation) {
-            editUnlocked = true;
-            refreshSaveState();
-
-            if (previewBox) previewBox.style.display = 'none';
-            if (editorBox) editorBox.style.display = '';
-
-            // “보이는 상태” 보장 후 init
-            requestAnimationFrame(() => initSummernote(initialContent));
-        } else {
-            // 기존은 preview만, hidden 제출값만 세팅
-            if (contentHidden) contentHidden.value = initialContent;
-        }
-    });
-
-    // ✅ 기존: 수정 누르면 preview 숨기고 editor 보여주고 init + 번역 주입
-    function enableEdit() {
-        document.querySelectorAll('#translationSection input[readonly], #translationSection textarea[readonly]')
-            .forEach(el => el.removeAttribute('readonly'));
-
-        editUnlocked = true;
-        refreshSaveState();
-
-        if (cancelBtn) cancelBtn.style.display = '';   // ✅ 수정모드에서만 보이기
-        if (editBtn) editBtn.style.display = 'none';   // ✅ 수정 버튼 숨기기(원하면)
-
-        if (previewBox) previewBox.style.display = 'none';
-        if (editorBox) editorBox.style.display = '';
-
-        requestAnimationFrame(() => {
-            initSummernote(contentHidden?.value || initialContent);
-            $('#summernote').summernote('focus');
+        // ✅ post와 동일하게 app.js의 initSummernote 사용
+        sn = window.initSummernote({
+            selector: '#translatedContentEditor',
+            existingContent: originalHtmlForCancel,
+            height: 320,
+            contentHiddenSelector: '#contentHidden'
         });
 
-
+        if (editBtn) editBtn.style.display = 'none';
+        if (cancelBtn) cancelBtn.style.display = showCancelBtn ? 'inline-block' : 'none';
     }
-    window.enableEdit = enableEdit;
 
-    function cancelEdit() {
-        // 기존 번역에서만 동작하도록
-        if (!isExistingTranslation) return;
+    function enterViewMode() {
+        // 내용 되돌리기
+        if (viewDiv) viewDiv.innerHTML = originalHtmlForCancel;
+        if (contentHidden) contentHidden.value = originalHtmlForCancel;
 
-        // pendingFiles 정리
-        pendingFiles.clear();
+        destroySummernote();
 
-        // content 원복
-        if (contentHidden) contentHidden.value = initialContent;
-        if (previewBox) previewBox.innerHTML = initialContent;
+        // 다시 잠금
+        lockFields();
 
-        // summernote 원복 + disable
-        if (summernoteReady && window.jQuery && $('#summernote').summernote) {
-            $('#summernote').summernote('code', initialContent);
-            $('#summernote').summernote('disable');
-        }
-
-        // 모드 전환: Editor -> Preview
-        if (editorBox) editorBox.style.display = 'none';
-        if (previewBox) previewBox.style.display = '';
+        if (editBtn) editBtn.style.display = hasTranslation ? 'inline-block' : 'none';
         if (cancelBtn) cancelBtn.style.display = 'none';
-        if (editBtn) editBtn.style.display = ''; // 다시 수정버튼 보이게(원하면)
-
-        editUnlocked = false;
-        refreshSaveState();
-
-        // readonly 복구(필요시)
-        document.querySelectorAll('#translationSection input, #translationSection textarea')
-            .forEach(el => el.setAttribute('readonly', 'readonly'));
     }
-    window.cancelEdit = cancelEdit;
 
+    async function doSave() {
+        // 기존 번역인데 잠금이면 저장 막기
+        if (hasTranslation && saveBtn && saveBtn.disabled) return;
 
-    async function submitTranslation() {
-        if (!editUnlocked) return;
+        let content = '';
+        let files = [];
 
-        // 최종 동기화
-        if (summernoteReady && window.jQuery && $('#summernote').summernote) {
-            const html = $('#summernote').summernote('code');
-            if (contentHidden) contentHidden.value = html;
+        if (sn) {
+            const payload = window.getSummernotePayload({
+                editorSelector: '#translatedContentEditor',
+                contentHiddenSelector: '#contentHidden'
+            });
+            content = payload.content;
+            files = payload.files;
+        } else {
+            // 신규인데 sn이 없는 예외 케이스 방어
+            content = viewDiv?.innerHTML || initialContent || '';
         }
 
-        const form = document.getElementById('translationForm');
-        const fd = new FormData(form);
+        if (contentHidden) contentHidden.value = content;
 
-        for (const [, file] of pendingFiles.entries()) {
-            fd.append('files', file, file.name);
+        const fd = new FormData(formEl);
+
+        // content는 hidden 하나만 유지
+        fd.delete('content');
+        fd.append('content', content);
+
+        // editor에서 모은 이미지 파일 추가
+        for (const f of files) fd.append('files', f);
+
+        try {
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.dataset._txt = saveBtn.textContent;
+                saveBtn.textContent = '저장 중...';
+            }
+
+            const res = await fetch(formEl.action, { method: 'POST', body: fd });
+
+            // 서버가 redirect 주면 그쪽으로
+            if (res.redirected) { window.location.href = res.url; return; }
+
+            // OK면 reload (기존 패턴 유지)
+            if (res.ok) { window.location.reload(); return; }
+
+            throw new Error('저장 실패: ' + res.status + ' ' + await res.text());
+        } catch (e) {
+            console.error(e);
+            alert(e?.message ?? e);
+            if (saveBtn) saveBtn.disabled = false;
+        } finally {
+            if (saveBtn && saveBtn.dataset._txt) {
+                saveBtn.textContent = saveBtn.dataset._txt;
+                delete saveBtn.dataset._txt;
+
+                // 기존 번역 + 뷰모드면 저장 비활성 유지
+                if (hasTranslation && !sn) saveBtn.disabled = true;
+                else saveBtn.disabled = false;
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // content hidden 초기값 방어
+        if (contentHidden && !contentHidden.value) contentHidden.value = initialContent;
+
+        if (hasTranslation) {
+            // ✅ 기존 번역: 잠금 + preview만
+            lockFields();
+            if (editBtn) editBtn.style.display = 'inline-block';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+
+            if (viewDiv) viewDiv.style.display = 'block';
+            if (editorWrap) editorWrap.style.display = 'none';
+            destroySummernote();
+        } else {
+            // ✅ 신규 번역: 바로 edit 모드
+            unlockFields();
+            if (editBtn) editBtn.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            if (viewDiv) viewDiv.style.display = 'none';
+
+            enterEditMode({ showCancelBtn: false });
         }
 
-        const res = await fetch(form.action, { method: 'POST', body: fd });
-        if (res.redirected) { window.location.href = res.url; return; }
-        if (res.ok) { window.location.reload(); return; }
-        alert('저장 실패: ' + res.status);
-    }
-    window.submitTranslation = submitTranslation;
+        editBtn?.addEventListener('click', () => enterEditMode({ showCancelBtn: true }));
+        cancelBtn?.addEventListener('click', enterViewMode);
+        saveBtn?.addEventListener('click', doSave);
+
+        // 엔터 submit 방지
+        formEl?.addEventListener('submit', (e) => e.preventDefault());
+    });
+    /*]]>*/
 </script>
 
 </body>

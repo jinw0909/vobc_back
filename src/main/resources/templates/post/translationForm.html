@@ -42,17 +42,7 @@
     /* width/height attribute가 있어도 뚫지 못하게 */
     .html-view img[width] { width: auto !important; }
     .html-view img[height] { height: auto !important; }
-    /* ✅ Summernote 에디터 내부 이미지가 에디터 폭을 넘지 않도록 강제 */
-    .note-editor .note-editable img {
-        max-width: 100% !important;
-        height: auto !important;
-    }
 
-    /* width/height 속성(HTML attribute)이 박혀 있어도 못 뚫고 나가게 */
-    .note-editor .note-editable img[width] {
-        width: auto !important;
-    }
-    .note-editor .note-editable img[height] { height: auto !important; }
 </style>
 
 <body>
@@ -261,293 +251,6 @@
 
 <div th:replace="~{layout/footer :: footer}"></div>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    const hasTranslation = /*[[${hasTranslation}]]*/ false;
-
-    const formEl = document.getElementById('translationForm');
-    const editBtn = document.getElementById('editBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const saveBtn = document.getElementById('saveBtn');
-
-    const viewDiv = document.getElementById('translatedContentView');
-    const editorTa = document.getElementById('translatedContentEditor');
-
-    const contentHidden = document.getElementById('contentHidden');
-    const errorBox = document.getElementById('errorBox');
-
-    const pendingFiles = new Map();
-    const blobUrls = new Map();
-
-    let originalHtmlForCancel = '';
-
-    function showError(msg) {
-        if (!errorBox) return;
-        errorBox.style.display = 'block';
-        errorBox.textContent = msg ?? '오류가 발생했습니다.';
-    }
-    function clearError() {
-        if (!errorBox) return;
-        errorBox.style.display = 'none';
-        errorBox.textContent = '';
-    }
-
-    function isSummernoteInitialized() {
-        return !!($('#translatedContentEditor').next('.note-editor').length);
-    }
-
-    function lockFields() {
-        // 제목/요약/작가 등 잠금
-        const lockables = formEl.querySelectorAll('[data-lockable]');
-        lockables.forEach(el => {
-            // input/textarea readonly
-            el.setAttribute('readonly', 'readonly');
-        });
-
-        // 저장 비활성
-        if (saveBtn) saveBtn.disabled = true;
-    }
-
-    function unlockFields() {
-        const lockables = formEl.querySelectorAll('[data-lockable]');
-        lockables.forEach(el => el.removeAttribute('readonly'));
-
-        if (saveBtn) saveBtn.disabled = false;
-    }
-
-    function initSummernote(initialHtml) {
-        editorTa.style.display = 'block';
-        viewDiv.style.display = 'none';
-
-        $('#translatedContentEditor').summernote({
-            height: 420,
-            placeholder: '번역 내용을 입력하세요...',
-            toolbar: [
-                ['style', ['style']],
-                ['font', ['bold', 'underline', 'clear']],
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['insert', ['picture', 'link']],
-                ['view', ['codeview']]
-            ],
-            callbacks: {
-                onImageUpload: function (files) {
-                    if (!files || files.length === 0) return;
-                    for (const f of files) insertImageToEditor(f);
-                },
-                onChange: function () {
-                    syncPendingFilesWithEditor();
-                }
-            }
-        });
-
-        $('#translatedContentEditor').summernote('code', initialHtml ?? '');
-    }
-
-    function destroySummernote() {
-        if (isSummernoteInitialized()) {
-            $('#translatedContentEditor').summernote('destroy');
-        }
-        editorTa.style.display = 'none';
-        viewDiv.style.display = 'block';
-    }
-
-    // ===== 이미지 업로드 로직 (기존 그대로) =====
-    function uuidv4() {
-        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-    function getExtFromFile(file) {
-        const name = file.name || '';
-        const idx = name.lastIndexOf('.');
-        if (idx > -1) return name.substring(idx);
-        if (file.type === 'image/png') return '.png';
-        if (file.type === 'image/jpeg') return '.jpg';
-        if (file.type === 'image/webp') return '.webp';
-        return '';
-    }
-    function insertImageToEditor(file) {
-        const assetId = uuidv4();
-        const ext = getExtFromFile(file);
-        const renamed = new File([file], `${assetId}${ext}`, { type: file.type });
-
-        pendingFiles.set(assetId, renamed);
-
-        const blobUrl = URL.createObjectURL(renamed);
-        blobUrls.set(assetId, blobUrl);
-
-        const imgHtml = `<img src="${blobUrl}" data-asset-id="${assetId}" alt="" />`;
-        $('#translatedContentEditor').summernote('pasteHTML', imgHtml);
-    }
-    function syncPendingFilesWithEditor() {
-        const html = $('#translatedContentEditor').summernote('code');
-        const temp = document.createElement('div');
-        temp.innerHTML = html;
-
-        const assetIdsInEditor = new Set(
-            Array.from(temp.querySelectorAll('img[data-asset-id]'))
-                .map(img => img.getAttribute('data-asset-id'))
-                .filter(Boolean)
-        );
-
-        for (const assetId of Array.from(pendingFiles.keys())) {
-            if (!assetIdsInEditor.has(assetId)) {
-                pendingFiles.delete(assetId);
-                const url = blobUrls.get(assetId);
-                if (url) URL.revokeObjectURL(url);
-                blobUrls.delete(assetId);
-            }
-        }
-    }
-
-    function enterEditMode() {
-        clearError();
-
-        // ✅ 기존 번역 있을 때만 '수정' 버튼을 통해서 진입
-        originalHtmlForCancel = viewDiv.innerHTML || '';
-
-        unlockFields(); // 제목/요약/작가 잠금 해제
-
-        if (!isSummernoteInitialized()) {
-            initSummernote(originalHtmlForCancel);
-        } else {
-            editorTa.style.display = 'block';
-            viewDiv.style.display = 'none';
-            $('#translatedContentEditor').summernote('code', originalHtmlForCancel);
-        }
-
-        if (editBtn) editBtn.style.display = 'none';
-        if (cancelBtn) cancelBtn.style.display = 'inline-block';
-    }
-
-    function enterViewMode() {
-        clearError();
-
-        // 내용 되돌리기
-        viewDiv.innerHTML = originalHtmlForCancel;
-
-        // 업로드 대기 파일 정리
-        for (const url of blobUrls.values()) {
-            try { URL.revokeObjectURL(url); } catch(e) {}
-        }
-        pendingFiles.clear();
-        blobUrls.clear();
-
-        destroySummernote();
-
-        // ✅ 다시 잠금
-        lockFields();
-
-        if (editBtn) editBtn.style.display = hasTranslation ? 'inline-block' : 'none';
-        if (cancelBtn) cancelBtn.style.display = 'none';
-    }
-
-    function getFinalHtmlForSubmit() {
-        if (isSummernoteInitialized()) {
-            syncPendingFilesWithEditor();
-            return $('#translatedContentEditor').summernote('code');
-        }
-        return viewDiv.innerHTML || '';
-    }
-
-    function getCsrfHeader() {
-        const headerName = /*[[${_csrf?.headerName}]]*/ null;
-        const token = /*[[${_csrf?.token}]]*/ null;
-        if (!headerName || !token) return null;
-        return { headerName, token };
-    }
-
-    function buildSaveUrl() {
-        const postId = formEl?.dataset?.postId;
-        const lang = formEl?.dataset?.lang;
-        if (!postId || !lang) throw new Error('data-post-id / data-lang 가 없습니다.');
-        return `/post/translate/${encodeURIComponent(postId)}?lang=${encodeURIComponent(lang)}`;
-    }
-
-    async function doSave() {
-        clearError();
-
-        // ✅ 기존 번역이고 아직 수정모드 아니면 저장 막기
-        if (hasTranslation && saveBtn && saveBtn.disabled) return;
-
-        const html = getFinalHtmlForSubmit();
-        contentHidden.value = html;
-
-        const fd = new FormData(formEl);
-        fd.delete('content');
-        fd.append('content', html);
-
-        for (const file of pendingFiles.values()) fd.append('files', file);
-
-        const headers = {};
-        const csrf = getCsrfHeader();
-        if (csrf) headers[csrf.headerName] = csrf.token;
-
-        try {
-            if (saveBtn) {
-                saveBtn.disabled = true;
-                saveBtn.dataset._txt = saveBtn.textContent;
-                saveBtn.textContent = '저장 중...';
-            }
-
-            const url = buildSaveUrl();
-            const res = await fetch(url, { method: 'POST', body: fd, headers });
-            if (!res.ok) throw new Error(await res.text());
-
-            const data = await res.json();
-            if (!data?.ok) throw new Error('서버 응답이 ok=false 입니다.');
-
-            window.location.href = `/post/translate?id=${data.postId}&languageCode=${data.lang}`;
-        } catch (err) {
-            console.error(err);
-            showError('저장 실패: ' + (err?.message ?? err));
-            // 수정모드면 다시 활성화
-            if (saveBtn) saveBtn.disabled = false;
-        } finally {
-            if (saveBtn && saveBtn.dataset._txt) {
-                saveBtn.textContent = saveBtn.dataset._txt;
-                delete saveBtn.dataset._txt;
-
-                // 수정모드가 유지되는 동안은 enabled
-                // (저장 성공하면 페이지 이동하니 여기까지 보통 안 옴)
-                if (hasTranslation && (!isSummernoteInitialized() || editorTa.style.display === 'none')) {
-                    saveBtn.disabled = true;
-                } else {
-                    saveBtn.disabled = false;
-                }
-            }
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        if (hasTranslation) {
-            // ✅ 처음에는 잠금 상태
-            lockFields();
-            if (editBtn) editBtn.style.display = 'inline-block';
-            if (cancelBtn) cancelBtn.style.display = 'none';
-            destroySummernote(); // 혹시 남아있을까 방어
-        } else {
-            // ✅ 번역이 없으면 바로 입력 가능
-            unlockFields();
-            if (editBtn) editBtn.style.display = 'none';
-            if (cancelBtn) cancelBtn.style.display = 'inline-block'; // 원하면 hide 가능
-            enterEditMode(); // 바로 에디터 켜기
-        }
-
-        editBtn?.addEventListener('click', enterEditMode);
-        cancelBtn?.addEventListener('click', enterViewMode);
-        saveBtn?.addEventListener('click', doSave);
-
-        // 엔터 submit 방지
-        formEl?.addEventListener('submit', (e) => e.preventDefault());
-    });
-    /*]]>*/
-</script>
-
-
 <!--<script th:inline="javascript">-->
 <!--    /*<![CDATA[*/-->
 <!--    const hasTranslation = /*[[${hasTranslation}]]*/ false;-->
@@ -563,8 +266,8 @@
 <!--    const contentHidden = document.getElementById('contentHidden');-->
 <!--    const errorBox = document.getElementById('errorBox');-->
 
-<!--    const pendingFiles = new Map(); // assetId -> File-->
-<!--    const blobUrls = new Map();     // assetId -> blobUrl-->
+<!--    const pendingFiles = new Map();-->
+<!--    const blobUrls = new Map();-->
 
 <!--    let originalHtmlForCancel = '';-->
 
@@ -579,101 +282,163 @@
 <!--        errorBox.textContent = '';-->
 <!--    }-->
 
-<!--    function uuidv4() {-->
-<!--        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();-->
-<!--        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {-->
-<!--            const r = Math.random() * 16 | 0;-->
-<!--            const v = c === 'x' ? r : (r & 0x3 | 0x8);-->
-<!--            return v.toString(16);-->
-<!--        });-->
+<!--    // function isSummernoteInitialized() {-->
+<!--    //     return !!($('#translatedContentEditor').next('.note-editor').length);-->
+<!--    // }-->
+<!--    //-->
+<!--    // function lockFields() {-->
+<!--    //     // 제목/요약/작가 등 잠금-->
+<!--    //     const lockables = formEl.querySelectorAll('[data-lockable]');-->
+<!--    //     lockables.forEach(el => {-->
+<!--    //         // input/textarea readonly-->
+<!--    //         el.setAttribute('readonly', 'readonly');-->
+<!--    //     });-->
+<!--    //-->
+<!--    //     // 저장 비활성-->
+<!--    //     if (saveBtn) saveBtn.disabled = true;-->
+<!--    // }-->
+<!--    //-->
+<!--    function unlockFields() {-->
+<!--        const lockables = formEl.querySelectorAll('[data-lockable]');-->
+<!--        lockables.forEach(el => el.removeAttribute('readonly'));-->
+
+<!--        if (saveBtn) saveBtn.disabled = false;-->
 <!--    }-->
+<!--    //-->
+<!--    // function initSummernote(initialHtml) {-->
+<!--    //     editorTa.style.display = 'block';-->
+<!--    //     viewDiv.style.display = 'none';-->
+<!--    //-->
+<!--    //     // 이미 초기화 돼 있으면 제거(중복 초기화 방지)-->
+<!--    //     if ($('#translatedContentEditor').next('.note-editor').length) {-->
+<!--    //         $('#translatedContentEditor').summernote('destroy');-->
+<!--    //     }-->
+<!--    //-->
+<!--    //     const lineHeightButton = function (context) {-->
+<!--    //         const ui = $.summernote.ui;-->
+<!--    //-->
+<!--    //         // 드롭다운 열기 전에 range 저장-->
+<!--    //         const saveRange = () => context.invoke('editor.saveRange');-->
+<!--    //         const restoreRange = () => context.invoke('editor.restoreRange');-->
+<!--    //-->
+<!--    //         const dropdown = ui.dropdown({-->
+<!--    //             items: ['1.0', '1.2', '1.4', '1.6', '1.8', '2.0'],-->
+<!--    //             click: function (event) {-->
+<!--    //                 event.preventDefault();-->
+<!--    //                 event.stopPropagation();-->
+<!--    //-->
+<!--    //                 const value = event.target.innerText;-->
+<!--    //-->
+<!--    //                 // ✅ selection 복원 + 포커스 복귀-->
+<!--    //                 restoreRange();-->
+<!--    //                 context.invoke('editor.focus');-->
+<!--    //-->
+<!--    //                 applyLineHeight(context, value);-->
+<!--    //             }-->
+<!--    //         });-->
+<!--    //-->
+<!--    //         const button = ui.button({-->
+<!--    //             className: 'dropdown-toggle',-->
+<!--    //             contents: 'LH <span class="caret"></span>',-->
+<!--    //             tooltip: 'Line height',-->
+<!--    //             data: { toggle: 'dropdown', 'bs-toggle' : 'dropdown' },-->
+<!--    //             click: function (e) {-->
+<!--    //                 // ✅ 버튼 클릭 순간 range 저장 (드롭다운 클릭으로 selection 날아가는 거 방지)-->
+<!--    //                 saveRange();-->
+<!--    //             }-->
+<!--    //         });-->
+<!--    //-->
+<!--    //         return ui.buttonGroup([button, dropdown]).render();-->
+<!--    //     };-->
+<!--    //-->
+<!--    //-->
+<!--    //     $('#translatedContentEditor').summernote({-->
+<!--    //         height: 420,-->
+<!--    //         placeholder: '번역 내용을 입력하세요...',-->
+<!--    //         toolbar: [-->
+<!--    //             ['style', ['bold', 'italic', 'underline']],-->
+<!--    //             ['fontsize', ['fontsize']],-->
+<!--    //             ['para', ['ul', 'ol', 'paragraph']],-->
+<!--    //             ['insert', ['link', 'picture']],-->
+<!--    //             ['custom', ['lineHeight']], // ⭐ 그룹명은 아무거나 OK-->
+<!--    //             ['view', ['codeview']]-->
+<!--    //         ],-->
+<!--    //         fontSizes: ['12', '14', '16', '18', '20', '24'],-->
+<!--    //-->
+<!--    //         // ⭐ 여기서 버튼 등록-->
+<!--    //         buttons: {-->
+<!--    //             lineHeight: lineHeightButton-->
+<!--    //         },-->
+<!--    //-->
+<!--    //         callbacks: {-->
+<!--    //             onImageUpload: function (files) {-->
+<!--    //                 if (!files || files.length === 0) return;-->
+<!--    //                 for (const f of files) insertImageToEditor(f);-->
+<!--    //             },-->
+<!--    //             onChange: function () {-->
+<!--    //                 syncPendingFilesWithEditor();-->
+<!--    //             },-->
+<!--    //             onPaste: function (e) {-->
+<!--    //                 handlePasteKeepMedia()-->
+<!--    //                 // e.preventDefault();-->
+<!--    //                 // const text = (e.originalEvent || e).clipboardData.getData('text/plain');-->
+<!--    //                 // document.execCommand('insertText', false, text);-->
+<!--    //             },-->
+<!--    //             onKeyup: function () { $('#translatedContentEditor').summernote('saveRange'); },-->
+<!--    //             onMouseup: function () { $('#translatedContentEditor').summernote('saveRange'); },-->
+<!--    //         }-->
+<!--    //     });-->
+<!--    //-->
+<!--    //     $('#translatedContentEditor').summernote('code', initialHtml ?? '');-->
+<!--    // }-->
 
-<!--    function getExtFromFile(file) {-->
-<!--        const name = file.name || '';-->
-<!--        const idx = name.lastIndexOf('.');-->
-<!--        if (idx > -1) return name.substring(idx);-->
-<!--        if (file.type === 'image/png') return '.png';-->
-<!--        if (file.type === 'image/jpeg') return '.jpg';-->
-<!--        if (file.type === 'image/webp') return '.webp';-->
-<!--        return '';-->
-<!--    }-->
 
-<!--    function insertImageToEditor(file) {-->
-<!--        const assetId = uuidv4();-->
-<!--        const ext = getExtFromFile(file);-->
-<!--        const renamed = new File([file], `${assetId}${ext}`, { type: file.type });-->
 
-<!--        pendingFiles.set(assetId, renamed);-->
+<!--    /**-->
+<!--     * 선택 영역이 있으면 해당 selection을 감싸는 span에 적용,-->
+<!--     * 없으면 현재 커서가 있는 문단(p/li)에 line-height 적용.-->
+<!--     */-->
+<!--    function applyLineHeight(context, value) {-->
+<!--        // restoreRange/focus는 이미 dropdown click에서 해준 상태라고 가정-->
+<!--        const range = context.invoke('editor.createRange');-->
+<!--        if (!range) return;-->
 
-<!--        const blobUrl = URL.createObjectURL(renamed);-->
-<!--        blobUrls.set(assetId, blobUrl);-->
+<!--        // range 안의 모든 block(p/li/heading) 찾아서 line-height 적용-->
+<!--        const $rng = $(range.sc).closest('.note-editable');-->
+<!--        const editable = $rng.get(0);-->
+<!--        if (!editable) return;-->
 
-<!--        const imgHtml = `<img src="${blobUrl}" data-asset-id="${assetId}" alt="" />`;-->
-<!--        $('#translatedContentEditor').summernote('pasteHTML', imgHtml);-->
-<!--    }-->
+<!--        // selection이 없으면 커서 위치의 문단에만-->
+<!--        if (range.isCollapsed()) {-->
+<!--            const $block = $(range.sc).closest('p, li, div, h1, h2, h3, h4, h5, h6');-->
+<!--            if ($block.length) $block.css('line-height', value);-->
+<!--            return;-->
+<!--        }-->
 
-<!--    function syncPendingFilesWithEditor() {-->
-<!--        const html = $('#translatedContentEditor').summernote('code');-->
-<!--        const temp = document.createElement('div');-->
-<!--        temp.innerHTML = html;-->
+<!--        // selection이 있으면: selection에 걸친 블록들에 적용-->
+<!--        const nativeRange = range.nativeRange ? range.nativeRange() : range;-->
+<!--        const startNode = nativeRange.startContainer;-->
+<!--        const endNode = nativeRange.endContainer;-->
 
-<!--        const assetIdsInEditor = new Set(-->
-<!--            Array.from(temp.querySelectorAll('img[data-asset-id]'))-->
-<!--                .map(img => img.getAttribute('data-asset-id'))-->
-<!--                .filter(Boolean)-->
-<!--        );-->
+<!--        const $startBlock = $(startNode).closest('p, li, div, h1, h2, h3, h4, h5, h6');-->
+<!--        const $endBlock   = $(endNode).closest('p, li, div, h1, h2, h3, h4, h5, h6');-->
 
-<!--        for (const assetId of Array.from(pendingFiles.keys())) {-->
-<!--            if (!assetIdsInEditor.has(assetId)) {-->
-<!--                pendingFiles.delete(assetId);-->
-<!--                const url = blobUrls.get(assetId);-->
-<!--                if (url) URL.revokeObjectURL(url);-->
-<!--                blobUrls.delete(assetId);-->
-<!--            }-->
+<!--        if ($startBlock.length) $startBlock.css('line-height', value);-->
+
+<!--        // start~end 사이의 블록도 전부 적용-->
+<!--        if ($startBlock.length && $endBlock.length && !$startBlock.is($endBlock)) {-->
+<!--            const blocks = $(editable).find('p, li, div, h1, h2, h3, h4, h5, h6');-->
+<!--            let started = false;-->
+
+<!--            blocks.each(function () {-->
+<!--                const $b = $(this);-->
+<!--                if ($b.is($startBlock)) started = true;-->
+<!--                if (started) $b.css('line-height', value);-->
+<!--                if ($b.is($endBlock)) return false; // break-->
+<!--            });-->
 <!--        }-->
 <!--    }-->
 
-<!--    function isSummernoteInitialized() {-->
-<!--        return !!($('#translatedContentEditor').next('.note-editor').length);-->
-<!--    }-->
-
-<!--    function initSummernote(initialHtml) {-->
-<!--        editorTa.style.display = 'block';-->
-<!--        viewDiv.style.display = 'none';-->
-
-<!--        $('#translatedContentEditor').summernote({-->
-<!--            height: 420,-->
-<!--            placeholder: '번역 내용을 입력하세요...',-->
-<!--            toolbar: [-->
-<!--                ['style', ['style']],-->
-<!--                ['font', ['bold', 'underline', 'clear']],-->
-<!--                ['para', ['ul', 'ol', 'paragraph']],-->
-<!--                ['insert', ['picture', 'link']],-->
-<!--                ['view', ['codeview']]-->
-<!--            ],-->
-<!--            callbacks: {-->
-<!--                onInit: function () {-->
-<!--                    // 에디터 초기화 직후 한번 정리-->
-<!--                    setTimeout(normalizeEditorImages, 0);-->
-<!--                },-->
-<!--                onImageUpload: function (files) {-->
-<!--                    if (!files || files.length === 0) return;-->
-<!--                    for (const f of files) insertImageToEditor(f);-->
-<!--                },-->
-<!--                onPaste: function () {-->
-<!--                    // 붙여넣기 이미지/HTML 들어온 뒤 정리-->
-<!--                    setTimeout(normalizeEditorImages, 0);-->
-<!--                },-->
-<!--                onChange: function () {-->
-<!--                    syncPendingFilesWithEditor();-->
-<!--                }-->
-<!--            }-->
-<!--        });-->
-
-<!--        $('#translatedContentEditor').summernote('code', initialHtml ?? '');-->
-<!--        // 초기 HTML 세팅 후 한번 더-->
-<!--        setTimeout(normalizeEditorImages, 0);-->
-<!--    }-->
 
 <!--    function destroySummernote() {-->
 <!--        if (isSummernoteInitialized()) {-->
@@ -683,52 +448,102 @@
 <!--        viewDiv.style.display = 'block';-->
 <!--    }-->
 
-<!--    function normalizeEditorImages() {-->
-<!--        if (!isSummernoteInitialized()) return;-->
+<!--    // // ===== 이미지 업로드 로직 (기존 그대로) =====-->
+<!--    // function uuidv4() {-->
+<!--    //     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();-->
+<!--    //     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {-->
+<!--    //         const r = Math.random() * 16 | 0;-->
+<!--    //         const v = c === 'x' ? r : (r & 0x3 | 0x8);-->
+<!--    //         return v.toString(16);-->
+<!--    //     });-->
+<!--    // }-->
+<!--    // function getExtFromFile(file) {-->
+<!--    //     const name = file.name || '';-->
+<!--    //     const idx = name.lastIndexOf('.');-->
+<!--    //     if (idx > -1) return name.substring(idx);-->
+<!--    //     if (file.type === 'image/png') return '.png';-->
+<!--    //     if (file.type === 'image/jpeg') return '.jpg';-->
+<!--    //     if (file.type === 'image/webp') return '.webp';-->
+<!--    //     return '';-->
+<!--    // }-->
+<!--    // function insertImageToEditor(file) {-->
+<!--    //     const assetId = uuidv4();-->
+<!--    //     const ext = getExtFromFile(file);-->
+<!--    //     const renamed = new File([file], `${assetId}${ext}`, { type: file.type });-->
+<!--    //-->
+<!--    //     pendingFiles.set(assetId, renamed);-->
+<!--    //-->
+<!--    //     const blobUrl = URL.createObjectURL(renamed);-->
+<!--    //     blobUrls.set(assetId, blobUrl);-->
+<!--    //-->
+<!--    //     const imgHtml = `<img src="${blobUrl}" data-asset-id="${assetId}" alt="" />`;-->
+<!--    //     $('#translatedContentEditor').summernote('pasteHTML', imgHtml);-->
+<!--    // }-->
+<!--    // function syncPendingFilesWithEditor() {-->
+<!--    //     const html = $('#translatedContentEditor').summernote('code');-->
+<!--    //     const temp = document.createElement('div');-->
+<!--    //     temp.innerHTML = html;-->
+<!--    //-->
+<!--    //     const assetIdsInEditor = new Set(-->
+<!--    //         Array.from(temp.querySelectorAll('img[data-asset-id]'))-->
+<!--    //             .map(img => img.getAttribute('data-asset-id'))-->
+<!--    //             .filter(Boolean)-->
+<!--    //     );-->
+<!--    //-->
+<!--    //     for (const assetId of Array.from(pendingFiles.keys())) {-->
+<!--    //         if (!assetIdsInEditor.has(assetId)) {-->
+<!--    //             pendingFiles.delete(assetId);-->
+<!--    //             const url = blobUrls.get(assetId);-->
+<!--    //             if (url) URL.revokeObjectURL(url);-->
+<!--    //             blobUrls.delete(assetId);-->
+<!--    //         }-->
+<!--    //     }-->
+<!--    // }-->
 
-<!--        const $editable = $(formEl).find('.note-editable');-->
+<!--    let sn = null;-->
 
-<!--        $editable.find('img').each(function () {-->
-<!--            const img = this;-->
-
-<!--            // 1) 너무 큰 width/height attribute 제거(에디터 밖으로 튀는 원인)-->
-<!--            if (img.hasAttribute('width')) img.removeAttribute('width');-->
-<!--            if (img.hasAttribute('height')) img.removeAttribute('height');-->
-
-<!--            // 2) 인라인 style에 width가 있으면 제거하고 max-width로 통일-->
-<!--            //    (기존 width 유지 "시도"는 하되, 컨테이너보다 크면 제한)-->
-<!--            const style = img.getAttribute('style') || '';-->
-<!--            // width: xxxpx / width: xxx% 제거-->
-<!--            const cleaned = style-->
-<!--                .replace(/width\s*:\s*[^;]+;?/gi, '')-->
-<!--                .replace(/height\s*:\s*[^;]+;?/gi, '');-->
-
-<!--            img.setAttribute('style', (cleaned + ';max-width:100%;height:auto;').replace(/;;+/g, ';'));-->
-<!--        });-->
-<!--    }-->
-
-
-<!--    function enterEditMode() {-->
+<!--    function enterEditMode({showCancelBtn = true} = {showCancelBtn: true}) {-->
 <!--        clearError();-->
+
+<!--        // ✅ 기존 번역 있을 때만 '수정' 버튼을 통해서 진입-->
 <!--        originalHtmlForCancel = viewDiv.innerHTML || '';-->
 
-<!--        if (!isSummernoteInitialized()) {-->
-<!--            initSummernote(originalHtmlForCancel);-->
-<!--        } else {-->
-<!--            editorTa.style.display = 'block';-->
-<!--            viewDiv.style.display = 'none';-->
-<!--            $('#translatedContentEditor').summernote('code', originalHtmlForCancel);-->
-<!--        }-->
+<!--        unlockFields(); // 제목/요약/작가 잠금 해제-->
+
+<!--        editorTa.style.display = 'block';-->
+<!--        viewDiv.style.display = 'none';-->
+
+<!--        // if (!isSummernoteInitialized()) {-->
+<!--        //     initSummernote(originalHtmlForCancel);-->
+<!--        // } else {-->
+<!--        //     editorTa.style.display = 'block';-->
+<!--        //     viewDiv.style.display = 'none';-->
+<!--        //     $('#translatedContentEditor').summernote('code', originalHtmlForCancel);-->
+<!--        // }-->
+
+<!--        sn = window.initSummernote({-->
+<!--            selector: '#translatedContentEditor',-->
+<!--            existingContent: originalHtmlForCancel,-->
+<!--            height: 420,-->
+<!--            contentHiddenSelector: '#contentHidden',-->
+<!--            onChange: function (html) {-->
+<!--                // 여기서 pendingFiles sync는 app.js가 이미 함-->
+<!--                // 필요하면 추가로 뭔가 할 수 있음-->
+<!--            },-->
+<!--            // paste는 기본이 handlePasteMedia라서 따로 안 줘도 됨-->
+<!--        });-->
 
 <!--        if (editBtn) editBtn.style.display = 'none';-->
-<!--        if (cancelBtn) cancelBtn.style.display = 'inline-block';-->
-<!--        if (saveBtn) saveBtn.disabled = false;-->
+<!--        if (cancelBtn) cancelBtn.style.display = showCancelBtn ? 'inline-block' : 'none';-->
 <!--    }-->
 
 <!--    function enterViewMode() {-->
 <!--        clearError();-->
+
+<!--        // 내용 되돌리기-->
 <!--        viewDiv.innerHTML = originalHtmlForCancel;-->
 
+<!--        // 업로드 대기 파일 정리-->
 <!--        for (const url of blobUrls.values()) {-->
 <!--            try { URL.revokeObjectURL(url); } catch(e) {}-->
 <!--        }-->
@@ -737,12 +552,13 @@
 
 <!--        destroySummernote();-->
 
+<!--        // ✅ 다시 잠금-->
+<!--        lockFields();-->
+
 <!--        if (editBtn) editBtn.style.display = hasTranslation ? 'inline-block' : 'none';-->
 <!--        if (cancelBtn) cancelBtn.style.display = 'none';-->
-<!--        if (saveBtn) saveBtn.disabled = hasTranslation;-->
 <!--    }-->
 
-<!--    // ✅ 핵심: display 상태로 판단하지 않고, summernote 초기화 여부만으로 content 가져오기-->
 <!--    function getFinalHtmlForSubmit() {-->
 <!--        if (isSummernoteInitialized()) {-->
 <!--            syncPendingFilesWithEditor();-->
@@ -768,18 +584,19 @@
 <!--    async function doSave() {-->
 <!--        clearError();-->
 
+<!--        // ✅ 기존 번역이고 아직 수정모드 아니면 저장 막기-->
 <!--        if (hasTranslation && saveBtn && saveBtn.disabled) return;-->
 
-<!--        const html = getFinalHtmlForSubmit();-->
-<!--        contentHidden.value = html;-->
+<!--        const payload = window.getSummernotePayload({-->
+<!--            editorSelector: '#translatedContentEditor',-->
+<!--            contentHiddenSelector: '#contentHidden'-->
+<!--        });-->
 
 <!--        const fd = new FormData(formEl);-->
 <!--        fd.delete('content');-->
 <!--        fd.append('content', html);-->
 
-<!--        for (const file of pendingFiles.values()) {-->
-<!--            fd.append('files', file);-->
-<!--        }-->
+<!--        for (const file of payload.files) fd.append('files', file);-->
 
 <!--        const headers = {};-->
 <!--        const csrf = getCsrfHeader();-->
@@ -799,17 +616,19 @@
 <!--            const data = await res.json();-->
 <!--            if (!data?.ok) throw new Error('서버 응답이 ok=false 입니다.');-->
 
-<!--            window.location.href = `/post/translate?id=${encodeURIComponent(data.postId)}&languageCode=${encodeURIComponent(data.lang)}`;-->
-
+<!--            window.location.href = `/post/translate?id=${data.postId}&languageCode=${data.lang}`;-->
 <!--        } catch (err) {-->
 <!--            console.error(err);-->
 <!--            showError('저장 실패: ' + (err?.message ?? err));-->
+<!--            // 수정모드면 다시 활성화-->
 <!--            if (saveBtn) saveBtn.disabled = false;-->
 <!--        } finally {-->
 <!--            if (saveBtn && saveBtn.dataset._txt) {-->
 <!--                saveBtn.textContent = saveBtn.dataset._txt;-->
 <!--                delete saveBtn.dataset._txt;-->
 
+<!--                // 수정모드가 유지되는 동안은 enabled-->
+<!--                // (저장 성공하면 페이지 이동하니 여기까지 보통 안 옴)-->
 <!--                if (hasTranslation && (!isSummernoteInitialized() || editorTa.style.display === 'none')) {-->
 <!--                    saveBtn.disabled = true;-->
 <!--                } else {-->
@@ -820,25 +639,218 @@
 <!--    }-->
 
 <!--    document.addEventListener('DOMContentLoaded', () => {-->
+<!--        console.log('DOMContentLoaded');-->
+<!--        console.log('hasTranslation: ' + hasTranslation);-->
 <!--        if (hasTranslation) {-->
-<!--            if (saveBtn) saveBtn.disabled = true;-->
+<!--            // ✅ 처음에는 잠금 상태-->
+<!--            lockFields();-->
+<!--            if (editBtn) editBtn.style.display = 'inline-block';-->
 <!--            if (cancelBtn) cancelBtn.style.display = 'none';-->
+<!--            destroySummernote(); // 혹시 남아있을까 방어-->
 <!--        } else {-->
+<!--            // ✅ 번역이 없으면 바로 입력 가능-->
+<!--            unlockFields();-->
 <!--            if (editBtn) editBtn.style.display = 'none';-->
-<!--            if (saveBtn) saveBtn.disabled = false;-->
-<!--            enterEditMode();-->
+<!--            if (cancelBtn) cancelBtn.style.display = 'none'; // 원하면 hide 가능-->
+<!--            enterEditMode({showCancelBtn : false}); // 바로 에디터 켜기-->
 <!--        }-->
 
 <!--        editBtn?.addEventListener('click', enterEditMode);-->
 <!--        cancelBtn?.addEventListener('click', enterViewMode);-->
-
 <!--        saveBtn?.addEventListener('click', doSave);-->
 
-<!--        // 엔터로 submit 방지-->
+<!--        // 엔터 submit 방지-->
 <!--        formEl?.addEventListener('submit', (e) => e.preventDefault());-->
 <!--    });-->
 <!--    /*]]>*/-->
 <!--</script>-->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const hasTranslation = /*[[${hasTranslation}]]*/ false;
 
+    const formEl = document.getElementById('translationForm');
+    const editBtn = document.getElementById('editBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const viewDiv = document.getElementById('translatedContentView');
+    const editorTa = document.getElementById('translatedContentEditor');
+
+    const errorBox = document.getElementById('errorBox');
+
+    let originalHtmlForCancel = '';
+    let sn = null; // app.js initSummernote 반환 api
+
+    function showError(msg) {
+        if (!errorBox) return;
+        errorBox.style.display = 'block';
+        errorBox.textContent = msg ?? '오류가 발생했습니다.';
+    }
+    function clearError() {
+        if (!errorBox) return;
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+    }
+
+    function lockFields() {
+        const lockables = formEl.querySelectorAll('[data-lockable]');
+        lockables.forEach(el => el.setAttribute('readonly', 'readonly'));
+        if (saveBtn) saveBtn.disabled = true;
+    }
+
+    function unlockFields() {
+        const lockables = formEl.querySelectorAll('[data-lockable]');
+        lockables.forEach(el => el.removeAttribute('readonly'));
+        if (saveBtn) saveBtn.disabled = false;
+    }
+
+    function destroySummernote() {
+        if (sn) {
+            sn.destroy();
+            sn = null;
+        }
+        editorTa.style.display = 'none';
+        viewDiv.style.display = 'block';
+    }
+
+    function enterEditMode({showCancelBtn = true} = {}) {
+        clearError();
+
+        originalHtmlForCancel = viewDiv.innerHTML || '';
+
+        unlockFields();
+
+        editorTa.style.display = 'block';
+        viewDiv.style.display = 'none';
+
+        sn = window.initSummernote({
+            selector: '#translatedContentEditor',
+            existingContent: originalHtmlForCancel,
+            height: 420,
+            contentHiddenSelector: '#contentHidden'
+            // paste는 기본 handlePasteMedia 사용
+        });
+
+        if (editBtn) editBtn.style.display = 'none';
+        if (cancelBtn) cancelBtn.style.display = showCancelBtn ? 'inline-block' : 'none';
+    }
+
+    function enterViewMode() {
+        clearError();
+
+        // 내용 되돌리기
+        viewDiv.innerHTML = originalHtmlForCancel;
+
+        destroySummernote();
+
+        // 다시 잠금
+        lockFields();
+
+        if (editBtn) editBtn.style.display = hasTranslation ? 'inline-block' : 'none';
+        if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+
+    function getCsrfHeader() {
+        const headerName = /*[[${_csrf?.headerName}]]*/ null;
+        const token = /*[[${_csrf?.token}]]*/ null;
+        if (!headerName || !token) return null;
+        return { headerName, token };
+    }
+
+    function buildSaveUrl() {
+        const postId = formEl?.dataset?.postId;
+        const lang = formEl?.dataset?.lang;
+        if (!postId || !lang) throw new Error('data-post-id / data-lang 가 없습니다.');
+        return `/post/translate/${encodeURIComponent(postId)}?lang=${encodeURIComponent(lang)}`;
+    }
+
+    async function doSave() {
+        clearError();
+
+        // 기존 번역인데 아직 잠금이면 저장 막기
+        if (hasTranslation && saveBtn && saveBtn.disabled) return;
+
+        // ✅ 에디터가 켜져있으면 그걸, 아니면 viewDiv 내용을 그대로 보냄
+        let content = '';
+        let files = [];
+
+        if (sn) {
+            const payload = window.getSummernotePayload({
+                editorSelector: '#translatedContentEditor',
+                contentHiddenSelector: '#contentHidden'
+            });
+            content = payload.content;
+            files = payload.files;
+        } else {
+            // 뷰 모드 저장(보통은 막히지만, 혹시 케이스 대비)
+            content = viewDiv.innerHTML || '';
+            const hidden = document.querySelector('#contentHidden');
+            if (hidden) hidden.value = content;
+        }
+
+        const fd = new FormData(formEl);
+        fd.delete('content');
+        fd.append('content', content);
+
+        for (const f of files) fd.append('files', f);
+
+        const headers = {};
+        const csrf = getCsrfHeader();
+        if (csrf) headers[csrf.headerName] = csrf.token;
+
+        try {
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.dataset._txt = saveBtn.textContent;
+                saveBtn.textContent = '저장 중...';
+            }
+
+            const url = buildSaveUrl();
+            const res = await fetch(url, { method: 'POST', body: fd, headers });
+            if (!res.ok) throw new Error(await res.text());
+
+            const data = await res.json();
+            if (!data?.ok) throw new Error('서버 응답이 ok=false 입니다.');
+
+            window.location.href = `/post/translate?id=${data.postId}&languageCode=${data.lang}`;
+        } catch (err) {
+            console.error(err);
+            showError('저장 실패: ' + (err?.message ?? err));
+            if (saveBtn) saveBtn.disabled = false;
+        } finally {
+            if (saveBtn && saveBtn.dataset._txt) {
+                saveBtn.textContent = saveBtn.dataset._txt;
+                delete saveBtn.dataset._txt;
+
+                // 기존 번역 + 뷰모드면 저장 비활성 유지
+                if (hasTranslation && !sn) saveBtn.disabled = true;
+                else saveBtn.disabled = false;
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (hasTranslation) {
+            lockFields();
+            if (editBtn) editBtn.style.display = 'inline-block';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            destroySummernote();
+        } else {
+            unlockFields();
+            if (editBtn) editBtn.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            enterEditMode({showCancelBtn: false});
+        }
+
+        editBtn?.addEventListener('click', () => enterEditMode({showCancelBtn: true}));
+        cancelBtn?.addEventListener('click', enterViewMode);
+        saveBtn?.addEventListener('click', doSave);
+
+        formEl?.addEventListener('submit', (e) => e.preventDefault());
+    });
+    /*]]>*/
+
+</script>
 </body>
 </html>
+
