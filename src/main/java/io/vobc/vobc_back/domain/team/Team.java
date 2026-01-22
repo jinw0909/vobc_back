@@ -27,6 +27,8 @@ public class Team {
     @Column(length = 1024)
     private String icon;
 
+    private int displayOrder = 0;
+
     @OrderBy("rolePriority ASC, id ASC")
     @OneToMany(mappedBy = "team", cascade ={CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = false)
     List<TeamMember> members = new ArrayList<>();
@@ -35,16 +37,17 @@ public class Team {
     private List<TeamTranslation> translations = new ArrayList<>();
 
     //==생성 메소드==//
-    public static Team create(String name, String description, String icon) {
+    public static Team create(String name, String description, String icon, int displayOrder) {
         Team team = new Team();
         team.name = name;
         team.description = description;
         team.icon = icon;
+        team.displayOrder = displayOrder;
         return team;
     }
 
-    public static Team create(Long id, String name, String description, String icon) {
-        Team team = create(name, description, icon);
+    public static Team create(Long id, String name, String description, String icon, int displayOrder) {
+        Team team = create(name, description, icon, displayOrder);
         team.id = id;
         return team;
     }

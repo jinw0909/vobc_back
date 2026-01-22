@@ -42,7 +42,7 @@ public class TeamService {
 
     @Transactional
     public Long saveTeam(TeamForm form) {
-        Team team = Team.create(form.getName(), form.getDescription(), form.getIcon());
+        Team team = Team.create(form.getName(), form.getDescription(), form.getIcon(), form.getDisplayOrder());
 
         for (TeamMemberForm tmf : form.getMembers()) {
             TeamMember member = TeamMember.create(team, tmf.getName(), TeamRole.fromOrDefault(tmf.getRole(), TeamRole.ASSOCIATE), tmf.getPhoto());
@@ -59,6 +59,7 @@ public class TeamService {
         team.setName(form.getName());
         team.setDescription(form.getDescription());
         team.setIcon(form.getIcon());
+        team.setDisplayOrder(form.getDisplayOrder());
 
         // 선택된 멤버 ID만 추출 (null 방어)
         Set<Long> selectedIds = (form.getMembers() == null ? Set.<Long>of() :

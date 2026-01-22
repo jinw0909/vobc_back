@@ -55,6 +55,12 @@
         </div>
 
         <div class="field">
+            <label for="displayOrder">Display Order</label>
+            <input type="number" id="displayOrder" th:field="*{displayOrder}" min="0" step="1" required>
+        </div>
+
+
+        <div class="field">
             <label for="description">Description</label>
             <textarea id="description" rows="5" th:field="*{description}"></textarea>
         </div>

@@ -17,6 +17,7 @@ public class TeamForm {
     private String name;
     private String description;
     private String icon;
+    private int displayOrder;
     private List<TeamMemberForm> members = new ArrayList<>();
 
     public TeamForm(Team team) {
@@ -24,5 +25,6 @@ public class TeamForm {
         this.name = team.getName();
         this.description = team.getDescription();
         this.icon = team.getIcon();
+        this.displayOrder = team.getDisplayOrder();
     }
 }

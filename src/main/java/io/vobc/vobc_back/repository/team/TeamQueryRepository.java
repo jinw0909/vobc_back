@@ -3,6 +3,7 @@ package io.vobc.vobc_back.repository.team;
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.team.Team;
 import io.vobc.vobc_back.dto.team.ResumeDto;
+import io.vobc.vobc_back.dto.team.TeamDto;
 import io.vobc.vobc_back.dto.team.TeamMemberDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,4 +48,17 @@ public interface TeamQueryRepository extends JpaRepository<Team, Long> {
     """)
     List<ResumeDto> findResumesInIds(@Param("teamMemberIds") List<Long> teamMemberIds,
                                      @Param("languageCode") LanguageCode languageCode);
+
+    @Query("""
+        select new io.vobc.vobc_back.dto.team.TeamDto(
+            t.id,
+            coalesce(tt.name, t.name),
+            coalesce(tt.description, t.description),
+            t.icon, t.displayOrder
+        )
+        from Team t
+        left join TeamTranslation tt
+            on tt.team = t and tt.languageCode = :languageCode
+    """)
+    List<TeamDto> findAll(@Param("languageCode") LanguageCode languageCode);
 }

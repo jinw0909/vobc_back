@@ -32,7 +32,7 @@
 
     .field { margin-bottom:14px; }
     label { display:block; font-weight:700; margin-bottom:6px; color:#333; }
-    input[type="text"], textarea {
+    input[type="text"], input[type="number"], textarea {
         width:100%; padding:10px; box-sizing:border-box;
         border:1px solid #ddd; border-radius:8px; outline:none;
     }
@@ -156,6 +156,15 @@
                     <label for="name">Name</label>
                     <input id="name" type="text" th:field="*{name}" required>
                 </div>
+
+                <div class="field">
+                    <label for="displayOrder">Display Order</label>
+                    <input id="displayOrder" type="number" th:field="*{displayOrder}" min="0" step="1" required>
+                    <div class="muted" style="margin-top:6px;">
+                        팀 노출 순서(작을수록 먼저 노출).
+                    </div>
+                </div>
+
 
                 <div class="field">
                     <label for="description">Description</label>

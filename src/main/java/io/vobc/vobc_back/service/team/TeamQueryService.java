@@ -4,6 +4,7 @@ import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.team.Team;
 import io.vobc.vobc_back.domain.team.TeamRole;
 import io.vobc.vobc_back.dto.team.ResumeDto;
+import io.vobc.vobc_back.dto.team.TeamDto;
 import io.vobc.vobc_back.dto.team.TeamMemberDto;
 import io.vobc.vobc_back.repository.team.TeamQueryRepository;
 import lombok.RequiredArgsConstructor;
@@ -56,4 +57,8 @@ public class TeamQueryService {
 
     }
 
+    @Transactional(readOnly = true)
+    public List<TeamDto> getAll(LanguageCode languageCode) {
+        return teamQueryRepository.findAll(languageCode);
+    }
 }

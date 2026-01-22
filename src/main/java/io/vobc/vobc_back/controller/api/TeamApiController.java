@@ -2,6 +2,7 @@ package io.vobc.vobc_back.controller.api;
 
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.team.Team;
+import io.vobc.vobc_back.dto.team.TeamDto;
 import io.vobc.vobc_back.dto.team.TeamMemberDto;
 import io.vobc.vobc_back.service.team.TeamQueryService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/team")
@@ -34,5 +37,12 @@ public class TeamApiController {
 
         Page<Team> members = teamQueryService.getMembersOfTeam(pageable, team);
         return "";
+    }
+
+
+    @GetMapping("/all")
+    public List<TeamDto> all(@RequestParam String lang) {
+        LanguageCode languageCode = LanguageCode.from(lang);
+        return teamQueryService.getAll(languageCode);
     }
 }

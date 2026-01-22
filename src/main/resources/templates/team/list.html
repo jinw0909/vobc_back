@@ -53,7 +53,9 @@
             <th>ID</th>
             <th>Name</th>
             <th>Description</th>
+            <th>Display Order</th>
             <th>Created At</th>
+
         </tr>
         </thead>
         <tbody>
@@ -62,6 +64,7 @@
             <td th:text="${team.id}"></td>
             <td th:text="${team.name}"></td>
             <td th:text="${team.description}"></td>
+            <td th:text="${team.displayOrder}"></td>
             <td th:text="${#temporals.format(team.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
         </tr>
         </tbody>

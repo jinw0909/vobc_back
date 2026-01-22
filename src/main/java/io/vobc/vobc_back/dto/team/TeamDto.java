@@ -16,12 +16,14 @@ public class TeamDto {
     private String name;
     private String description;
     private String icon;
+    private int displayOrder;
     private List<TeamMemberDto> members = new ArrayList<>();
 
-    public TeamDto(Long id, String name, String description, String icon) {
+    public TeamDto(Long id, String name, String description, String icon, int displayOrder) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.icon = icon;
+        this.displayOrder = displayOrder;
     }
 }
