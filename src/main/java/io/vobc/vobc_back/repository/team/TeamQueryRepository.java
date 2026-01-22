@@ -59,6 +59,7 @@ public interface TeamQueryRepository extends JpaRepository<Team, Long> {
         from Team t
         left join TeamTranslation tt
             on tt.team = t and tt.languageCode = :languageCode
+        order by coalesce(t.displayOrder, 10) asc, t.id asc
     """)
     List<TeamDto> findAll(@Param("languageCode") LanguageCode languageCode);
 }

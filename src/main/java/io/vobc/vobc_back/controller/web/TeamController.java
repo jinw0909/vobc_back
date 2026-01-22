@@ -29,7 +29,7 @@ public class TeamController {
     private final TeamService teamService;
 
     @GetMapping("/list")
-    public String teamList(@PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
+    public String teamList(@PageableDefault(size = 10, sort = {"displayOrder", "id"}, direction = Sort.Direction.ASC) Pageable pageable,
                            Model model) {
         Page<Team> page = teamService.getAllTeam(pageable);
         model.addAttribute("teams", page.getContent());
