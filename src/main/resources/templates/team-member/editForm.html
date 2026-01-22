@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+  .container { max-width: 920px; margin: 0 auto; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin:20px 0; }
+  .title-wrap { display:flex; flex-direction:column; gap:6px; }
+  .subtitle { color:#666; font-size:0.95rem; }
+
+  .card { border:1px solid #e5e5e5; border-radius:10px; padding:18px; background:#fff; margin:18px 0; }
+
+  .grid {
+    display:grid;
+    grid-template-columns:170px 1fr;
+    gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid #f0f0f0;
+    align-items:start;
+  }
+  .grid:last-child { border-bottom:none; }
+
+  label { font-weight:800; color:#333; padding-top:8px; }
+
+  input, select, textarea {
+    width:100%;
+    border:1px solid #e5e5e5;
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:0.95rem;
+    box-sizing:border-box;
+    background:#fff;
+  }
+  textarea { min-height:110px; resize:vertical; }
+
+  .help { color:#777; font-size:0.9rem; margin-top:6px; }
+
+  .btn {
+    padding:8px 14px;
+    border-radius:8px;
+    text-decoration:none;
+    border:1px solid transparent;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.95rem;
+    height:36px;
+    background:#fff;
+  }
+  .btn-primary { background:#222; color:#fff; }
+  .btn-secondary { background:#fff; color:#111; border-color:#ddd; }
+  .btn-danger { background:#c62828; color:#fff; }
+
+  .actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap; }
+
+  .resume-box {
+    border:1px solid #e5e5e5;
+    border-radius:10px;
+    padding:12px;
+    background:#fafafa;
+  }
+  .resume-list { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+
+  .resume-item {
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:10px;
+    padding:10px;
+  }
+
+  .resume-actions {
+    display:flex;
+    justify-content:flex-end;
+    margin-top:10px;
+  }
+
+  /* ✅ profile preview */
+  .profile-wrap {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:6px 0 10px;
+  }
+  .profile-photo {
+    width:72px;
+    height:72px;
+    border-radius:16px;
+    object-fit:cover;
+    border:1px solid #e5e5e5;
+    background:#fafafa;
+    flex:0 0 auto;
+  }
+  .profile-meta { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .profile-title { font-weight:800; color:#111; }
+  .profile-url {
+    color:#666;
+    font-size:0.9rem;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:520px;
+  }
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container">
+
+  <div class="header">
+    <div class="title-wrap">
+      <h1 style="margin:0;">Edit Team Member</h1>
+      <div class="subtitle" th:text="|#${form.id} 멤버 정보 수정|"></div>
+    </div>
+
+    <!-- ✅ 버튼들 -->
+    <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+      <a class="btn btn-secondary" th:href="@{/team-member/list}">All Members</a>
+
+      <!-- 팀 이동: teamId가 이미 있으니 바로 가능 -->
+      <a class="btn btn-secondary" id="goTeamBtn" href="#">Go to Team</a>
+
+      <a class="btn btn-secondary" th:href="@{/team-member/{id}(id=${form.id})}">
+        Back to Detail
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <form th:action="@{/team-member/{id}/edit(id=${form.id})}"
+          th:object="${form}"
+          method="post">
+
+      <!-- ID 반드시 전송 -->
+      <input type="hidden" th:field="*{id}"/>
+
+      <!-- Team -->
+      <div class="grid">
+        <label for="teamId">Team</label>
+        <div>
+          <select id="teamId" th:field="*{teamId}">
+            <option th:each="t : ${teams}"
+                    th:value="${t.id}"
+                    th:text="|#${t.id} - ${t.name}|">
+            </option>
+          </select>
+          <div class="help">팀을 바꾸면 소속이 변경됩니다.</div>
+        </div>
+      </div>
+
+      <!-- Name -->
+      <div class="grid">
+        <label for="name">Name</label>
+        <div>
+          <input id="name" type="text" th:field="*{name}" required/>
+        </div>
+      </div>
+
+      <!-- Role -->
+      <div class="grid">
+        <label for="role">Role</label>
+        <div>
+          <select id="role" th:field="*{role}" required>
+            <option value="" disabled>역할 선택</option>
+            <option th:each="r : ${T(io.vobc.vobc_back.domain.team.TeamRole).values()}"
+                    th:value="${r.name()}"
+                    th:text="${r.name()}">
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ✅ Photo: preview + upload -->
+      <div class="grid">
+        <label>Photo</label>
+        <div>
+
+          <!-- 프로필 미리보기: 항상 보임 -->
+          <div class="profile-wrap">
+            <img id="profileImg"
+                 class="profile-photo"
+                 th:src="${(form.photo != null and !#strings.isEmpty(form.photo)) ? form.photo : '/img/fallback.png'}"
+                 alt="profile"
+                 onerror="this.onerror=null;this.src='/img/fallback.png';" />
+
+            <div class="profile-meta">
+              <div class="profile-title">Profile Preview</div>
+              <div id="photoUrlText" class="profile-url"
+                   th:text="${(form.photo != null and !#strings.isEmpty(form.photo)) ? form.photo : 'Using fallback image'}">
+                Using fallback image
+              </div>
+            </div>
+          </div>
+
+          <!-- URL 입력 -->
+          <input id="photo" type="url" th:field="*{photo}" placeholder="https://..."/>
+          <div class="help">URL을 직접 입력하거나 아래에서 이미지를 업로드하면 자동으로 URL이 입력됩니다.</div>
+
+          <!-- 업로드 -->
+          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <input id="photoFile" type="file" accept="image/*"
+                   style="max-width:340px; padding:7px 12px;">
+            <button type="button" id="uploadPhotoBtn" class="btn btn-secondary" onclick="uploadPhoto()">
+              Upload
+            </button>
+            <span id="uploadStatus" class="help"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Introduction -->
+      <div class="grid">
+        <label for="introduction">Introduction</label>
+        <div>
+          <textarea id="introduction" th:field="*{introduction}" placeholder="소개글 입력"></textarea>
+        </div>
+      </div>
+
+      <!-- Resumes -->
+      <div class="grid">
+        <label>Resumes</label>
+        <div class="resume-box">
+          <div class="help">여기서는 신규 추가 / 삭제만 처리합니다.</div>
+
+          <div class="resume-list" id="resumeList">
+            <!-- 기존 resumes -->
+            <div class="resume-item" th:each="r, stat : *{resumes}">
+              <!-- id 유지 -->
+              <input type="hidden" th:field="*{resumes[__${stat.index}__].id}"/>
+
+              <div style="flex:1;">
+                <div style="font-weight:800; margin-bottom:6px;">
+                  Resume ID: <span th:text="${r.id}"></span>
+                </div>
+
+                <!-- ✅ 기존 content도 수정 가능 -->
+                <textarea
+                        th:field="*{resumes[__${stat.index}__].content}"
+                        placeholder="이력 내용"
+                        style="min-height:80px;"></textarea>
+
+                <div class="help">기존 이력 수정 / 삭제 / 신규 추가 가능</div>
+              </div>
+
+              <button type="button" class="btn btn-danger" onclick="removeResumeRow(this)">
+                Remove
+              </button>
+            </div>
+          </div>
+
+
+          <div class="resume-actions">
+            <button type="button" class="btn btn-secondary" onclick="addNewResume()">
+              + Add Resume
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="btn btn-secondary" th:href="@{/team-member/{id}(id=${form.id})}">Cancel</a>
+        <button class="btn btn-primary" type="submit"
+                onclick="return confirm('저장할까요?');">
+          Save
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+
+<script th:inline="javascript">
+  // ------- Resumes -------
+  function removeResumeRow(btn) {
+    btn.closest('.resume-item').remove();
+  }
+
+  // ✅ 삭제해도 인덱스 꼬이지 않게 "전역 카운터" 사용
+  const resumeList = document.getElementById('resumeList');
+  let resumeIndex = /*[[${form.resumes != null ? form.resumes.size() : 0}]]*/ 0;
+
+  function addNewResume() {
+    const div = document.createElement('div');
+    div.className = 'resume-item';
+
+    div.innerHTML = `
+      <div style="flex:1;">
+        <input type="text"
+               name="resumes[${resumeIndex}].content"
+               placeholder="새 resume 내용 입력"
+               required/>
+      </div>
+      <button type="button" class="btn btn-danger" onclick="removeResumeRow(this)">
+        Remove
+      </button>
+    `;
+
+    resumeList.appendChild(div);
+    resumeIndex++;
+  }
+
+  // ------- Photo Preview / Upload -------
+  const photoInput = document.getElementById('photo');
+  const fileInput = document.getElementById('photoFile');
+  const statusEl = document.getElementById('uploadStatus');
+  const uploadBtn = document.getElementById('uploadPhotoBtn');
+  const profileImg = document.getElementById('profileImg');
+  const photoUrlText = document.getElementById('photoUrlText');
+
+  function setProfileImage(url) {
+    const fallback = '/img/fallback.png';
+    const finalUrl = (url && url.trim().length > 0) ? url.trim() : fallback;
+    profileImg.src = finalUrl;
+
+    if (url && url.trim().length > 0) {
+      photoUrlText.textContent = url.trim();
+    } else {
+      photoUrlText.textContent = 'Using fallback image';
+    }
+  }
+
+  // URL 입력하면 즉시 반영
+  photoInput.addEventListener('input', () => {
+    setProfileImage(photoInput.value);
+  });
+
+  // 파일 선택 시 업로드 전 로컬 미리보기
+  fileInput.addEventListener('change', () => {
+    if (!fileInput.files || fileInput.files.length === 0) return;
+    const file = fileInput.files[0];
+    const objectUrl = URL.createObjectURL(file);
+    profileImg.src = objectUrl;
+    photoUrlText.textContent = '(Local preview) 업로드 후 URL이 저장됩니다';
+    statusEl.textContent = '';
+  });
+
+  async function uploadPhoto() {
+    if (!fileInput.files || fileInput.files.length === 0) {
+      alert('업로드할 이미지를 선택해줘.');
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+
+    uploadBtn.disabled = true;
+    statusEl.textContent = 'Uploading...';
+
+    try {
+      const res = await fetch('/api/upload/thumbnail', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || ('Upload failed: ' + res.status));
+      }
+
+      const data = await res.json(); // { url: "https://..." }
+
+      photoInput.value = data.url;
+      setProfileImage(data.url);
+
+      statusEl.textContent = 'Uploaded ✓';
+
+      // 같은 파일 다시 업로드 가능하게 input 초기화(선택)
+      // fileInput.value = '';
+
+    } catch (e) {
+      console.error(e);
+      statusEl.textContent = '';
+      alert('업로드 실패: ' + (e?.message ?? e));
+      setProfileImage(photoInput.value);
+    } finally {
+      uploadBtn.disabled = false;
+    }
+  }
+
+  // 팀 이동 버튼 세팅 (edit는 teamId가 항상 존재하는 케이스가 많아서 바로 세팅)
+  const teamSelect = document.getElementById('teamId');
+  const goTeamBtn = document.getElementById('goTeamBtn');
+
+  function syncGoTeamBtn() {
+    const teamId = teamSelect.value;
+    if (teamId) {
+      goTeamBtn.href = `/team/${teamId}`;
+      goTeamBtn.style.pointerEvents = 'auto';
+      goTeamBtn.style.opacity = '1';
+    } else {
+      goTeamBtn.href = '#';
+      goTeamBtn.style.pointerEvents = 'none';
+      goTeamBtn.style.opacity = '.6';
+    }
+  }
+  teamSelect.addEventListener('change', syncGoTeamBtn);
+  syncGoTeamBtn();
+
+  // 초기 상태 반영
+  setProfileImage(photoInput.value);
+</script>
+
+</body>
+</html>

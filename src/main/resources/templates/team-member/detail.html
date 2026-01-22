@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+    .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+    .card {
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+        background: #fff;
+    }
+    .title { font-size: 1.4rem; font-weight: 700; margin-bottom: 12px; }
+
+    .profile {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .profile-photo {
+        width: 96px;
+        height: 96px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 1px solid #eee;
+        background: #fafafa;
+    }
+
+    .row { display: flex; gap: 12px; margin-bottom: 8px; }
+    .label { width: 120px; font-weight: 700; color: #444; }
+    .value { flex: 1; color: #222; }
+    .muted { color: #777; }
+
+    .resume-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .resume-item {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 12px;
+        background: #fafafa;
+        white-space: pre-line;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        background: #fff;
+        color: #111;
+        font-size: .95rem;
+    }
+
+    .btn-primary {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+    }
+
+    .btn-danger {
+        background: #c62828;
+        color: #fff;
+        border-color: #c62828;
+    }
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .action-left {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .action-right {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    /* 언어 pill */
+    .lang-pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid #ddd;
+        background: #fff;
+        color: #111;
+        text-decoration: none;
+        font-size: .9rem;
+        line-height: 1;
+    }
+
+    /* 번역 존재(=Edit) */
+    .lang-pill.exists {
+        border-color: #111;
+        background: #111;
+        color: #fff;
+    }
+
+    /* 번역 없음(=Add) */
+    .lang-pill.missing {
+        background: #fff;
+        color: #111;
+        border-style: dashed;
+    }
+
+    .lang-pill:hover { opacity: .9; }
+
+
+
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container">
+
+    <!-- Team Member Info -->
+    <div class="card">
+        <div class="title">Team Member</div>
+
+        <div class="profile">
+            <img class="profile-photo"
+                 th:src="${teamMember.photo != null ? teamMember.photo : '/img/fallback.png'}"
+                 alt="profile"/>
+
+            <div>
+                <div class="row">
+                    <div class="label">ID</div>
+                    <div class="value" th:text="${teamMember.id}">1</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">Name</div>
+                    <div class="value" th:text="${teamMember.name}">홍길동</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">Role</div>
+                    <div class="value" th:text="${teamMember.role}">Developer</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">Introduction</div>
+                    <div class="value"
+                         th:if="${teamMember.introduction != null and !#strings.isEmpty(teamMember.introduction)}"
+                         th:text="${teamMember.introduction}">
+                        소개글
+                    </div>
+
+                    <div class="value muted"
+                         th:if="${teamMember.introduction == null or #strings.isEmpty(teamMember.introduction)}">
+                        -
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Info -->
+    <div class="card">
+        <div class="title">Team</div>
+
+        <div class="row">
+            <div class="label">Team ID</div>
+            <div class="value" th:text="${teamMember.team.id}">1</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Name</div>
+            <div class="value" th:text="${teamMember.team.name}">Backend Team</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Description</div>
+            <div class="value muted" th:text="${teamMember.team.description}">
+                팀 설명
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumes -->
+    <div class="card">
+        <div class="title">Resumes</div>
+
+        <div th:if="${#lists.isEmpty(teamMember.resumes)}" class="muted">
+            등록된 이력이 없습니다.
+        </div>
+
+        <div class="resume-list" th:if="${!#lists.isEmpty(teamMember.resumes)}">
+            <div class="resume-item" th:each="resume : ${teamMember.resumes}"
+                 th:text="${resume.content}">
+                이력서 내용
+            </div>
+        </div>
+    </div>
+
+    <div class="actions">
+
+        <!-- 🔹 왼쪽: 전체 언어 목록 (enum 전체) -->
+        <div class="action-left">
+            <span class="muted">Translations:</span>
+
+            <a th:each="lc : ${T(io.vobc.vobc_back.domain.LanguageCode).values()}"
+               th:text="${lc}"
+               th:class="'lang-pill ' + (${languageCodes != null and languageCodes.contains(lc)} ? 'exists' : 'missing')"
+               th:title="${languageCodes != null and languageCodes.contains(lc)} ? 'Edit translation' : 'Add translation'"
+               th:href="@{/team-member/{id}/translate(id=${teamMember.id}, lang=${lc.name().toLowerCase()})}">
+                EN
+            </a>
+        </div>
+
+        <!-- 🔹 오른쪽: 기존 버튼들 -->
+        <div class="action-right">
+            <a th:href="@{/team-member/list}" class="btn">All Members</a>
+            <a th:href="@{/team/{id}(id=${teamMember.team.id})}" class="btn">Back to Team</a>
+            <a th:href="@{/team-member/{id}/edit(id=${teamMember.id})}" class="btn btn-primary">Edit</a>
+
+            <form th:action="@{/team-member/{id}/delete(id=${teamMember.id})}"
+                  method="post"
+                  style="display:inline;">
+                <button type="submit"
+                        class="btn btn-danger"
+                        onclick="return confirm('정말 삭제할까요?');">
+                    Delete
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+
+
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

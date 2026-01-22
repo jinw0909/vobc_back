@@ -21,4 +21,13 @@ public class ResumeTranslation {
     private LanguageCode languageCode;
 
     private String content;
+
+    public static ResumeTranslation create(Resume resume, LanguageCode languageCode, String content) {
+        ResumeTranslation resumeTranslation = new ResumeTranslation();
+        resumeTranslation.resume = resume;
+        resumeTranslation.languageCode = languageCode;
+        resumeTranslation.content = content;
+        resume.getTranslations().add(resumeTranslation);
+        return resumeTranslation;
+    }
 }

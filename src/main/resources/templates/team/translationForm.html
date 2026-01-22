@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>Team Translation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .title { font-size: 1.5rem; font-weight: 800; margin: 0; }
+        .badge { padding: 6px 10px; border-radius: 999px; background: #f3f4f6; font-size: 0.9rem; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+        .card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; background: #fff; }
+        .card h3 { margin: 0 0 12px; font-size: 1.1rem; }
+
+        .field { margin-bottom: 14px; }
+        .label { display: block; font-weight: 700; margin-bottom: 6px; }
+        .readonly { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; min-height: 42px; }
+        .readonly.multiline { min-height: 120px; white-space: pre-wrap; }
+
+        input[type="text"], textarea {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        textarea { min-height: 120px; resize: vertical; }
+
+        .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+        .btn { border: 1px solid #d1d5db; padding: 10px 14px; border-radius: 10px; background: #fff; cursor: pointer; font-weight: 700; }
+        .btn.primary { background: #111827; color: #fff; border-color: #111827; }
+        .hint { color: #6b7280; font-size: 0.9rem; margin-top: 6px; }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            color: #111;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            line-height: 1;
+            transition: all 0.15s ease;
+        }
+
+        .back-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .back-btn::before {
+            content: "←";
+            font-weight: 900;
+        }
+
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1 class="title">Team Translation</h1>
+        <div class="badge">
+            Team ID: <span th:text="${teamForm.id}">0</span>
+            · Lang: <span th:text="${translationForm.languageCode}">en</span>
+        </div>
+
+        <a th:href="@{|/team/${teamForm.id}|}" class="back-btn">
+            Back to Detail
+        </a>
+
+    </div>
+
+    <!-- 좌/우 비교 -->
+    <div class="grid">
+
+        <!-- LEFT: Original -->
+        <section class="card">
+            <h3>Original</h3>
+
+            <div class="field">
+                <span class="label">Name</span>
+                <div class="readonly" th:text="${teamForm.name}">Original name</div>
+            </div>
+
+            <div class="field">
+                <span class="label">Description</span>
+                <div class="readonly multiline" th:text="${teamForm.description}">Original description</div>
+            </div>
+
+            <p class="hint">원본 데이터는 Team 엔티티 기준으로 표시됩니다.</p>
+        </section>
+
+        <!-- RIGHT: Translation (editable) -->
+        <section class="card">
+            <h3>Translation
+                <span th:if="${translationForm.id != null}" style="color: #16a34a; font-weight: 700;">
+                    (Existing)
+                </span>
+                <span th:if="${translationForm.id == null}" style="color: #ca8a04; font-weight: 700;">
+                    (New)
+                </span>
+            </h3>
+
+            <!-- 저장: POST /{teamId}/translate?lang=xx -->
+            <form th:action="@{|/team/${translationForm.teamId}/translate|}"
+                  method="post"
+                  th:object="${translationForm}">
+
+                <!-- 서버에서 teamId/lang은 Path+Query로 받더라도, 폼에도 같이 담아두면 안전 -->
+                <input type="hidden" th:field="*{teamId}" />
+                <input type="hidden" th:field="*{languageCode}" />
+
+                <div class="field">
+                    <label class="label" for="tName">Name</label>
+                    <input id="tName" type="text" th:field="*{name}" />
+                </div>
+
+                <div class="field">
+                    <label class="label" for="tDesc">Description</label>
+                    <textarea id="tDesc" th:field="*{description}"></textarea>
+                </div>
+
+                <div class="actions">
+                    <button class="btn" type="reset">Reset</button>
+                    <button class="btn primary" type="submit">Save</button>
+                </div>
+
+                <p class="hint" th:if="${translationForm.id == null}">
+                    아직 이 언어의 번역이 없습니다. 원본 값을 수정하여 새 번역을 생성하세요.
+                </p>
+
+                <p class="hint" th:if="${translationForm.id != null}">
+                    이미 등록된 번역이 있습니다. 수정 후 저장하면 업데이트됩니다.
+                </p>
+            </form>
+        </section>
+
+    </div>
+</div>
+</body>
+</html>

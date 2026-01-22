@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 20px 0;
+    }
+
+    .title-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .subtitle {
+        color: #666;
+        font-size: 0.95rem;
+    }
+
+    .btns {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        border: 1px solid transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        line-height: 1;
+        height: 34px;
+        box-sizing: border-box;
+    }
+
+    .btn-primary { background: #222; color: #fff; }
+    .btn-secondary { background: #fff; color: #111; border-color: #ddd; }
+    .btn-danger { background: #c62828; color: #fff; }
+
+    .card {
+        border: 1px solid #e5e5e5;
+        border-radius: 10px;
+        padding: 18px;
+        background: #fff;
+        margin: 18px 0;
+    }
+
+    .row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        align-items: center;
+    }
+    .row:last-child { border-bottom: none; }
+
+    .label {
+        font-weight: 700;
+        color: #333;
+    }
+    .value {
+        color: #111;
+        /*white-space: pre-wrap;*/
+        word-break: break-word;
+    }
+
+    .muted {
+        color: #666;
+        font-size: 0.95rem;
+    }
+    .thumb {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 1px solid #e5e5e5;
+        background: #fafafa;
+    }
+
+    .member-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+        margin-top: 6px;
+    }
+
+    .member-item {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        border: 1px solid #f0f0f0;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fff;
+    }
+
+    .member-photo {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 1px solid #eee;
+        background: #fafafa;
+        flex: 0 0 auto;
+    }
+
+    .member-name {
+        font-weight: 700;
+        color: #111;
+    }
+
+    .member-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .member-role {
+        color: #666;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .icon-pair {
+        display: inline-flex;   /* ⭐ block 말고 inline-flex */
+        gap: 8px;
+        align-items: center;
+        flex-wrap: nowrap;      /* ⭐ 줄바꿈 절대 금지 */
+        white-space: nowrap;    /* ⭐ 내부도 줄바꿈 금지 */
+    }
+
+    .icon-box {
+        width: 52px;
+        height: 52px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e5e5e5;
+    }
+
+    .icon-box.black { background: #111; }
+    .icon-box.white { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+    .icon-img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain; /* 아이콘은 contain이 더 예쁨 */
+        display: block;
+    }
+    .member-item { text-decoration: none; color: inherit; }
+    .member-item:hover { border-color: #e5e5e5; }
+
+    .lang-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .lang-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid #e5e5e5;
+        text-decoration: none;
+        color: #111;
+        background: #fff;
+        font-size: 0.95rem;
+        line-height: 1;
+    }
+
+    .lang-pill:hover {
+        border-color: #cfcfcf;
+        background: #fafafa;
+    }
+
+    .lang-pill.exist {
+        font-weight: 800;               /* 존재하는 번역은 굵게 */
+        border-color: #111;
+    }
+
+    .lang-pill.exist::after {
+        content: "✓";
+        font-weight: 900;
+    }
+
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container">
+    <div class="header">
+        <div class="title-wrap">
+            <h1 th:text="|Team Detail (#${team.id})|">Team Detail</h1>
+            <div class="subtitle">팀 정보 및 멤버 관리</div>
+        </div>
+
+        <div class="btns">
+            <a class="btn btn-secondary" th:href="@{/team/list}">Back to List</a>
+
+            <!-- 멤버 목록 / 멤버 추가 -->
+            <a class="btn btn-secondary" th:href="@{/team/member/list(teamId=${team.id})}">
+                View Members
+            </a>
+            <a class="btn btn-primary" th:href="@{/team/member/create(teamId=${team.id})}">
+                + Add Member
+            </a>
+
+            <!-- 팀 수정 -->
+            <a class="btn btn-secondary" th:href="@{/team/{id}/edit(id=${team.id})}">
+                Edit Team
+            </a>
+
+            <!-- 팀 삭제 (POST) -->
+            <form th:action="@{/team/{id}/delete(id=${team.id})}" method="post" style="display:inline;">
+                <button type="submit"
+                        class="btn btn-danger"
+                        onclick="return confirm('정말 삭제할까요? (멤버도 함께 삭제됩니다)');">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+
+        <!-- ⭐ Icon row (카드 안으로 이동) -->
+        <div class="row">
+            <div class="label">Icon</div>
+            <div class="value">
+                <div th:if="${team.icon != null and !#strings.isEmpty(team.icon)}" class="icon-pair">
+                    <!-- black background -->
+                    <div class="icon-box black">
+                        <img class="icon-img" th:src="${team.icon}" alt="team icon on black"/>
+                    </div>
+
+                    <!-- white background -->
+                    <div class="icon-box white">
+                        <img class="icon-img" th:src="${team.icon}" alt="team icon on white"/>
+                    </div>
+                </div>
+
+                <span class="muted"
+                      th:if="${team.icon == null or #strings.isEmpty(team.icon)}">-</span>
+            </div>
+        </div>
+
+
+
+        <div class="row">
+            <div class="label">Name</div>
+            <div class="value" th:text="${team.name}">Team Name</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Description</div>
+            <div class="value" th:text="${team.description}">Team Description</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Created At</div>
+            <div class="value"
+                 th:text="${team.createdAt != null ? #temporals.format(team.createdAt, 'yyyy-MM-dd HH:mm') : '-'}">
+                -
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Updated At</div>
+            <div class="value"
+                 th:text="${team.updatedAt != null ? #temporals.format(team.updatedAt, 'yyyy-MM-dd HH:mm') : '-'}">
+                -
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Members</div>
+            <div class="value">
+                <!-- 멤버가 없을 때 -->
+                <div class="muted"
+                     th:if="${team.members == null or #lists.isEmpty(team.members)}">
+                    등록된 멤버가 없습니다.
+                </div>
+
+                <!-- 멤버 리스트 -->
+                <div class="member-grid"
+                     th:if="${team.members != null and !#lists.isEmpty(team.members)}">
+                    <a class="member-item"
+                       th:each="m : ${team.members}"
+                       th:href="@{/team-member/{id}(id=${m.id})}">
+                        <img class="member-photo"
+                             th:src="${(m.photo != null and !#strings.isEmpty(m.photo)) ? m.photo : '/img/fallback.png'}"
+                             alt="member photo"/>
+
+                        <div class="member-meta">
+                            <div class="member-name" th:text="${m.name}">Member Name</div>
+                            <div class="member-role"
+                                 th:if="${m.role != null}"
+                                 th:text="${m.role}">Role</div>
+                        </div>
+                    </a>
+
+                </div>
+
+                <!-- 필요하면 아래 링크도 같이 유지 가능 -->
+                <div style="margin-top:10px;">
+                    <a class="btn btn-secondary" th:href="@{/team/member/list(teamId=${team.id})}">
+                        View Members (관리 페이지)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⭐ Languages -->
+        <div class="row">
+            <div class="label">Languages</div>
+            <div class="value">
+                <div class="lang-row">
+                    <!-- LanguageCode enum 전체를 렌더 -->
+                    <a class="lang-pill"
+                       th:each="lc : ${T(io.vobc.vobc_back.domain.LanguageCode).values()}"
+                       th:href="@{|/team/${team.id}/translate?lang=${lc.name()}|}"
+                       th:classappend="${languageCodes != null and languageCodes.contains(lc)} ? ' exist' : ''"
+                       th:text="${lc.name()}">
+                        EN
+                    </a>
+                </div>
+                <div class="hint" style="margin-top:8px;">
+                    굵게 표시된 언어는 번역이 존재합니다. 어떤 언어를 눌러도 번역 편집 페이지로 이동합니다.
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

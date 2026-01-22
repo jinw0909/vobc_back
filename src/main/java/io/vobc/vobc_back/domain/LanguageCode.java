@@ -3,6 +3,7 @@ package io.vobc.vobc_back.domain;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 @Getter
 public enum LanguageCode {
@@ -29,5 +30,14 @@ public enum LanguageCode {
                 .filter(l -> l.code.equalsIgnoreCase(code))
                 .findFirst()
                 .orElse(en);
+    }
+
+    public Locale toLocale() {
+        return switch (this) {
+            case kr -> Locale.KOREAN;
+            case en -> Locale.ENGLISH;
+            case jp -> Locale.JAPANESE;
+            case cn -> Locale.SIMPLIFIED_CHINESE;
+        };
     }
 }

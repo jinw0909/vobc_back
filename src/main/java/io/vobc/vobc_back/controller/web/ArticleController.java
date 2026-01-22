@@ -10,8 +10,8 @@ import io.vobc.vobc_back.exception.ImageUploadException;
 import io.vobc.vobc_back.repository.article.ArticleRepository;
 import io.vobc.vobc_back.repository.publisher.PublisherRepository;
 import io.vobc.vobc_back.service.ArticleService;
-import io.vobc.vobc_back.service.media.MediaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -124,10 +124,30 @@ public class ArticleController {
     @PostMapping(value = "/translate/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String translate(@PathVariable Long id,
                             @RequestParam("lang") String lang,
-                            @ModelAttribute("translation") ArticleTranslationForm form
+                            @ModelAttribute("translation") ArticleTranslationForm form,
+                            RedirectAttributes ra
     ) {
+
         form.setLanguageCode(LanguageCode.from(lang));
-        articleService.saveTranslation(id, form);
+
+        try {
+            articleService.saveTranslation(id, form);
+
+            ra.addFlashAttribute("flashType", "success");
+            ra.addFlashAttribute("flashMsg", "저장 완료");
+
+        } catch (DataIntegrityViolationException e) {
+            FlashError fe = FlashError.from(e);
+
+            ra.addFlashAttribute("flashType", "danger");
+            ra.addFlashAttribute("flashMsg", fe.userMessage());
+            ra.addFlashAttribute("detail", fe.detail());
+        } catch (Exception e) {
+            ra.addFlashAttribute("flashType", "danger");
+            ra.addFlashAttribute("flashMsg", "저장 중 오류가 발생했습니다.");
+            ra.addFlashAttribute("flashDetail", rootMessage(e));
+        }
+
         return "redirect:/article/translate/" + id + "?lang=" + form.getLanguageCode().getCode();
     }
 
@@ -165,5 +185,26 @@ public class ArticleController {
     public String handleImageFail(ImageUploadException e, RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         return "redirect:/article/create";
+    }
+
+    record FlashError(String userMessage, String detail) {
+
+        static FlashError from(DataIntegrityViolationException e) {
+                String root = rootMessage(e);
+                if (root.contains("ORA-00001")) {
+                    return new FlashError(
+                            "이미 해당 언어 번역이 존재합니다. (중복 저장)",
+                            root
+                    );
+                }
+                return new FlashError("DB 제작조건 위반으로 저장에 실패했습니다.", root);
+            }
+        }
+
+    private static String rootMessage(Throwable t) {
+        Throwable r = t;
+        while (r.getCause() != null) { r = r.getCause(); }
+        String msg = r.getMessage();
+        return r.getClass().getSimpleName() + (msg == null ? "" : ": " + msg);
     }
 }

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+    .container { max-width: 900px; margin: 0 auto; }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 20px 0;
+    }
+
+    .title-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .subtitle {
+        color: #666;
+        font-size: 0.95rem;
+    }
+
+    .card {
+        border: 1px solid #e5e5e5;
+        border-radius: 10px;
+        padding: 18px;
+        background: #fff;
+        margin: 18px 0;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .grid:last-child { border-bottom: none; }
+
+    label {
+        font-weight: 700;
+        color: #333;
+    }
+
+    .input, .select {
+        width: 100%;
+        border: 1px solid #e5e5e5;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        box-sizing: border-box;
+        background: #fff;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 16px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        border: 1px solid transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        height: 34px;
+        background: #fff;
+    }
+
+    .btn-primary { background: #222; color: #fff; }
+    .btn-secondary { background: #fff; color: #111; border-color: #ddd; }
+
+    .help {
+        color: #777;
+        font-size: 0.9rem;
+        margin-top: 6px;
+    }
+
+    .preview {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 1px solid #e5e5e5;
+        background: #fafafa;
+    }
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container">
+    <div class="header">
+        <div class="title-wrap">
+            <h1>Create Team Member</h1>
+            <div class="subtitle">팀 멤버를 생성합니다</div>
+        </div>
+
+        <div>
+            <a class="btn btn-secondary" th:href="@{/team-member/list}">Back to List</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <form th:action="@{/team-member/create}" th:object="${form}" method="post">
+
+            <!-- Team -->
+            <div class="grid">
+                <label for="teamId">Team</label>
+                <div>
+                    <select id="teamId" class="select" th:field="*{teamId}" required>
+                        <option value="" disabled selected>팀을 선택하세요</option>
+                        <option th:each="t : ${teams}"
+                                th:value="${t.id}"
+                                th:text="|#${t.id} - ${t.name}|">
+                            Team
+                        </option>
+                    </select>
+                    <div class="help">소속될 팀을 선택하세요.</div>
+                </div>
+            </div>
+
+            <!-- Name -->
+            <div class="grid">
+                <label for="name">Name</label>
+                <div>
+                    <input id="name" class="input" type="text"
+                           th:field="*{name}" placeholder="이름" required/>
+                </div>
+            </div>
+
+            <!-- Role (Enum String) -->
+            <div class="grid">
+                <label for="role">Role</label>
+                <div>
+                    <select id="role" class="select" th:field="*{role}" required>
+                        <option value="" disabled selected>역할을 선택하세요</option>
+                        <option th:each="r : ${T(io.vobc.vobc_back.domain.team.TeamRole).values()}"
+                                th:value="${r.name()}"
+                                th:text="${r.name()}">
+                            ROLE
+                        </option>
+                    </select>
+                    <div class="help">TeamRole enum name 값이 그대로 저장됩니다.</div>
+                </div>
+            </div>
+
+            <!-- Photo URL + Upload -->
+            <div class="grid">
+                <label for="photo">Photo</label>
+                <div>
+                    <!-- 1) URL 직접 입력 -->
+                    <input id="photo" class="input" type="url"
+                           th:field="*{photo}" placeholder="https://..."/>
+
+                    <div class="help">URL을 직접 입력하거나 아래에서 이미지를 업로드하면 자동으로 URL이 입력됩니다.</div>
+
+                    <!-- 2) 파일 업로드 UI -->
+                    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <input id="photoFile" type="file" accept="image/*"
+                               class="input" style="max-width:340px; padding:7px 12px;">
+                        <button type="button" class="btn btn-secondary" onclick="uploadPhoto()">Upload</button>
+                        <span id="uploadStatus" class="help"></span>
+                    </div>
+
+                    <!-- 서버 렌더링용 프리뷰(폼 값이 있을 때) -->
+                    <div class="preview"
+                         th:if="${form.photo != null and !#strings.isEmpty(form.photo)}">
+                        <img class="thumb" th:src="${form.photo}" alt="preview"/>
+                        <span>preview</span>
+                    </div>
+
+                    <!-- 업로드 후 즉시 프리뷰(클라) -->
+                    <div class="preview" id="livePreview" style="display:none;">
+                        <img class="thumb" id="livePreviewImg" src="" alt="preview"/>
+                        <span>preview</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a class="btn btn-secondary" th:href="@{/team-member/list}">Cancel</a>
+                <button class="btn btn-primary" type="submit">Create</button>
+            </div>
+
+            <!-- Spring Security 사용 중이면 필요 -->
+            <!--
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            -->
+        </form>
+    </div>
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+<script>
+    async function uploadPhoto() {
+        const fileInput = document.getElementById('photoFile');
+        const statusEl = document.getElementById('uploadStatus');
+        const photoEl = document.getElementById('photo');
+        const liveWrap = document.getElementById('livePreview');
+        const liveImg = document.getElementById('livePreviewImg');
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('업로드할 이미지를 선택해줘.');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        statusEl.textContent = 'Uploading...';
+
+        try {
+            const res = await fetch('/api/upload/thumbnail', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || ('Upload failed: ' + res.status));
+            }
+
+            const data = await res.json(); // { url: "https://..." }
+
+            // URL input 자동 채우기
+            photoEl.value = data.url;
+
+            // 즉시 프리뷰
+            liveImg.src = data.url;
+            liveWrap.style.display = 'flex';
+
+            statusEl.textContent = 'Uploaded ✓';
+        } catch (e) {
+            console.error(e);
+            statusEl.textContent = '';
+            alert('업로드 실패: ' + e.message);
+        }
+    }
+
+</script>
+</body>
+</html>

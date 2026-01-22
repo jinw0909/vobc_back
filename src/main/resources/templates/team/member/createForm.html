@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+  .container { max-width: 760px; margin: 0 auto; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin:20px 0; }
+  .title-wrap { display:flex; flex-direction:column; gap:6px; }
+  .subtitle { color:#666; font-size:.95rem; }
+
+  .card { border:1px solid #e5e5e5; border-radius:10px; padding:18px; background:#fff; margin:18px 0; }
+
+  .field { margin-bottom: 16px; }
+  label { display:block; font-weight:800; margin-bottom:6px; color:#333; }
+
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    font-size: .95rem;
+    background:#fff;
+  }
+
+  .help { color:#777; font-size:.9rem; margin-top:6px; }
+
+  .actions { margin-top: 20px; display: flex; gap: 10px; justify-content:flex-end; flex-wrap:wrap; }
+  .btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    font-size: .95rem;
+    background:#fff;
+  }
+  .btn-primary { background: #222; color: #fff; }
+  .btn-secondary { background: #fff; color: #111; border-color:#ddd; }
+  .btn:disabled { opacity:.6; cursor:not-allowed; }
+
+  .upload-row { margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .status { color:#666; font-size:.95rem; }
+
+  .preview-wrap { margin-top:12px; display:flex; gap:10px; align-items:center; }
+  .preview-img {
+    width: 84px; height: 84px; object-fit: cover;
+    border: 1px solid #e5e5e5; border-radius: 12px; background:#fafafa;
+    display:none;
+  }
+  .pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 10px; border:1px solid #e5e5e5; border-radius:999px;
+    font-size:.9rem; color:#111; background:#fff;
+  }
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container">
+
+  <div class="header">
+    <div class="title-wrap">
+      <h1 style="margin:0;">Create Team Member</h1>
+      <div class="subtitle">
+        Team:
+        <b th:text="${team.name}">Team Name</b>
+        <span style="color:#999;" th:text="|(#${team.id})|">(#1)</span>
+      </div>
+    </div>
+
+    <a class="btn btn-secondary"
+       th:href="@{/team/member/list(teamId=${team.id})}">
+      Back to Member List
+    </a>
+  </div>
+
+  <div class="card">
+    <form id="memberForm" th:action="@{/team/member/create}" method="post" th:object="${form}">
+      <!-- teamId 고정 -->
+      <input type="hidden" name="teamId" th:value="${team.id}"/>
+
+      <div class="field">
+        <label for="name">Name</label>
+        <input id="name" type="text" th:field="*{name}" required placeholder="이름을 입력하세요"/>
+      </div>
+
+      <div class="field">
+        <label for="role">Role</label>
+
+        <!-- ✅ enum select -->
+        <select id="role" th:field="*{role}" required>
+          <option value="" disabled selected>역할을 선택하세요</option>
+          <option th:each="r : ${T(io.vobc.vobc_back.domain.team.TeamRole).values()}"
+                  th:value="${r.name()}"
+                  th:text="${r.name()}">
+            ROLE
+          </option>
+        </select>
+
+        <div class="help">TeamRole enum 값을 그대로 저장합니다.</div>
+      </div>
+
+      <div class="field">
+        <label for="photoFile">Photo</label>
+        <input id="photoFile" type="file" accept="image/*"/>
+
+        <div class="help">
+          파일 선택 → 프리뷰 확인 → Upload 버튼을 누르면 S3 업로드 후 URL이 자동 저장됩니다.
+        </div>
+
+        <div class="upload-row">
+          <button type="button" id="uploadPhotoBtn" class="btn btn-secondary">
+            Upload Photo
+          </button>
+          <span id="uploadStatus" class="status"></span>
+          <span id="uploadedPill" class="pill" style="display:none;">Uploaded</span>
+        </div>
+
+        <div class="preview-wrap">
+          <img id="photoPreview" class="preview-img" src="" alt="preview"/>
+          <span id="previewHint" class="status" style="display:none;">preview</span>
+        </div>
+
+        <!-- 업로드된 URL을 TeamMemberForm.photo 로 제출 -->
+        <input type="hidden" th:field="*{photo}" id="photoUrl"/>
+      </div>
+
+      <div class="actions">
+        <a class="btn btn-secondary" th:href="@{/team/member/list(teamId=${team.id})}">Cancel</a>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+
+<script>
+  const photoFileInput = document.getElementById('photoFile');
+  const uploadBtn = document.getElementById('uploadPhotoBtn');
+  const statusEl = document.getElementById('uploadStatus');
+  const preview = document.getElementById('photoPreview');
+  const previewHint = document.getElementById('previewHint');
+  const hiddenUrl = document.getElementById('photoUrl');
+  const uploadedPill = document.getElementById('uploadedPill');
+  const form = document.getElementById('memberForm');
+
+  // ✅ 파일 선택 즉시 로컬 프리뷰 (업로드 전)
+  photoFileInput.addEventListener('change', () => {
+    const file = photoFileInput.files?.[0];
+    uploadedPill.style.display = 'none';
+    hiddenUrl.value = '';            // 새 파일 선택하면 기존 업로드 URL 무효화
+    statusEl.textContent = '';
+
+    if (!file) {
+      preview.style.display = 'none';
+      previewHint.style.display = 'none';
+      preview.src = '';
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    preview.src = objectUrl;
+    preview.style.display = 'block';
+    previewHint.style.display = 'inline';
+  });
+
+  uploadBtn.addEventListener('click', async () => {
+    const file = photoFileInput.files?.[0];
+    if (!file) {
+      alert('사진 파일을 선택해줘');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    uploadBtn.disabled = true;
+    statusEl.textContent = 'Uploading...';
+    uploadedPill.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/upload/thumbnail', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Upload failed');
+      }
+
+      const data = await res.json(); // { url: "..." }
+      hiddenUrl.value = data.url;
+
+      // ✅ 업로드된 S3 URL로 프리뷰 전환
+      preview.src = data.url;
+      preview.style.display = 'block';
+      previewHint.style.display = 'inline';
+
+      statusEl.textContent = 'Uploaded ✓';
+      uploadedPill.style.display = 'inline-flex';
+    } catch (e) {
+      console.error(e);
+      alert('업로드 실패: ' + (e?.message ?? e));
+      statusEl.textContent = 'Upload failed';
+    } finally {
+      uploadBtn.disabled = false;
+    }
+  });
+
+  // ✅ 제출 시 업로드 안 했으면 경고(필수로 강제하고 싶으면 preventDefault)
+  form.addEventListener('submit', (e) => {
+    const fileSelected = !!photoFileInput.files?.[0];
+    const uploaded = !!hiddenUrl.value;
+
+    // 파일을 선택했는데 업로드를 안 했다면 경고
+    if (fileSelected && !uploaded) {
+      const ok = confirm('사진 파일을 선택했는데 아직 업로드를 안 했어. 업로드 없이 생성할까?');
+      if (!ok) e.preventDefault();
+    }
+
+    // 사진을 "필수"로 강제하고 싶으면 아래로 바꾸면 됨:
+    // if (!uploaded) {
+    //   e.preventDefault();
+    //   alert('사진 업로드 후 생성해줘');
+    // }
+  });
+</script>
+
+</body>
+</html>

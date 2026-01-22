@@ -20,14 +20,16 @@ public class Resume {
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "team_member_id", nullable = false)
     private TeamMember teamMember;
 
     @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ResumeTranslation> translations;
 
-    public Resume(String content) {
-        this.content = content;
+    public static Resume create(TeamMember teamMember, String content) {
+        Resume resume = new Resume();
+        resume.content = content;
+        teamMember.addResume(resume);
+        return resume;
     }
-
 }

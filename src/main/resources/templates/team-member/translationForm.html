@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin:20px 0; }
+    .title-wrap { display:flex; flex-direction:column; gap:6px; }
+    .subtitle { color:#666; font-size:0.95rem; }
+
+    .card { border:1px solid #e5e5e5; border-radius:12px; padding:16px; background:#fff; margin-bottom:16px; }
+    .card-title { font-size:1.15rem; font-weight:800; margin-bottom:10px; }
+
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .panel { border:1px solid #eee; border-radius:12px; padding:12px; background:#fafafa; }
+    .panel-title { font-weight:800; margin-bottom:10px; }
+    .muted { color:#777; font-size:.9rem; }
+
+    label { display:block; font-weight:800; margin:10px 0 6px; }
+    input, textarea {
+        width:100%;
+        border:1px solid #ddd;
+        border-radius:10px;
+        padding:10px 12px;
+        box-sizing:border-box;
+        background:#fff;
+        font-size:.95rem;
+    }
+    textarea { min-height:120px; resize:vertical; white-space:pre-wrap; }
+
+    .resume-row {
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .actions {
+        display:flex;
+        justify-content:flex-end;
+        gap:10px;
+        flex-wrap:wrap;
+        margin-top:12px;
+    }
+
+    .btn {
+        padding:8px 14px;
+        border-radius:8px;
+        text-decoration:none;
+        border:1px solid #ddd;
+        background:#fff;
+        color:#111;
+        cursor:pointer;
+        font-size:.95rem;
+        height:36px;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+    }
+    .btn-primary { background:#111; color:#fff; border-color:#111; }
+    .btn-save {
+        padding: 10px 18px;
+        border-radius: 10px;
+        background: #111;
+        color: #fff;
+        border: 1px solid #111;
+        font-weight: 800;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+    }
+
+    .btn-save:hover {
+        background: #000;
+        border-color: #000;
+    }
+
+    .btn-save:active {
+        transform: translateY(1px);
+    }
+
+    .btn-save::before {
+        content: "💾";
+        font-size: 0.95rem;
+    }
+    .btn-save.outline {
+        background: #fff;
+        color: #111;
+    }
+    .btn-save.outline:hover {
+        background: #f9fafb;
+    }
+
+
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container">
+
+    <div class="header">
+        <div class="title-wrap">
+            <h1 style="margin:0;">Translate Team Member</h1>
+            <div class="subtitle"
+                 th:text="|Member #${teamMember.id} / lang=${lang}|">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn" th:href="@{/team-member/{id}(id=${teamMember.id})}">Back to Detail</a>
+            <a class="btn" th:href="@{/team-member/list}">All Members</a>
+        </div>
+    </div>
+
+    <!-- ✅ 한 번에 저장할 거면 form 하나로 묶는 게 편함 -->
+    <form th:object="${teamMemberTranslationForm}"
+          th:action="@{/team-member/{id}/translate(id=${teamMember.id}, lang=${lang})}"
+          method="post">
+
+        <input type="hidden" th:field="*{id}">
+        <input type="hidden" th:field="*{teamMemberId}">
+        <input type="hidden" th:field="*{languageCode}">
+
+        <!-- TeamMember Translation -->
+        <div>
+            <h3>Member Translation</h3>
+
+            <div>
+                <label>Original Name</label>
+                <div th:text="${teamMember.name}"></div>
+            </div>
+            <div>
+                <label>Translated Name</label>
+                <input type="text" th:field="*{name}">
+            </div>
+
+            <div>
+                <label>Original Introduction</label>
+                <div th:text="${teamMember.introduction}"></div>
+            </div>
+            <div>
+                <label>Translated Introduction</label>
+                <textarea th:field="*{introduction}"></textarea>
+            </div>
+        </div>
+
+        <!-- Resume Translation -->
+        <div style="margin-top:24px;">
+            <h3>Resume Translations</h3>
+
+            <div th:each="r, stat : ${teamMember.resumes}">
+                <div style="border:1px solid #eee; padding:12px; border-radius:10px; margin-bottom:12px;">
+                    <div>
+                        <b>Original</b>
+                        <div th:text="${r.content}"></div>
+                    </div>
+
+                    <!-- ✅ 같은 index로 번역 폼 바인딩 -->
+                    <input type="hidden" th:field="*{resumes[__${stat.index}__].id}">
+                    <input type="hidden" th:field="*{resumes[__${stat.index}__].resumeId}">
+                    <input type="hidden" th:field="*{resumes[__${stat.index}__].languageCode}">
+
+                    <div style="margin-top:8px;">
+                        <b>Translation</b>
+                        <textarea th:field="*{resumes[__${stat.index}__].content}"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn-save outline">Save</button>
+        </div>
+
+    </form>
+
+
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

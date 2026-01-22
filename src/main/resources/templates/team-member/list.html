@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+  .container { max-width: 1100px; margin: 0 auto; }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .title-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .subtitle { color: #666; font-size: 0.95rem; }
+
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+  .btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    line-height: 1;
+    height: 34px;
+    box-sizing: border-box;
+    background: #fff;
+  }
+  .btn-primary { background: #222; color: #fff; }
+  .btn-secondary { background: #fff; color: #111; border-color: #ddd; }
+  .btn-danger { background: #c62828; color: #fff; }
+
+  .card {
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 18px;
+    background: #fff;
+    margin: 18px 0;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  .table th, .table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    text-align: left;
+  }
+  .table th { color: #333; font-weight: 800; background: #fafafa; }
+  .table tr:hover td { background: #fcfcfc; }
+
+  .thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid #e5e5e5;
+    background: #fafafa;
+  }
+
+  .muted { color: #777; }
+  .badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    color: #111;
+    white-space: nowrap;
+  }
+
+  .actions { display: inline-flex; gap: 8px; align-items: center; }
+  .btn-sm { height: 30px; padding: 6px 10px; font-size: 0.9rem; border-radius: 8px; }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .page-links { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .page-link {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #111;
+    background: #fff;
+    font-size: 0.95rem;
+  }
+  .page-link.disabled { pointer-events: none; opacity: 0.45; }
+  .page-link.active { background: #111; color: #fff; border-color: #111; }
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container">
+  <div class="header">
+    <div class="title-wrap">
+      <h1>Team Members</h1>
+      <div class="subtitle">멤버 목록 (rolePriority 오름차순)</div>
+    </div>
+
+    <div class="btns">
+      <a class="btn btn-secondary" th:href="@{/team/list}">Teams</a>
+      <form th:action="@{/team-member/reorder}" method="post" style="display:inline;">
+        <button type="submit"
+                class="btn btn-secondary"
+                onclick="return confirm('모든 멤버의 Priority를 Role 기준으로 재정렬할까요?');">
+          Reorder
+        </button>
+      </form>
+      <a class="btn btn-primary" th:href="@{/team-member/create}">+ Create</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="muted" th:if="${teamMembers == null or teamMembers.totalElements == 0}">
+      등록된 멤버가 없습니다.
+    </div>
+
+    <table class="table" th:if="${teamMembers != null and teamMembers.totalElements > 0}">
+      <thead>
+      <tr>
+        <th style="width:84px;">Photo</th>
+        <th style="width:90px;">ID</th>
+        <th>Name</th>
+        <th style="width:220px;">Email</th>
+        <th style="width:130px;">Role</th>
+        <th style="width:130px;">Priority</th>
+        <th style="width:170px;">Updated</th>
+        <th style="width:190px;">Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="m : ${teamMembers.content}">
+        <td>
+          <img class="thumb"
+               th:src="${(m.photo != null and !#strings.isEmpty(m.photo)) ? m.photo : '/img/fallback.png'}"
+               alt="photo"/>
+        </td>
+        <td class="muted" th:text="${m.id}">1</td>
+        <td>
+          <a th:href="@{/team-member/{id}(id=${m.id})}"
+             th:text="${m.name}">Name</a>
+        </td>
+        <td>
+          <span th:text="${(m.email != null and !#strings.isEmpty(m.email)) ? m.email : '-'}">-</span>
+        </td>
+        <td>
+                    <span class="badge"
+                          th:text="${m.role != null ? m.role : '-'}">ROLE</span>
+        </td>
+        <td>
+          <span th:text="${m.rolePriority != null ? m.rolePriority : 0}">0</span>
+        </td>
+        <td class="muted"
+            th:text="${m.updatedAt != null ? #temporals.format(m.updatedAt, 'yyyy-MM-dd HH:mm') : '-'}">-</td>
+
+        <td>
+          <div class="actions">
+            <a class="btn btn-secondary btn-sm"
+               th:href="@{/team-member/{id}(id=${m.id})}">Detail</a>
+
+            <form th:action="@{/team-member/{id}/delete(id=${m.id})}"
+                  method="post" style="display:inline;">
+              <button type="submit"
+                      class="btn btn-danger btn-sm"
+                      onclick="return confirm('정말 삭제할까요?');">
+                Delete
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <!-- pagination -->
+    <div class="pagination" th:if="${teamMembers != null and teamMembers.totalPages > 1}">
+      <div class="muted">
+        <span th:text="|Total: ${teamMembers.totalElements} |">Total: 0</span>
+        <span th:text="| (Page ${teamMembers.number + 1} / ${teamMembers.totalPages})|">(Page 1/1)</span>
+      </div>
+
+      <div class="page-links">
+        <!-- prev -->
+        <a class="page-link"
+           th:classappend="${teamMembers.first} ? 'disabled' : ''"
+           th:href="@{/team-member/list(page=${teamMembers.number - 1}, size=${teamMembers.size}, sort='rolePriority,asc')}">
+          Prev
+        </a>
+
+        <!-- numbers: 간단히 전체 페이지 -->
+        <a class="page-link"
+           th:each="i : ${#numbers.sequence(0, teamMembers.totalPages - 1)}"
+           th:text="${i + 1}"
+           th:classappend="${i == teamMembers.number} ? 'active' : ''"
+           th:href="@{/team-member/list(page=${i}, size=${teamMembers.size}, sort='rolePriority,asc')}">
+          1
+        </a>
+
+        <!-- next -->
+        <a class="page-link"
+           th:classappend="${teamMembers.last} ? 'disabled' : ''"
+           th:href="@{/team-member/list(page=${teamMembers.number + 1}, size=${teamMembers.size}, sort='rolePriority,asc')}">
+          Next
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>
