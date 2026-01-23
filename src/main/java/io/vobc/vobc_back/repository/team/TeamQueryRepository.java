@@ -45,6 +45,7 @@ public interface TeamQueryRepository extends JpaRepository<Team, Long> {
         left join ResumeTranslation rt
             on rt.resume = r and rt.languageCode = :languageCode
         where r.teamMember.id in :teamMemberIds
+        order by r.id asc
     """)
     List<ResumeDto> findResumesInIds(@Param("teamMemberIds") List<Long> teamMemberIds,
                                      @Param("languageCode") LanguageCode languageCode);

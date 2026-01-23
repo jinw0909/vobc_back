@@ -31,6 +31,7 @@ public class TeamMember {
 
     @JsonIgnore
     @OneToMany(mappedBy = "teamMember", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
     private List<Resume> resumes = new ArrayList<>();
 
     @JsonIgnore
@@ -72,11 +73,6 @@ public class TeamMember {
         return teamMember;
     }
 
-    public void removeResume(Resume resume) {
-        resumes.remove(resume);
-        resume.setTeamMember(null);
-    }
-
     public void changeTeam(Team team) {
         if (this.team != null) {
             this.team.getMembers().remove(this); //기존 컬렉션에서 제거
@@ -90,6 +86,11 @@ public class TeamMember {
     public void addResume(Resume resume) {
         this.resumes.add(resume);
         resume.setTeamMember(this);
+    }
+
+    public void removeResume(Resume resume) {
+        resumes.remove(resume);
+        resume.setTeamMember(null);
     }
 
     public void reOrder() {

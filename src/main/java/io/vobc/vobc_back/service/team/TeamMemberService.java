@@ -142,9 +142,17 @@ public class TeamMemberService {
         }
 
         // 2) 삭제: 기존에 있었는데 폼에 없는 것
-        teamMember.getResumes().removeIf(r ->
-                r.getId() != null && !formIds.contains(r.getId())
-        );
+//        teamMember.getResumes().removeIf(r ->
+//                r.getId() != null && !formIds.contains(r.getId())
+//        );
+
+        for (Iterator<Resume> it = teamMember.getResumes().iterator(); it.hasNext();) {
+            Resume r = it.next();
+            if (r.getId()!=null && !formIds.contains(r.getId())) {
+                it.remove();
+                r.setTeamMember(null);
+            }
+        }
     }
 
     @Transactional(readOnly = true)

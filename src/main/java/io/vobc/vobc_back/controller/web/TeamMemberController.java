@@ -89,6 +89,10 @@ public class TeamMemberController {
     public String edit(@PathVariable Long teamMemberId,
                        @ModelAttribute TeamMemberForm form) {
 
+        if (!teamMemberId.equals(form.getId())) {
+            throw new IllegalArgumentException("Path id and form id mismatch");
+        }
+
         teamMemberService.updateTeamMember(form);
         return "redirect:/team-member/" + teamMemberId;
     }
