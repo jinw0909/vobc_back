@@ -3,13 +3,16 @@ package io.vobc.vobc_back.controller.web;
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.article.Article;
 import io.vobc.vobc_back.domain.article.Category;
+import io.vobc.vobc_back.domain.article.Topic;
 import io.vobc.vobc_back.domain.publisher.Publisher;
 import io.vobc.vobc_back.dto.article.ArticleForm;
+import io.vobc.vobc_back.dto.article.ArticleTopicForm;
 import io.vobc.vobc_back.dto.article.ArticleTranslationForm;
 import io.vobc.vobc_back.exception.ImageUploadException;
 import io.vobc.vobc_back.repository.article.ArticleRepository;
 import io.vobc.vobc_back.repository.publisher.PublisherRepository;
 import io.vobc.vobc_back.service.ArticleService;
+import io.vobc.vobc_back.service.TopicService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -23,7 +26,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
+
 
 @Controller
 @RequestMapping("/article")
@@ -33,6 +38,7 @@ public class ArticleController {
     private final ArticleService articleService;
     private final ArticleRepository articleRepository;
     private final PublisherRepository publisherRepository;
+    private final TopicService topicService;
 
     @GetMapping("/create")
     public String createForm(Model model) {
@@ -47,12 +53,39 @@ public class ArticleController {
     public String editForm(@RequestParam("id") Long id, Model model) {
         ArticleForm articleForm = articleService.findById(id);
         Map<Long, String> publishers = articleService.getPublishers();
+        List<Topic> topicList = topicService.getAllTopics();
+
+        // ✅ topic 선택/primary/sort를 템플릿이 쓰기 쉬운 형태로 내려줌
+        var selectedTopicIds = articleForm.getArticleTopics().stream()
+                .map(ArticleTopicForm::getTopicId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        Long primaryTopicId = articleForm.getArticleTopics().stream()
+                .filter(ArticleTopicForm::isPrimaryTopic)
+                .map(ArticleTopicForm::getTopicId)
+                .findFirst()
+                .orElse(null);
+
+        var topicSortMap = articleForm.getArticleTopics().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        ArticleTopicForm::getTopicId,
+                        ArticleTopicForm::getSortOrder,
+                        (a, b) -> a, // 중복 방지
+                        java.util.LinkedHashMap::new
+                ));
+
+        model.addAttribute("selectedTopicIds", selectedTopicIds);
+        model.addAttribute("primaryTopicId", primaryTopicId);
+        model.addAttribute("topicSortMap", topicSortMap);
+
         model.addAttribute("form", articleForm);
+        model.addAttribute("topics", topicList);
         model.addAttribute("mode", "edit");
         model.addAttribute("articleId", id);
         model.addAttribute("publishers", publishers);
         return "article/form";
     }
+
 
     @GetMapping("/detail")
     public String detail(@RequestParam("id") Long id, Model model) {
@@ -60,6 +93,7 @@ public class ArticleController {
         model.addAttribute("article", articleService.findById(id));
         model.addAttribute("langs", articleService.getLanguages(id));
         model.addAttribute("allLangs", io.vobc.vobc_back.domain.LanguageCode.values());
+        model.addAttribute("articleTopics", articleService.getTopics(id));
         return "article/detail";
     }
 
@@ -150,6 +184,9 @@ public class ArticleController {
 
         return "redirect:/article/translate/" + id + "?lang=" + form.getLanguageCode().getCode();
     }
+
+
+
 
     @GetMapping("/feed")
     public void feed() {

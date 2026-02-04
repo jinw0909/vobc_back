@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+<style>
+    .list-group-item a {
+        color: inherit;
+        text-decoration: none;
+    }
+</style>
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<main class="container py-4">
+
+    <div class="mb-3">
+        <h1 class="h3 mb-1" th:text="${topic.name}">Topic Name</h1>
+        <div class="text-muted small">
+            Created at
+            <span th:text="${#temporals.format(topic.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <a class="btn btn-outline-dark"
+           th:href="@{/topic/{id}/edit(id=${topic.id})}">
+            Edit
+        </a>
+        <a class="btn btn-outline-secondary"
+           th:href="@{/topic/list}">
+            Back to list
+        </a>
+    </div>
+
+    <!-- 관련 Article 목록 -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light fw-semibold">
+            Related Articles
+        </div>
+        <ul class="list-group list-group-flush">
+            <li th:if="${#lists.isEmpty(topic.articles)}"
+                class="list-group-item text-muted">
+                연결된 Article이 없습니다.
+            </li>
+
+            <li class="list-group-item"
+                th:each="at : ${topic.articles}">
+                <a th:href="@{/article/detail(id=${at.article.id})}">
+                    <div class="fw-semibold"
+                         th:text="${at.article.title}">
+                        Article title
+                    </div>
+                    <div class="text-muted small"
+                         th:text="${at.article.summary}">
+                        Article summary
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+</main>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

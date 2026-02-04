@@ -1,7 +1,10 @@
 package io.vobc.vobc_back.domain.article;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 
+@Getter
 public enum Category {
 
     editorial("editorial"), event("event"), interview("interview"), publicity("publicity"), news("news");
@@ -10,10 +13,6 @@ public enum Category {
 
     Category(String type) {
         this.type = type;
-    }
-
-    public String getType() {
-        return type;
     }
 
     public static Category from(String type) {
@@ -26,7 +25,5 @@ public enum Category {
                 .findFirst()
                 .orElse(null);
     }
-
-
 
 }

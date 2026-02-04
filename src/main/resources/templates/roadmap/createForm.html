@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <th:block th:replace="~{layout/head :: head}"></th:block>
+
+    <!-- roadmap 전용 css -->
+    <link rel="stylesheet" th:href="@{/css/roadmap.css}">
+
+    <!-- 이 페이지에서만 쓰는 보정 CSS (추가 정의 OK 라 했으니 여기에) -->
+    <style>
+        /* 헤더/푸터는 건드리지 않고, 본문만 보기 좋게 */
+        .roadmap-wrap {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .page-title {
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .form-card {
+            border: 1px solid rgba(0,0,0,.08);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.06);
+            overflow: hidden;
+        }
+
+        .form-card .card-header {
+            background: #fff;
+            border-bottom: 1px solid rgba(0,0,0,.06);
+        }
+
+        .form-help {
+            color: rgba(0,0,0,.55);
+            font-size: .9rem;
+        }
+
+        /* bootstrap 기본 form-control도 충분히 좋지만 살짝만 */
+        .form-control, .form-select {
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+
+        textarea.form-control {
+            min-height: 180px;
+        }
+
+        .sticky-actions {
+            position: sticky;
+            bottom: 0;
+            background: rgba(255,255,255,.92);
+            backdrop-filter: blur(8px);
+            border-top: 1px solid rgba(0,0,0,.06);
+            padding: 12px 16px;
+            margin: 0 -16px -16px; /* card-body padding 맞추기 */
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<main class="roadmap-wrap">
+    <!-- 상단 헤더 영역 -->
+    <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+        <div>
+            <h1 class="page-title mb-1">Create Roadmap</h1>
+            <div class="form-help">로드맵 항목을 생성합니다. 내용(Content)은 HTML로 저장됩니다.</div>
+        </div>
+        <a class="btn btn-outline-secondary"
+           th:href="@{/roadmap/list}">
+            목록으로
+        </a>
+    </div>
+
+    <!-- 카드 -->
+    <div class="card form-card">
+        <div class="card-header py-3 px-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="fw-semibold">기본 정보</div>
+                <span class="badge text-bg-light">Draft</span>
+            </div>
+        </div>
+
+        <div class="card-body p-4">
+            <form th:action="@{/roadmap/0/new}" method="post" th:object="${form}">
+                <div class="row g-3">
+                    <!-- Title -->
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" th:field="*{title}" required
+                               placeholder="예) 2026 Q1 Product Launch" />
+                    </div>
+
+                    <!-- Description -->
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea class="form-control" th:field="*{description}"
+                                  placeholder="리스트에 보일 요약 설명"></textarea>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Content</label>
+                        <textarea class="form-control" th:field="*{content}"
+                                  placeholder="상세 본문 (HTML 가능)"></textarea>
+                        <div class="form-text">HTML을 렌더링할 거면 detail에서 th:utext를 사용하세요.</div>
+                    </div>
+
+                    <!-- Date / Order -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Roadmap Date</label>
+                        <input type="date" class="form-control" th:field="*{roadmapDate}" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Display Order</label>
+                        <input type="number" class="form-control" th:field="*{displayOrder}"
+                               placeholder="0" />
+                        <div class="form-text">작을수록 먼저 노출되게 쓰는 게 보통 편합니다.</div>
+                    </div>
+
+                    <!-- Thumbnail -->
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Thumbnail</label>
+
+                        <!-- 1) URL input (DB에 들어갈 값) -->
+                        <input type="text"
+                               class="form-control mb-2"
+                               th:field="*{thumbnail}"
+                               id="thumbnailUrl"
+                               placeholder="업로드하면 자동으로 URL이 채워집니다. 또는 직접 URL 입력" />
+
+                        <!-- 2) File input -->
+                        <input class="form-control"
+                               type="file"
+                               id="thumbnailFile"
+                               accept="image/*" />
+
+                        <!-- 3) Upload action row -->
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-primary" id="uploadThumbBtn">
+                                Upload
+                            </button>
+                            <div class="form-text" id="thumbStatus"></div>
+                        </div>
+
+                        <!-- 4) Preview -->
+                        <div class="mt-3" id="thumbPreviewWrap" style="display:none;">
+                            <div class="border rounded-3 p-2" style="max-width: 420px;">
+                                <img id="thumbPreview" alt="thumbnail preview" style="width:100%; display:block; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Show -->
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" th:field="*{show}">
+                            <label class="form-check-label">Show (노출)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions (sticky) -->
+                <div class="sticky-actions mt-4 rounded-bottom-4">
+                    <div class="d-flex justify-content-end gap-2">
+                        <a class="btn btn-light" th:href="@{/roadmap/list}">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+<script>
+    (function () {
+        const fileInput = document.getElementById('thumbnailFile');
+        const uploadBtn = document.getElementById('uploadThumbBtn');
+        const statusEl = document.getElementById('thumbStatus');
+        const urlInput = document.getElementById('thumbnailUrl'); // th:field가 id를 만들지만 안정적으로 지정
+        const previewWrap = document.getElementById('thumbPreviewWrap');
+        const previewImg = document.getElementById('thumbPreview');
+
+        function setStatus(msg, type) {
+            statusEl.textContent = msg || '';
+            statusEl.className = 'form-text ' + (type === 'error' ? 'text-danger' : type === 'ok' ? 'text-success' : '');
+        }
+
+        // 로컬 미리보기
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) {
+                previewWrap.style.display = 'none';
+                setStatus('', '');
+                return;
+            }
+            if (!file.type.startsWith('image/')) {
+                setStatus('이미지 파일만 업로드할 수 있어요.', 'error');
+                fileInput.value = '';
+                previewWrap.style.display = 'none';
+                return;
+            }
+            const objUrl = URL.createObjectURL(file);
+            previewImg.src = objUrl;
+            previewWrap.style.display = 'block';
+            setStatus('업로드 버튼을 눌러 S3에 업로드하세요.', '');
+        });
+
+        // S3 업로드
+        uploadBtn.addEventListener('click', async () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) {
+                setStatus('먼저 파일을 선택하세요.', 'error');
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            setStatus('업로드 중...', '');
+
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+
+                const res = await fetch('/api/upload/thumbnail', {
+                    method: 'POST',
+                    body: fd
+                    // ※ 같은 도메인/세션이면 credentials 필요 없음
+                    // credentials: 'same-origin'
+                });
+
+                if (!res.ok) {
+                    const text = await res.text().catch(() => '');
+                    throw new Error('Upload failed: ' + res.status + ' ' + text);
+                }
+
+                const data = await res.json();
+                if (!data.url) throw new Error('No url in response');
+
+                // URL input 채우기
+                urlInput.value = data.url;
+
+                // Preview를 업로드된 URL로 교체
+                previewImg.src = data.url;
+                previewWrap.style.display = 'block';
+
+                setStatus('업로드 완료! URL이 자동 입력되었습니다.', 'ok');
+            } catch (e) {
+                console.error(e);
+                setStatus('업로드 실패: ' + (e.message || e), 'error');
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        });
+    })();
+</script>
+</body>
+</html>

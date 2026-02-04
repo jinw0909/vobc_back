@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<main class="container py-4">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h3 mb-1">Topics</h1>
+            <div class="text-muted small">토픽 관리 목록</div>
+        </div>
+
+        <a class="btn btn-success" th:href="@{/topic/new}">
+            + 새 Topic 생성
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 90px;">ID</th>
+                        <th>Name</th>
+                        <th style="width: 180px;">Created</th>
+                        <th class="text-end" style="width: 200px;">Action</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr th:if="${list.empty}">
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            데이터가 없습니다.
+                        </td>
+                    </tr>
+
+                    <tr th:each="t : ${list.content}">
+                        <td class="text-muted" th:text="${t.id}">1</td>
+                        <td>
+                            <a class="fw-semibold text-decoration-none"
+                               th:href="@{/topic/{id}(id=${t.id})}"
+                               th:text="${t.name}">
+                                Topic name
+                            </a>
+                        </td>
+                        <td th:text="${#temporals.format(t.createdAt, 'yyyy-MM-dd HH:mm')}">
+                            2026-02-04
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-primary"
+                               th:href="@{/topic/{id}(id=${t.id})}">
+                                Detail
+                            </a>
+                            <a class="btn btn-sm btn-outline-dark"
+                               th:href="@{/topic/{id}/edit(id=${t.id})}">
+                                Edit
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+</body>
+</html>

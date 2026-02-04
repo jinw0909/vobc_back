@@ -1,6 +1,7 @@
 package io.vobc.vobc_back.dto.article;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.article.Article;
 import io.vobc.vobc_back.domain.article.ArticleTranslation;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Getter @Setter
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ArticleResponse {
     private Long id;
     private String title;
@@ -60,6 +62,19 @@ public class ArticleResponse {
         this.link = link;
     }
 
+    public ArticleResponse(
+            Long id,
+            String title,
+            String publisherName,
+            LocalDate releaseDate,
+            String thumbnail
+    ) {
+        this.id = id;
+        this.title = title;
+        this.publisherName = publisherName;
+        this.releaseDate = releaseDate;
+        this.thumbnail = thumbnail;
+    }
 
     public static ArticleResponse create(Article article) {
         ArticleResponse r = new ArticleResponse();

@@ -2,6 +2,7 @@ package io.vobc.vobc_back.dto.article;
 
 import io.vobc.vobc_back.domain.article.Article;
 import io.vobc.vobc_back.domain.article.Category;
+import io.vobc.vobc_back.dto.TopicForm;
 import io.vobc.vobc_back.dto.publisher.PublisherForm;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter @Setter
@@ -27,6 +29,8 @@ public class ArticleForm {
     private Long publisherId;
 
     private PublisherForm publisher;
+
+    private List<ArticleTopicForm> articleTopics = new ArrayList<>();
 
     private List<MultipartFile> files;
 
@@ -47,6 +51,11 @@ public class ArticleForm {
             publisherForm.setId(article.getPublisher().getId());
             publisherForm.setName(article.getPublisher().getName());
             publisher = publisherForm;
+        }
+
+        if (article.getTopics() != null) {
+            this.articleTopics.addAll(article.getTopics().stream()
+                    .map(ArticleTopicForm::new).toList());
         }
     }
 

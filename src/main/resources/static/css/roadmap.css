@@ -1,0 +1,67 @@
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1e40af;
+    --border: #e5e7eb;
+    --muted: #6b7280;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge.show {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge.hide {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.thumbnail {
+    margin: 20px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.thumbnail img {
+    width: 100%;
+    display: block;
+}
+
+.meta {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.roadmap-page .card {
+    padding: 24px;
+}
+
+.roadmap-page .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.roadmap-page .table thead th {
+    color: #6b7280;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.roadmap-page .pagination .page-link {
+    color: var(--primary);
+}
+
+.roadmap-page .pagination .active .page-link {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+

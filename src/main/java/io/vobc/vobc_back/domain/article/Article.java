@@ -60,6 +60,9 @@ public class Article {
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleTranslation> translations = new ArrayList<>();
 
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArticleTopic> topics = new ArrayList<>();
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -101,6 +104,16 @@ public class Article {
     public void removeMedia(Media m) {
         media.remove(m);
         m.setArticle(null);
+    }
+
+    public void addTopic(ArticleTopic topic) {
+        topics.add(topic);
+        topic.setArticle(this);
+    }
+
+    public void removeTopic(ArticleTopic topic) {
+        topics.remove(topic);
+        topic.setArticle(null);
     }
 
 

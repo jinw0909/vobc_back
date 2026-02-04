@@ -43,4 +43,11 @@ public class ArticleApiController {
         return articleService.getTranslatedSingle(id, languageCode);
     }
 
+    @GetMapping("/{articleId}/related")
+    public List<ArticleResponse> related(@PathVariable Long articleId,
+                                         @RequestParam(defaultValue = "en") String lang) {
+        LanguageCode languageCode = LanguageCode.from(lang);
+        return articleService.getRelatedArticles(articleId, languageCode);
+    }
+
 }

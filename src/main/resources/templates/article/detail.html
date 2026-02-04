@@ -118,6 +118,48 @@
         box-shadow: 0 6px 14px rgba(13,110,253,.12);
     }
 
+    /* =========================
+       ✅ Topics (Tags) UI 추가
+       ========================= */
+    .topic-list{
+        display:flex;
+        flex-wrap:wrap;
+        gap:.5rem;
+        margin-top: 12px;
+    }
+    .topic-pill{
+        display:inline-flex;
+        align-items:center;
+        gap:.4rem;
+        padding:.42rem .72rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0,0,0,.10);
+        background: #f8f9fa;
+        font-weight: 650;
+        color:#212529;
+        text-decoration:none;
+        transition: transform .06s ease, box-shadow .12s ease;
+    }
+    .topic-pill:hover{
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(0,0,0,.08);
+        color:#212529;
+        text-decoration:none;
+    }
+    .topic-pill.primary{
+        background: rgba(13,110,253,.10);
+        border-color: rgba(13,110,253,.35);
+        box-shadow: 0 6px 14px rgba(13,110,253,.10);
+    }
+    .topic-badge{
+        font-size: .72rem;
+        font-weight: 900;
+        padding: .18rem .45rem;
+        border-radius: 999px;
+        background: #0d6efd;
+        color: #fff;
+        line-height: 1;
+    }
 </style>
 
 <body class="bg-light">
@@ -140,7 +182,6 @@
             </a>
         </div>
 
-
         <h1 class="article-title" th:text="${article.title}">제목</h1>
 
         <!-- ✅ summary -->
@@ -157,8 +198,8 @@
 
         <!-- ✅ meta: author / publisher / date / category -->
         <div class="article-meta">
-      <span class="dot" th:if="${article.author != null and !#strings.isEmpty(article.author)}"
-            th:text="${'Author: ' + article.author}">Author</span>
+            <span class="dot" th:if="${article.author != null and !#strings.isEmpty(article.author)}"
+                  th:text="${'Author: ' + article.author}">Author</span>
 
             <span class="dot" th:if="${article.publisher != null and article.publisher.name != null and !#strings.isEmpty(article.publisher.name)}"
                   th:text="${'Publisher: ' + article.publisher.name}">Publisher</span>
@@ -168,6 +209,25 @@
 
             <span class="dot" th:if="${article.category != null}"
                   th:text="${'Category: ' + article.category.type}">news</span>
+        </div>
+
+        <!-- ✅ ✅ Topics(=Tags) 추가: 여기만 추가됨 -->
+        <div class="topic-list" th:if="${articleTopics != null and !#lists.isEmpty(articleTopics)}">
+            <a th:each="at : ${articleTopics}"
+               th:if="${at.topic != null}"
+               th:href="@{/topic/{id}(id=${at.topic.id})}"
+               class="topic-pill"
+               th:classappend="${at.primaryTopic} ? ' primary' : ''">
+
+                <span th:text="${at.topic.name}">Topic</span>
+                <span th:if="${at.primaryTopic}" class="topic-badge">PRIMARY</span>
+            </a>
+        </div>
+
+        <!-- topic 없을 때는 아예 표시 안 하려면 아래 div 삭제해도 됨 -->
+        <div class="text-muted small mt-2"
+             th:if="${articleTopics == null or #lists.isEmpty(articleTopics)}">
+            (연결된 Topic 없음)
         </div>
 
         <!-- ✅ thumbnail 작게 -->

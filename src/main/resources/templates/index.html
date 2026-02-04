@@ -1,46 +1,280 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<th:block th:replace="~{layout/head :: head}"></th:block>
+<head th:replace="~{layout/head :: head}"></head>
 
-<body>
+<style>
+    .admin-hero {
+        background: linear-gradient(135deg, rgba(13,110,253,.10), rgba(32,201,151,.10));
+        border: 1px solid rgba(0,0,0,.06);
+        border-radius: 18px;
+        padding: 22px;
+    }
+    .admin-hero .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        object-fit: contain;
+        background: rgba(255,255,255,.75);
+        border: 1px solid rgba(0,0,0,.06);
+        padding: 6px;
+    }
+    .admin-title {
+        line-height: 1.1;
+    }
+
+    .dash-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 14px;
+    }
+    .dash-card {
+        grid-column: span 12;
+        border: 1px solid rgba(0,0,0,.06);
+        border-radius: 16px;
+        background: #fff;
+        transition: transform .08s ease, box-shadow .15s ease, border-color .15s ease;
+        overflow: hidden;
+    }
+    .dash-card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(13,110,253,.18);
+        box-shadow: 0 14px 30px rgba(0,0,0,.06);
+    }
+    @media (min-width: 768px) {
+        .dash-card { grid-column: span 6; }
+    }
+    @media (min-width: 1200px) {
+        .dash-card { grid-column: span 4; }
+    }
+
+    .dash-card a {
+        color: inherit;
+        text-decoration: none;
+        display: block;
+        padding: 16px;
+    }
+    .dash-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(13,110,253,.08);
+        border: 1px solid rgba(13,110,253,.12);
+    }
+    .dash-icon.secondary {
+        background: rgba(108,117,125,.08);
+        border-color: rgba(108,117,125,.14);
+    }
+    .dash-icon.success {
+        background: rgba(32,201,151,.10);
+        border-color: rgba(32,201,151,.16);
+    }
+    .dash-meta {
+        color: #6c757d;
+        font-size: .92rem;
+    }
+    .section-title {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap: 10px;
+        margin-top: 18px;
+        margin-bottom: 10px;
+    }
+    .section-title h2 {
+        font-size: 1rem;
+        margin: 0;
+        font-weight: 800;
+        color: rgba(33,37,41,.85);
+        letter-spacing: .2px;
+    }
+    .chip {
+        font-size: .8rem;
+        color: rgba(33,37,41,.7);
+        background: rgba(0,0,0,.04);
+        border: 1px solid rgba(0,0,0,.06);
+        padding: 4px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+</style>
+
+<body class="bg-light">
 <th:block th:replace="~{layout/header :: header}"></th:block>
-<div class="container mt-4">
-    <h1 class="mb-4">Welcome!</h1>
 
-    <div class="d-flex flex-wrap gap-3 align-items-center">
+<main class="container py-4">
 
-        <!-- ✅ Article 목록 -->
-        <a th:href="@{/article/list}" class="btn btn-primary">
-            <i class="fa-solid fa-newspaper me-1"></i>
-            Article List
-        </a>
+    <!-- HERO -->
+    <div class="admin-hero mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <img class="logo" th:src="@{/img/logo.png}" alt="logo" />
+            <div class="flex-grow-1">
+                <h1 class="h3 mb-1 admin-title">Admin Dashboard</h1>
+                <div class="text-muted">
+                    Manage articles, publishers, topics, and organization resources in one place.
+                </div>
+            </div>
 
-        <!-- ✅ Publisher 목록 (오타 수정: publisher) -->
-        <a th:href="@{/publisher/list}" class="btn btn-outline-primary">
-            <i class="fa-solid fa-building me-1"></i>
-            Publisher List
-        </a>
-
-        <!-- 게시글 목록 -->
-        <a th:href="@{/post/list}" class="btn btn-outline-secondary">
-            <i class="fa-solid fa-file-lines me-1"></i>
-            Post List
-        </a>
-
-        <!-- 태그 목록 -->
-        <a th:href="@{/tag/list}" class="btn btn-outline-secondary">
-            <i class="fa-solid fa-tags me-1"></i>
-            Tag List
-        </a>
-
-        <!-- 그냥 예제용 버튼 -->
-        <button class="btn btn-success" type="button">
-            Bootstrap Button
-        </button>
-
-        <i class="fa-solid fa-heart text-danger fs-4"></i>
+            <div class="d-none d-md-flex gap-2">
+                <a th:href="@{/article/list}" class="btn btn-primary">
+                    <i class="fa-solid fa-newspaper me-1"></i>
+                    Articles
+                </a>
+                <a th:href="@{/post/list}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-file-lines me-1"></i>
+                    Posts
+                </a>
+            </div>
+        </div>
     </div>
-</div>
+
+    <!-- CONTENT MANAGEMENT -->
+    <div class="section-title">
+        <h2>Content Management</h2>
+        <span class="chip">Articles / Posts / Topics</span>
+    </div>
+
+    <div class="dash-grid">
+        <!-- Article -->
+        <div class="dash-card">
+            <a th:href="@{/article/list}">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-icon">
+                        <i class="fa-solid fa-newspaper"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Article List</div>
+                        <div class="dash-meta">Create, edit, and publish articles</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Publisher -->
+        <div class="dash-card">
+            <a th:href="@{/publisher/list}">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-icon success">
+                        <i class="fa-solid fa-building"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Publisher List</div>
+                        <div class="dash-meta">Manage publisher profiles and metadata</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Topic -->
+        <div class="dash-card">
+            <a th:href="@{/topic/list}">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Topic List</div>
+                        <div class="dash-meta">Create topics and link related articles</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Post -->
+        <div class="dash-card">
+            <a th:href="@{/post/list}">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-icon secondary">
+                        <i class="fa-solid fa-file-lines"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Post List</div>
+                        <div class="dash-meta">Manage posts and blog-style content</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Tag -->
+        <div class="dash-card">
+            <a th:href="@{/tag/list}">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-icon secondary">
+                        <i class="fa-solid fa-tags"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Tag List</div>
+                        <div class="dash-meta">Maintain tag taxonomy and classification</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Terms -->
+        <div class="dash-card">
+            <a th:href="@{/term/list}">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-icon secondary">
+                        <i class="fa-solid fa-file-contract"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Terms List</div>
+                        <div class="dash-meta">Manage terms, policies, and legal documents</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ORGANIZATION -->
+    <div class="section-title">
+        <h2>Organization</h2>
+        <span class="chip">Teams / Members</span>
+    </div>
+
+    <div class="dash-grid">
+        <!-- Team -->
+        <div class="dash-card">
+            <a th:href="@{/team/list}">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-icon success">
+                        <i class="fa-solid fa-people-group"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Team List</div>
+                        <div class="dash-meta">Manage departments and team structure</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Team Member -->
+        <div class="dash-card">
+            <a th:href="@{/team-member/list}">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-icon success">
+                        <i class="fa-solid fa-user-gear"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Team Member List</div>
+                        <div class="dash-meta">Manage team members and roles</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+
+</main>
 
 <th:block th:replace="~{layout/footer :: footer}"></th:block>
 </body>
