@@ -1,6 +1,7 @@
 package io.vobc.vobc_back.controller.web;
 
 import io.vobc.vobc_back.domain.LanguageCode;
+import io.vobc.vobc_back.domain.Tag;
 import io.vobc.vobc_back.domain.post.Post;
 import io.vobc.vobc_back.domain.post.PostTag;
 import io.vobc.vobc_back.domain.post.Translation;
@@ -70,6 +71,61 @@ public class PostController {
         model.addAttribute("post", new PostForm());
         model.addAttribute("allTags", tagService.getAllTags());
         return "post/form";
+    }
+
+    @GetMapping("/{postId}")
+    public String detailPage(@PathVariable Long postId,
+                             Model model) {
+        model.addAttribute("post", postService.getPostWithTags(postId));
+        List<String> langs = postService.getLanguageCodesById(postId).stream()
+                .map(lc -> lc.getCode().toLowerCase())
+                .toList();
+
+        model.addAttribute("langs", langs);
+        return "post/detailPage";
+    }
+
+    @GetMapping("/new")
+    public String createNewForm(Model model) {
+        model.addAttribute("post", new PostForm());
+        model.addAttribute("allTags", tagService.getAllTags());
+        return "post/createForm";
+    }
+
+    @PostMapping("/new")
+    @ResponseBody
+    public Map<String, Object> createNew(@ModelAttribute PostForm form) {
+        Long postId = postService.create(form);
+        return Map.of(
+                "id", postId,
+                "redirectUrl", "/post/" + postId
+        );
+    }
+
+    @GetMapping("/{postId}/edit")
+    public String editPostForm(@PathVariable Long postId, Model model) {
+        Post post = postService.getPostWithTags(postId);
+        Map<Long, PostTagForm> postTagByTagId = post.getPostTags().stream().collect(Collectors.toMap(
+                pt -> pt.getTag().getId(),
+                PostTagForm::new
+        ));
+        model.addAttribute("post", new PostForm(post));
+        model.addAttribute("allTags", tagService.getAllTags());
+        model.addAttribute("postTagByTagId", postTagByTagId);
+        return "post/editForm";
+    }
+
+    @PostMapping("/{postId}/edit")
+    @ResponseBody
+    public Map<String, Object> editPost(@PathVariable Long postId,
+                                        @ModelAttribute PostForm form) {
+        Long updatedId = postService.update(postId, form);
+
+        return Map.of(
+                "id", updatedId,
+                "redirectUrl", "/post/" + updatedId
+        );
+
     }
 
     @GetMapping("/update")

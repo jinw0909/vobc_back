@@ -35,7 +35,7 @@ public class TeamMemberService {
 
     @Transactional(readOnly = true)
     public Page<TeamMember> getAll(Pageable pageable) {
-        return teamMemberRepository.findAll(pageable);
+        return teamMemberRepository.findAllWithTeam(pageable);
     }
 
     @Transactional
@@ -204,5 +204,14 @@ public class TeamMemberService {
     public void reOrder() {
         List<TeamMember> all = teamMemberRepository.findAll();
         all.forEach(TeamMember::reOrder);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TeamMember> search(Pageable pageable, String name, List<Long> teamId, List<TeamRole> roles) {
+        if (name != null && name.isBlank()) { name = null;}
+        if (teamId != null && teamId.isEmpty()) { teamId = null;}
+        if (roles != null && roles.isEmpty()) { roles = null;}
+
+        return teamMemberRepository.searchWithTeam(name, teamId, roles, pageable);
     }
 }

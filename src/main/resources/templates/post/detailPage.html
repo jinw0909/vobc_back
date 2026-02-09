@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+    .content-scroll-box {
+        max-height: 480px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .content-scroll-box img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 1rem auto;
+        width: 100%;
+    }
+    .content-scroll-box p {
+        margin-bottom: 1rem;
+    }
+    .content-scroll-box h4,
+    .content-scroll-box h5,
+    .content-scroll-box h6 {
+        margin-top: 1.8rem;
+        margin-bottom: 0.8rem;
+    }
+    .content-scroll-box ul {
+        margin-bottom: 1.2rem;
+    }
+    .content-scroll-box figure > img {
+        width: 33%;
+    }
+
+    pre code {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .badge-primary-tag {
+        background-color: rgba(13,110,253,.12) !important;
+        color: #0d6efd !important;
+        border: 1px solid rgba(13,110,253,.35) !important;
+        font-weight: 700 !important;
+    }
+
+    .badge-primary-tag::before{
+        content: "대표";
+        display: inline-block;
+        margin-right: .4rem;
+        padding: .1rem .35rem;
+        border-radius: 999px;
+        background-color: rgba(13,110,253,.18);
+        color: #0d6efd;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container mt-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <h2 class="mb-0" th:text="${post.title}">게시글 제목</h2>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+
+            <!-- ✅ 번역 버튼 그룹 (유지) -->
+            <div class="btn-group" role="group" aria-label="Translate">
+                <a class="btn btn-sm lang-btn"
+                   th:classappend="${langs.contains('kr')} ? ' btn-primary ' : ' btn-outline-primary'"
+                   th:href="@{/post/translate(id=${post.id}, languageCode='kr')}">KR</a>
+
+                <a class="btn btn-sm lang-btn"
+                   th:classappend="${langs.contains('jp')} ? ' btn-primary is-selected' : ' btn-outline-primary'"
+                   th:href="@{/post/translate(id=${post.id}, languageCode='jp')}">JP</a>
+
+                <a class="btn btn-sm lang-btn"
+                   th:classappend="${langs.contains('cn')} ? ' btn-primary is-selected' : ' btn-outline-primary'"
+                   th:href="@{/post/translate(id=${post.id}, languageCode='cn')}">CN</a>
+
+                <a class="btn btn-sm lang-btn"
+                   th:classappend="${langs.contains('en')} ? ' btn-primary is-selected' : ' btn-outline-primary'"
+                   th:href="@{/post/translate(id=${post.id}, languageCode='en')}">EN</a>
+            </div>
+
+            <!-- 수정/목록 -->
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/post/{postId}/edit(postId=${post.id})}">수정</a>
+            <a class="btn btn-sm btn-outline-dark" th:href="@{/post/list}">목록</a>
+        </div>
+    </div>
+
+    <!-- 메타 정보 -->
+    <div class="mb-3 text-muted">
+        <span th:text="'작성자: ' + ${post.author}"></span>
+        <span class="ms-3"
+              th:if="${post.releaseDate != null}"
+              th:text="'발행일: ' + ${#temporals.format(post.releaseDate, 'yyyy-MM-dd')}"></span>
+    </div>
+
+    <!-- 썸네일 -->
+    <div class="mb-3"
+         th:if="${post.thumbnail != null and !#strings.isEmpty(post.thumbnail)}">
+        <strong>썸네일</strong>
+        <div class="mt-2">
+            <img th:src="${post.thumbnail}"
+                 alt="썸네일"
+                 class="img-thumbnail mb-1"
+                 style="max-height: 200px;">
+            <div class="small text-muted text-truncate"
+                 th:text="${post.thumbnail}"></div>
+        </div>
+    </div>
+
+    <!-- 요약 -->
+    <div class="mb-3">
+        <strong>요약</strong>
+        <p class="form-control-plaintext border rounded p-3 content-scroll-box"
+           th:text="${post.summary} ?: '요약 없음'"></p>
+    </div>
+
+    <!-- ✅ 태그 섹션: 보기만 (편집 기능 제거) -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <strong>태그</strong>
+            <small class="text-muted">
+                ※ 태그 우선순위(노출 순서)는 수정 화면에서 변경 가능합니다.
+            </small>
+        </div>
+
+        <!-- 현재 태그 뱃지 표시 영역 -->
+        <div class="mt-2" id="tagDisplay">
+            <a th:each="pt : ${post.postTags}"
+               th:href="@{/tag/{postId}/posts(postId=${pt.tag.id})}"
+               class="badge me-1 text-decoration-none"
+               th:classappend="${pt.primaryTag} ? 'badge-primary-tag' : 'text-bg-secondary'">
+                <span th:text="${pt.tag.name}"></span>
+            </a>
+
+            <span th:if="${#lists.isEmpty(post.postTags)}" class="text-muted">
+                등록된 태그가 없습니다.
+            </span>
+        </div>
+    </div>
+
+    <!-- 내용 -->
+    <div class="mb-4">
+        <strong>내용</strong>
+
+        <ul class="nav nav-tabs" id="contentTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active"
+                        data-bs-toggle="tab"
+                        data-bs-target="#render-pane"
+                        type="button">
+                    보기
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link"
+                        data-bs-toggle="tab"
+                        data-bs-target="#html-pane"
+                        type="button">
+                    HTML
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content border border-top-0 p-3">
+            <div class="tab-pane fade show active" id="render-pane">
+                <div class="border rounded p-3 content-scroll-box" th:utext="${post.content}"></div>
+            </div>
+
+            <div class="tab-pane fade" id="html-pane">
+                <div class="border rounded p-3 content-scroll-box">
+                    <pre class="mb-0"><code th:text="${post.content}"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div th:replace="~{layout/footer :: footer}"></div>
+
+</body>
+</html>

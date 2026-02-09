@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -102,6 +103,10 @@ public class ArticleController {
         Page<Article> page = articleService.findAll(pageable);
         model.addAttribute("articles", page.getContent());
         model.addAttribute("page", page); // ✅ 페이징 위해 추가
+
+        model.addAttribute("keyword", false);
+        model.addAttribute("time", false);
+
         return "article/list";
     }
 
@@ -186,7 +191,64 @@ public class ArticleController {
     }
 
 
+//    @GetMapping("/search/keyword")
+//    public String searchByKeyword(Model model,
+//                                  @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable,
+//                                  @RequestParam(required = false) String keyword) {
+//        Page<Article> page = articleService.findAllByKeyword(keyword, pageable);
+//        model.addAttribute("articles", page.getContent());
+//        model.addAttribute("page", page); // ✅ 페이징 위해 추가
+//        model.addAttribute("keyword", true);
+//        model.addAttribute("time", false);
+//        model.addAttribute("q", keyword);
+//
+//        return "article/list";
+//    }
+//
+//    @GetMapping("/search/date")
+//    public String searchByTime(Model model,
+//                               @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable,
+//                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//        Page<Article> page = articleService.findAllByReleaseDate(startDate, endDate, pageable);
+//
+//        model.addAttribute("articles", page.getContent());
+//        model.addAttribute("page", page); // ✅ 페이징 위해 추가
+//        model.addAttribute("time", true);
+//        model.addAttribute("keyword", false);
+//
+//        // 검색값 유지용
+//        model.addAttribute("startDate", startDate);
+//        model.addAttribute("endDate", endDate);
+//
+//        return "article/list";
+//    }
 
+
+    @GetMapping("/search")
+    public String search(Model model,
+                         @PageableDefault(size = 10) Pageable pageable,
+                         @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false) String publisher,
+                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        Page<Article> page = articleService.search(keyword, publisher, startDate, endDate, pageable);
+
+        model.addAttribute("articles", page.getContent());
+        model.addAttribute("page", page);
+
+        // 검색값 유지
+        model.addAttribute("q", keyword);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("publisher", publisher);
+
+        // 화면 플래그(선택)
+        model.addAttribute("search", true);
+
+        return "article/list";
+    }
 
     @GetMapping("/feed")
     public void feed() {

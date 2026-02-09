@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -348,7 +349,7 @@ public class ArticleService {
         Map<Long, ArticleResponse> picked = new LinkedHashMap<>();
 
         // 유틸: 남은 개수
-        final int LIMIT = 5;
+        final int LIMIT = 3;
 
         // Primary topic 찾기
         ArticleTopic primary = ats.stream()
@@ -409,4 +410,32 @@ public class ArticleService {
         return new ArrayList<>(picked.values());
     }
 
+    @Transactional(readOnly = true)
+    public Page<Article> findAllByKeyword(String keyword, Pageable pageable) {
+        return articleRepository.findAllByKeyword(keyword, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Article> findAllByReleaseDate(LocalDate start, LocalDate end, Pageable pageable) {
+
+        if (start != null && end != null) {
+            if (end.isBefore(start)) {
+                // 필요하면 swap 또는 예외 처리
+                LocalDate tmp = start; start = end; end = tmp;
+            }
+            return articleRepository.findByReleaseDateBetween(start, end, pageable);
+        }
+        if (start != null) {
+            return articleRepository.findByReleaseDateGreaterThanEqual(start, pageable);
+        }
+        if (end != null) {
+            return articleRepository.findByReleaseDateLessThanEqual(end, pageable);
+        }
+        return articleRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Article> search(String keyword, String publisher, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        return articleRepository.search(keyword, publisher, startDate, endDate, pageable);
+    }
 }

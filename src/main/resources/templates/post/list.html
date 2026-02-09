@@ -6,7 +6,7 @@
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>게시글 목록</h2>
-        <a class="btn btn-primary" th:href="@{/post/create}">새 글 작성</a>
+        <a class="btn btn-primary" th:href="@{/post/new}">새 글 작성</a>
     </div>
 
     <table class="table table-bordered table-hover align-middle">
@@ -24,7 +24,7 @@
         <tr th:each="post : ${posts.content}">
             <td th:text="${post.id}"></td>
             <td>
-                <a th:href="@{/post/detail(id=${post.id})}"
+                <a th:href="@{/post/{postId}(postId=${post.id})}"
                    th:text="${post.title}"></a>
             </td>
             <td th:text="${post.author}"></td>
@@ -33,15 +33,16 @@
             <td th:text="${post.releaseDate != null ? #temporals.format(post.releaseDate, 'yyyy-MM-dd') : '-'}"></td>
 
             <td>
-        <span th:each="pt : ${post.postTags}"
-              class="badge text-bg-secondary me-1"
-              th:text="${pt.tag.name}">
-        </span>
+                <span th:each="pt : ${post.postTags}"
+                      class="badge me-1"
+                      th:classappend="${pt.primaryTag} ? ' text-bg-primary fw-semibold ' : ' text-bg-secondary '"
+                      th:text="${pt.tag.name}">
+                </span>
             </td>
 
             <td>
                 <a class="btn btn-sm btn-outline-secondary"
-                   th:href="@{/post/update(id=${post.id})}">수정</a>
+                   th:href="@{/post/{postId}/edit(postId=${post.id})}">수정</a>
 
                 <form th:action="@{/post/delete}" method="post" style="display:inline-block;"
                       onsubmit="return confirm('정말 삭제하시겠습니까?');">

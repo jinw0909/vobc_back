@@ -2,17 +2,18 @@ package io.vobc.vobc_back.dto.post;
 
 import io.vobc.vobc_back.domain.post.Post;
 import io.vobc.vobc_back.dto.TagForm;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-@Getter @Setter
+@Data
 @ToString
+@NoArgsConstructor
+@Getter @Setter
 public class PostForm {
 
     private Long id;
@@ -23,14 +24,28 @@ public class PostForm {
     private LocalDate releaseDate;
     private String thumbnail;
 
-    private List<PostTagForm> postTags;
-
-    private List<TagForm> tags;
-
-    private List<MultipartFile> files;
+    private List<PostTagForm> postTags = new ArrayList<>();
+    private List<TagForm> tags = new ArrayList<>();
+    private List<MultipartFile> files = new ArrayList<>();
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public PostForm(Post post) {
+        this.id = post.getId();
+        this.title = post.getTitle();
+        this.content = post.getContent();
+        this.summary = post.getSummary();
+        this.author = post.getAuthor();
+        this.releaseDate = post.getReleaseDate();
+        this.thumbnail = post.getThumbnail();
+
+        if (post.getPostTags() != null) {
+            this.postTags = post.getPostTags().stream()
+                    .map(PostTagForm::new)
+                    .toList();
+        }
+    }
 
     public static PostForm from(Post p) {
         PostForm f = new PostForm();

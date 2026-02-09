@@ -105,6 +105,32 @@
   }
   .page-link.disabled { pointer-events: none; opacity: 0.45; }
   .page-link.active { background: #111; color: #fff; border-color: #111; }
+
+  /* Filters (dropdown) */
+  .filter { position: relative; }
+  .filter summary { list-style: none; }
+  .filter summary::-webkit-details-marker { display: none; }
+
+  .filter-panel {
+    position: absolute;
+    top: 42px;
+    right: 0;
+    z-index: 50;
+    width: 280px;
+    max-height: 260px;
+    overflow: auto;
+    padding: 10px;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(0,0,0,.08);
+  }
+
+  .filter-actions {
+    display:flex;
+    gap:8px;
+    margin-top: 10px;
+  }
 </style>
 
 <body>
@@ -130,6 +156,98 @@
     </div>
   </div>
 
+  <form th:action="@{/team-member/list}" method="get" style="margin-bottom:14px;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+
+      <!-- Name -->
+      <div style="min-width:220px;">
+        <div class="muted" style="margin-bottom:6px;">Name</div>
+        <input name="name"
+               th:value="${qName}"
+               placeholder="이름 검색"
+               style="height:34px; padding:0 10px; border:1px solid #e5e5e5; border-radius:8px; width:220px;">
+      </div>
+
+      <!-- Teams (multi) -->
+      <div class="filter">
+        <div class="muted" style="margin-bottom:6px;">Teams</div>
+
+        <details class="filter">
+          <summary class="btn btn-secondary" style="user-select:none; width: 140px; justify-content:center;">
+            <span th:text="|Teams (${qTeamIds != null ? #lists.size(qTeamIds) : 0})|">Teams (0)</span>
+          </summary>
+
+          <div class="filter-panel">
+            <div class="muted" style="margin-bottom:8px;">팀 다중 선택</div>
+
+            <label th:each="t : ${teams}" style="display:flex; gap:8px; align-items:center; padding:4px 0;">
+              <input type="checkbox" name="teamId"
+                     th:value="${t.id}"
+                     th:checked="${qTeamIds != null and qTeamIds.contains(t.id)}">
+              <span th:text="${t.name}">Team</span>
+            </label>
+
+            <div class="filter-actions">
+              <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+              <a class="btn btn-secondary btn-sm"
+                 th:href="@{/team-member/list(name=${qName}, role=${qRoleNames}, size=${teamMembers != null ? teamMembers.size : 10}, sort='rolePriority,asc')}">
+                Clear Teams
+              </a>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Roles (multi) -->
+      <div class="filter">
+        <div class="muted" style="margin-bottom:6px;">Roles</div>
+
+        <details class="filter">
+          <summary class="btn btn-secondary" style="user-select:none; width: 140px; justify-content:center;">
+            <span th:text="|Roles (${qRoleNames != null ? #lists.size(qRoleNames) : 0})|">Roles (0)</span>
+          </summary>
+
+          <div class="filter-panel">
+            <div class="muted" style="margin-bottom:8px;">직급 다중 선택</div>
+
+            <label th:each="r : ${T(io.vobc.vobc_back.domain.team.TeamRole).values()}"
+                   style="display:flex; gap:8px; align-items:center; padding:4px 0;">
+              <input type="checkbox" name="role"
+                     th:value="${r.name()}"
+                     th:checked="${qRoleNames != null and qRoleNames.contains(r.name())}">
+              <span th:text="${r.name()}">ROLE</span>
+            </label>
+
+            <div class="filter-actions">
+              <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+              <a class="btn btn-secondary btn-sm"
+                 th:href="@{/team-member/list(name=${qName}, teamId=${qTeamIds}, size=${teamMembers != null ? teamMembers.size : 10}, sort='rolePriority,asc')}">
+                Clear Roles
+              </a>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn btn-primary">Search</button>
+
+      <!-- Clear only the form inputs (no navigation) -->
+      <button type="reset" class="btn btn-secondary"
+              onclick="this.form.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);">
+        Clear Filters
+      </button>
+
+      <!-- Reset page (remove params) -->
+      <a class="btn btn-secondary" th:href="@{/team-member/list}">Reset</a>
+
+    </div>
+
+    <!-- keep size/sort -->
+    <input type="hidden" name="size" th:value="${teamMembers != null ? teamMembers.size : 10}">
+    <input type="hidden" name="sort" value="rolePriority,asc">
+  </form>
+
   <div class="card">
     <div class="muted" th:if="${teamMembers == null or teamMembers.totalElements == 0}">
       등록된 멤버가 없습니다.
@@ -142,6 +260,7 @@
         <th style="width:90px;">ID</th>
         <th>Name</th>
         <th style="width:220px;">Email</th>
+        <th style="width:140px;">Team</th>
         <th style="width:130px;">Role</th>
         <th style="width:130px;">Priority</th>
         <th style="width:170px;">Updated</th>
@@ -164,8 +283,14 @@
           <span th:text="${(m.email != null and !#strings.isEmpty(m.email)) ? m.email : '-'}">-</span>
         </td>
         <td>
-                    <span class="badge"
-                          th:text="${m.role != null ? m.role : '-'}">ROLE</span>
+          <a th:if="${m.team != null}"
+             th:href="@{/team/{id}(id=${m.team.id})}"
+             th:text="${m.team.name}">Team</a>
+          <span th:if="${m.team == null}">-</span>
+        </td>
+
+        <td>
+          <span class="badge" th:text="${m.role != null ? m.role : '-'}">ROLE</span>
         </td>
         <td>
           <span th:text="${m.rolePriority != null ? m.rolePriority : 0}">0</span>
@@ -203,23 +328,44 @@
         <!-- prev -->
         <a class="page-link"
            th:classappend="${teamMembers.first} ? 'disabled' : ''"
-           th:href="@{/team-member/list(page=${teamMembers.number - 1}, size=${teamMembers.size}, sort='rolePriority,asc')}">
+           th:href="@{/team-member/list(
+              page=${teamMembers.number - 1},
+              size=${teamMembers.size},
+              sort='rolePriority,asc',
+              name=${qName},
+              teamId=${qTeamIds},
+              role=${qRoleNames}
+           )}">
           Prev
         </a>
 
-        <!-- numbers: 간단히 전체 페이지 -->
+        <!-- numbers -->
         <a class="page-link"
            th:each="i : ${#numbers.sequence(0, teamMembers.totalPages - 1)}"
            th:text="${i + 1}"
            th:classappend="${i == teamMembers.number} ? 'active' : ''"
-           th:href="@{/team-member/list(page=${i}, size=${teamMembers.size}, sort='rolePriority,asc')}">
+           th:href="@{/team-member/list(
+              page=${i},
+              size=${teamMembers.size},
+              sort='rolePriority,asc',
+              name=${qName},
+              teamId=${qTeamIds},
+              role=${qRoleNames}
+           )}">
           1
         </a>
 
         <!-- next -->
         <a class="page-link"
            th:classappend="${teamMembers.last} ? 'disabled' : ''"
-           th:href="@{/team-member/list(page=${teamMembers.number + 1}, size=${teamMembers.size}, sort='rolePriority,asc')}">
+           th:href="@{/team-member/list(
+              page=${teamMembers.number + 1},
+              size=${teamMembers.size},
+              sort='rolePriority,asc',
+              name=${qName},
+              teamId=${qTeamIds},
+              role=${qRoleNames}
+           )}">
           Next
         </a>
       </div>

@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+    pre code {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+</style>
+
+<body>
 <style>
     .content-scroll-box {
         max-height: 480px;
@@ -70,16 +79,27 @@
         width: 92px;
     }
 
-
-</style>
-<style>
-    pre code {
-        white-space: pre-wrap;
-        word-break: break-word;
+    .badge-primary-tag {
+        background-color: rgba(13,110,253,.12) !important;
+        color: #0d6efd !important;
+        border: 1px solid rgba(13,110,253,.35) !important;
+        font-weight: 700 !important;
     }
-</style>
 
-<body>
+    .badge-primary-tag::before{
+        content: "대표";
+        display: inline-block;
+        margin-right: .4rem;
+        padding: .1rem .35rem;
+        border-radius: 999px;
+        background-color: rgba(13,110,253,.18);
+        color: #0d6efd;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+
+</style>
 <th:block th:replace="~{layout/header :: header}"></th:block>
 <div class="container mt-5">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
@@ -114,8 +134,8 @@
     <!-- 메타 정보 영역 -->
     <div class="mb-3 text-muted">
         <span th:text="'작성자: ' + ${post.author}"></span>
-<!--        <span class="ms-3"-->
-<!--              th:text="'작성일: ' + ${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}"></span>-->
+        <!--        <span class="ms-3"-->
+        <!--              th:text="'작성일: ' + ${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}"></span>-->
         <!-- ✅ 발행일 (releaseDate) 표시 -->
         <span class="ms-3"
               th:if="${post.releaseDate != null}"
@@ -161,13 +181,16 @@
         <div class="mt-2" id="tagDisplay">
             <a th:each="pt : ${post.postTags}"
                th:href="@{/tag/posts(id=${pt.tag.id})}"
-               class="badge text-bg-secondary me-1 text-decoration-none"
-               th:text="${pt.tag.name}">
+               class="badge me-1 text-decoration-none"
+               th:classappend="${pt.primaryTag} ? 'badge-primary-tag' : 'text-bg-secondary'">
+                <span th:text="${pt.tag.name}"></span>
             </a>
+
             <span th:if="${#lists.isEmpty(post.postTags)}" class="text-muted">
-            등록된 태그가 없습니다.
-        </span>
+                등록된 태그가 없습니다.
+            </span>
         </div>
+
 
         <!-- 인라인 태그 편집 패널 -->
         <div id="tagEditorPanel" class="mt-3 border rounded p-3 tag-panel" style="display:none;">

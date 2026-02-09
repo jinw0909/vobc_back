@@ -1,11 +1,14 @@
 package io.vobc.vobc_back.dto.post;
 
 import io.vobc.vobc_back.domain.post.PostTag;
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@Getter @Setter
 public class PostTagResponse {
     private Long tagId;
     private String tagName;
@@ -29,6 +32,14 @@ public class PostTagResponse {
     public PostTagResponse(Long tagId, String tagName, Integer sortOrder, Long postId) {
         this(tagId, tagName, sortOrder);
         this.postId = postId;
+    }
+
+    public PostTagResponse(PostTag postTag) {
+        this.tagId = postTag.getTag().getId();
+        this.tagName = postTag.getTag().getName();
+        this.sortOrder = postTag.getSortOrder();
+        this.primaryTag = postTag.getPrimaryTag();
+        this.postId = postTag.getPost().getId();
     }
 
     public static PostTagResponse from(PostTag postTag) {

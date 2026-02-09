@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -152,6 +154,65 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
             @Param("languageCode") LanguageCode languageCode,
             org.springframework.data.domain.Pageable pageable
     );
+
+    @Query("""
+    select a
+    from Article a
+    where a.title like %:keyword%
+    or a.content like %:keyword%
+    """)
+    Page<Article> findAllByKeyword(String keyword, Pageable pageable);
+
+    Page<Article> findByReleaseDateBetween(LocalDate start, LocalDate end, Pageable pageable);
+
+    Page<Article> findByReleaseDateGreaterThanEqual(LocalDate start, Pageable pageable);
+
+    Page<Article> findByReleaseDateLessThanEqual(LocalDate end, Pageable pageable);
+
+
+    @Query(
+            value = """
+    SELECT a.*
+    FROM ARTICLE a
+    LEFT JOIN PUBLISHER p ON p.ID = a.PUBLISHER_ID
+    WHERE (
+      :keyword IS NULL OR :keyword = ''
+      OR INSTR(UPPER(a.TITLE), UPPER(:keyword)) > 0
+      OR DBMS_LOB.INSTR(UPPER(a.CONTENT), UPPER(:keyword)) > 0
+    )
+    AND (
+      :publisher IS NULL OR :publisher = ''
+      OR INSTR(UPPER(p.NAME), UPPER(:publisher)) > 0
+    )
+    AND (:startDate IS NULL OR a.RELEASE_DATE >= :startDate)
+    AND (:endDate IS NULL OR a.RELEASE_DATE <= :endDate)
+    ORDER BY a.CREATED_AT DESC, a.ARTICLE_ID DESC
+    """,
+            countQuery = """
+    SELECT COUNT(*)
+    FROM ARTICLE a
+    LEFT JOIN PUBLISHER p ON p.ID = a.PUBLISHER_ID
+    WHERE (
+      :keyword IS NULL OR :keyword = ''
+      OR INSTR(UPPER(a.TITLE), UPPER(:keyword)) > 0
+      OR DBMS_LOB.INSTR(UPPER(a.CONTENT), UPPER(:keyword)) > 0
+    )
+    AND (
+      :publisher IS NULL OR :publisher = ''
+      OR INSTR(UPPER(p.NAME), UPPER(:publisher)) > 0
+    )
+    AND (:startDate IS NULL OR a.RELEASE_DATE >= :startDate)
+    AND (:endDate IS NULL OR a.RELEASE_DATE <= :endDate)
+    """,
+            nativeQuery = true
+    )
+    Page<Article> search(@Param("keyword") String keyword,
+                         @Param("publisher") String publisher,
+                         @Param("startDate") LocalDate startDate,
+                         @Param("endDate") LocalDate endDate,
+                         Pageable pageable);
+
+
 
 
 

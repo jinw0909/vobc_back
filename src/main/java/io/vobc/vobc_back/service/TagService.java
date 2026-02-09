@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,7 +52,7 @@ public class TagService {
 
     @Transactional(readOnly = true)
     public Tag getTag(Long id) {
-        return tagRepository.findById(id).orElseThrow();
+        return tagRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Tag not found: " + id));
     }
 
     @Transactional
@@ -83,6 +85,12 @@ public class TagService {
                 .map(PostTag::getPost)
                 .distinct()
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Post> getAllPostsByTagId(Long tagId,
+                                         Pageable pageable) {
+        return postRepository.findAllWithTagsByTagId(tagId, pageable);
     }
 
     // API용 (페이징 + 번역)

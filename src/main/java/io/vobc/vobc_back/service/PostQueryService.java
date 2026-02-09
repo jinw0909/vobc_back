@@ -2,6 +2,7 @@ package io.vobc.vobc_back.service;
 
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.post.Post;
+import io.vobc.vobc_back.domain.post.PostTag;
 import io.vobc.vobc_back.domain.post.Translation;
 import io.vobc.vobc_back.dto.post.PostDto;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
@@ -22,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -185,5 +188,92 @@ public class PostQueryService {
         posts.forEach(dto -> dto.setPostTags(postTagMap.getOrDefault(dto.getId(), List.of())));
 
         return posts;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostTranslatedResponse> getRelatedPosts(Long postId, LanguageCode languageCode) {
+
+        // 1) 해당 post의 tag 목록 (primary 우선, sortOrder 우선)
+        List<PostTag> pts = postRepository.findPostTagsByPostId(postId);
+        if (pts == null || pts.isEmpty()) return List.of();
+
+        final int LIMIT = 3;
+        Map<Long, PostTranslatedResponse> picked = new LinkedHashMap<>();
+
+        // primaryTag 찾기(여러 개 있을 수도 있으니 "첫 번쨰" 규칙)
+        PostTag primary = pts.stream()
+                .filter(pt -> Boolean.TRUE.equals(pt.getPrimaryTag()))
+                .findFirst()
+                .orElse(null);
+
+        // 2) primaryTag 공유 post 먼저 채우기
+        if (primary != null) {
+            Long primaryTagId = primary.getTag().getId();
+
+            List<PostTranslatedResponse> top = postRepository.findRelatedByPrimaryTag(
+                postId,
+                primaryTagId,
+                languageCode,
+                PageRequest.of(0, LIMIT)
+            );
+
+            for (PostTranslatedResponse r : top) {
+                if (picked.size() >= LIMIT) break;
+                picked.putIfAbsent(r.getId(), r);
+            }
+        }
+
+        // 3) 다 채웠으면 종료
+        if (picked.size() >= LIMIT) return new ArrayList<>(picked.values());
+
+        // 4) 나머지 tag들을 sortOrder 순으로 돌면서 채우기 (primary 제외)
+        Long primaryTagId = primary != null ? primary.getTag().getId() : null;
+
+        List<Long> tagIdsInOrder = pts.stream()
+                .map(pt -> pt.getTag().getId())
+                .filter(tid -> !tid.equals(primaryTagId))
+                .distinct()
+                .toList();
+
+        for (Long tagId : tagIdsInOrder) {
+            int remaining = LIMIT - picked.size();
+            if (remaining <= 0) break;
+
+            // 중복 대비해서 조금 더 fetch
+            int fetchSize = Math.max(remaining * 2, remaining);
+
+            List<PostTranslatedResponse> more = postRepository.findRelatedByTag(
+                    postId,
+                    tagId,
+                    languageCode,
+                    PageRequest.of(0, fetchSize)
+            );
+
+            for (PostTranslatedResponse r : more) {
+                if (picked.size() >= LIMIT) break;
+                picked.putIfAbsent(r.getId(), r);
+            }
+        }
+
+        List<PostTranslatedResponse> result = new ArrayList<>(picked.values());
+        if (result.isEmpty()) return result;
+
+        // 3) Map-IN으로 postTags 붙이기 (N + 1 방지)
+        List<Long> relatedPostIds = result.stream().map(PostTranslatedResponse::getId).toList();
+        List<PostTag> relatedTags = postRepository.findPostTagsByPostIds(relatedPostIds);
+        Map<Long, List<PostTagResponse>> tagMap = relatedTags.stream()
+                .collect(Collectors.groupingBy(
+                        pt -> pt.getPost().getId(),
+                        LinkedHashMap::new,
+                        Collectors.mapping(PostTagResponse::new, Collectors.toList())
+                ));
+
+        // DTO에 세팅(없으면 빈 리스트로)
+        for (PostTranslatedResponse dto : result) {
+            dto.setPostTags(tagMap.getOrDefault(dto.getId(), List.of()));
+        }
+
+        return result;
+
     }
 }

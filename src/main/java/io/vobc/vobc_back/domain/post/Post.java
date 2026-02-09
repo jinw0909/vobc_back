@@ -46,7 +46,7 @@ public class Post {
     private String thumbnail;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("sortOrder ASC, id DESC")
+    @OrderBy("primaryTag desc, sortOrder asc, id asc")
     private List<PostTag> postTags = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)

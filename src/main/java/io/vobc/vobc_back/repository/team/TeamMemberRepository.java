@@ -4,6 +4,9 @@ import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.team.ResumeTranslation;
 import io.vobc.vobc_back.domain.team.TeamMember;
 import io.vobc.vobc_back.domain.team.TeamMemberTranslation;
+import io.vobc.vobc_back.domain.team.TeamRole;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -32,4 +35,22 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
     @Query("select tr from ResumeTranslation tr join fetch tr.resume r where tr.resume.id in :resumeIds and tr.languageCode = :languageCode")
     List<ResumeTranslation> findByLanguageCodeAndInIds(@Param("languageCode") LanguageCode languageCode,
                                                        @Param("resumeIds") List<Long> resumeIds);
+
+    @EntityGraph(attributePaths = {"team"})
+    @Query("""
+    select tm
+    from TeamMember tm
+    where (:name is null or tm.name like concat('%', :name, '%'))
+    and (:teamId is null or tm.team.id in :teamId)
+    and (:roles is null or tm.role in :roles)
+    """)
+    Page<TeamMember> searchWithTeam(@Param("name") String name,
+                                    @Param("teamId") List<Long> teamId,
+                                    @Param("roles") List<TeamRole> roles,
+                                    Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"team"})
+    @Query("select tm from TeamMember tm")
+    Page<TeamMember> findAllWithTeam(Pageable pageable);
 }

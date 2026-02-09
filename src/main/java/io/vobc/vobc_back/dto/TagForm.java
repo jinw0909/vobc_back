@@ -1,11 +1,18 @@
 package io.vobc.vobc_back.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import io.vobc.vobc_back.domain.Tag;
+import lombok.*;
 
-@Getter
+@Data
+@Getter @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class TagForm {
     private Long id;
     private String name;
+
+    public TagForm(Tag tag) {
+        this.id = tag.getId();
+        this.name = tag.getName();
+    }
 }

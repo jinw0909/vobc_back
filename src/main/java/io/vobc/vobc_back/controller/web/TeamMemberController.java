@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -60,13 +61,15 @@ public class TeamMemberController {
         return "team-member/detail";
     }
 
-    @GetMapping("/list")
-    public String list(@PageableDefault(size = 10, sort = "rolePriority", direction = Sort.Direction.ASC) Pageable pageable,
-                       Model model) {
-        Page<TeamMember> list = teamMemberService.getAll(pageable);
-        model.addAttribute("teamMembers", list);
-        return "team-member/list";
-    }
+//    @GetMapping("/list")
+//    public String list(@PageableDefault(size = 10, sort = "rolePriority", direction = Sort.Direction.ASC) Pageable pageable,
+//                       Model model) {
+//        Page<TeamMember> list = teamMemberService.getAll(pageable);
+//        List<Team> teams = teamService.getAll();
+//        model.addAttribute("teamMembers", list);
+//        model.addAttribute("teams", teams);
+//        return "team-member/list";
+//    }
 
     @GetMapping("/{teamMemberId}/edit")
     public String editForm(@PathVariable Long teamMemberId,
@@ -182,5 +185,39 @@ public class TeamMemberController {
         teamMemberService.reOrder();
         return "redirect:/team-member/list";
     }
+
+
+    @GetMapping("/list")
+    public String list(
+            @PageableDefault(size = 10, sort = "rolePriority", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) List<Long> teamId,
+            @RequestParam(required = false) List<String> role,
+            Model model
+    ) {
+        List<TeamRole> roles = (role == null) ? List.of() :
+                role.stream().map(TeamRole::from).filter(Objects::nonNull).toList();
+
+        Page<TeamMember> list = teamMemberService.search(
+                pageable,
+                (name == null || name.isBlank()) ? null : name,
+                (teamId == null || teamId.isEmpty()) ? null : teamId,
+                (roles.isEmpty()) ? null : roles
+        );
+
+        model.addAttribute("teamMembers", list);
+        model.addAttribute("teams", teamService.getAll());
+
+        // ✅ 템플릿에서 항상 안전하게 contains 호출 가능
+        model.addAttribute("qName", name);
+        model.addAttribute("qTeamIds", teamId == null ? List.of() : teamId);
+        model.addAttribute("qRoles", roles);
+
+        // pagination에서 role 유지할 때 쓰기 좋음
+        model.addAttribute("qRoleNames", roles.stream().map(Enum::name).toList());
+
+        return "team-member/list";
+    }
+
 
 }

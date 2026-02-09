@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
-<th:block th:replace="~{layout/head :: head}">
-</th:block>
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
 <style>
     #content figure > img { width: 33%; }
+
+    .tag-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .tag-name { display:flex; align-items:center; gap:10px; }
+    .tag-primary { white-space:nowrap; }
+    .tag-primary label { margin-left: 6px; }
 </style>
 
 <body>
 <th:block th:replace="~{layout/header :: header}"></th:block>
-<div class="container mt-5" th:with="isNew=${post.id} == null">
+
+<div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 th:text="${isNew} ? '새 게시글 작성' : '게시글 수정'"></h2>
+        <h2>새 게시글 작성</h2>
         <a class="btn btn-outline-dark" th:href="@{/post/list}">목록</a>
     </div>
 
-    <!-- 새 글이면 /post/create, 수정이면 /post/update?id=... -->
-    <!--    <form th:action="${isNew} ? @{/post/create} : @{/post/update(id=${post.id})}" method="post">-->
     <form id="postForm" method="post" enctype="multipart/form-data">
-
-        <input type="hidden" name="id" th:value="${post.id}">
+        <!-- ✅ create 전용이라 id hidden 제거 -->
 
         <div class="mb-3">
             <label for="title" class="form-label">제목</label>
@@ -48,7 +51,6 @@
                    th:value="${post.author}">
         </div>
 
-        <!-- ✅ 발행일 입력 -->
         <div class="mb-3">
             <label for="releaseDate" class="form-label">발행일</label>
             <input type="date"
@@ -58,11 +60,10 @@
                    th:value="${post.releaseDate}">
         </div>
 
-        <!-- ✅ 썸네일 URL + 업로드 버튼 + 미리보기 -->
+        <!-- ✅ 썸네일 URL + 업로드 + 미리보기 -->
         <div class="mb-3">
             <label for="thumbnail" class="form-label">썸네일</label>
 
-            <!-- URL 입력 + 업로드 버튼 -->
             <div class="input-group">
                 <input type="text"
                        id="thumbnail"
@@ -76,33 +77,19 @@
                     이미지 업로드
                 </button>
             </div>
+
             <small class="text-muted d-block mt-1">
-                직접 URL을 붙여넣거나, 이미지 업로드 버튼을 눌러 파일을 올릴 수 있습니다.
+                직접 URL을 붙여넣거나, 이미지 업로드 버튼으로 파일을 올릴 수 있습니다.
             </small>
 
-            <!-- 실제 파일 선택 input (숨김) -->
-            <input type="file"
-                   id="thumbnailFile"
-                   accept="image/*"
-                   style="display:none;">
+            <input type="file" id="thumbnailFile" accept="image/*" style="display:none;">
 
-            <!-- 미리보기 -->
-            <div class="mt-2"
-                 th:if="${post.thumbnail != null and !#strings.isEmpty(post.thumbnail)}">
-                <img th:src="${post.thumbnail}"
-                     id="thumbnailPreview"
-                     alt="썸네일 미리보기"
-                     class="img-thumbnail"
-                     style="max-height: 150px;">
-            </div>
-            <!-- 새 글일 때도 JS로 미리보기를 쓰고 싶으면, 아래처럼 빈 img를 하나 둬도 됨
-            <div class="mt-2" th:unless="${post.thumbnail != null and !#strings.isEmpty(post.thumbnail)}">
+            <div class="mt-2">
                 <img id="thumbnailPreview"
                      alt="썸네일 미리보기"
                      class="img-thumbnail"
-                     style="max-height: 150px; display:none;">
+                     style="max-height:150px; display:none;">
             </div>
-            -->
         </div>
 
         <div class="mb-3">
@@ -115,43 +102,52 @@
                       th:text="${post.content}"></textarea>
         </div>
 
-        <!-- 태그 선택 영역 (priority 숫자는 여기선 안 다룸) -->
+        <!-- ✅ 태그 선택 + 대표 지정(create) -->
         <div class="mb-4">
             <label class="form-label">태그</label>
-            <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
-                <div class="form-check"
-                     th:each="tag : ${allTags}">
 
-                    <input class="form-check-input"
-                           type="checkbox"
-                           name="tagIds"
-                           th:id="${'tag-' + tag.id}"
-                           th:value="${tag.id}"
-                           th:checked="${postTagByTagId != null and postTagByTagId.containsKey(tag.id)}"
-                           th:attr="
-                              data-post-id=${post.id},
-                              data-post-tag-id=${postTagByTagId != null && postTagByTagId.containsKey(tag.id) ? postTagByTagId.get(tag.id).postTagId : ''},
-                              data-sort-order=${postTagByTagId != null && postTagByTagId.containsKey(tag.id) ? postTagByTagId.get(tag.id).sortOrder : ''},
-                              data-primary-tag=${postTagByTagId != null && postTagByTagId.containsKey(tag.id) ? postTagByTagId.get(tag.id).primaryTag : ''}
-                           ">
-                    <label class="form-check-label"
-                           th:for="${'tag-' + tag.id}"
-                           th:text="${tag.name}"></label>
+            <div class="border rounded p-2" style="max-height: 260px; overflow-y: auto;">
+                <div class="form-check py-1" th:each="tag : ${allTags}">
+                    <div class="tag-row">
+                        <div class="tag-name">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="tagIds"
+                                   th:id="${'tag-' + tag.id}"
+                                   th:value="${tag.id}">
+                            <label class="form-check-label"
+                                   th:for="${'tag-' + tag.id}"
+                                   th:text="${tag.name}"></label>
+                        </div>
+
+                        <!-- ✅ 대표 태그: 라디오 1개만 -->
+                        <div class="tag-primary">
+                            <input class="form-check-input primary-radio"
+                                   type="radio"
+                                   name="primaryTagId"
+                                   th:id="${'primary-' + tag.id}"
+                                   th:value="${tag.id}"
+                                   disabled>
+                            <label class="form-check-label" th:for="${'primary-' + tag.id}">
+                                대표
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <div th:if="${#lists.isEmpty(allTags)}" class="text-muted">
                     등록된 태그가 없습니다. 먼저 태그를 생성해 주세요.
                 </div>
             </div>
+
             <small class="text-muted d-block mt-1">
-                ※ 태그 우선순위(노출 순서)는 상세 화면에서 수정 가능합니다.
+                ※ “대표”는 한 개만 선택할 수 있으며, 체크된 태그만 대표로 지정 가능합니다.
             </small>
         </div>
 
         <div class="d-flex justify-content-end gap-2">
             <a class="btn btn-outline-secondary" th:href="@{/post/list}">취소</a>
-            <button type="button" class="btn btn-primary" id="btnSave"
-                    th:text="${isNew} ? '작성하기' : '수정하기'"></button>
+            <button type="button" class="btn btn-primary" id="btnSave">작성하기</button>
         </div>
     </form>
 </div>
@@ -166,9 +162,7 @@
     const previewImg = document.getElementById('thumbnailPreview');
 
     if (uploadBtn && fileInput) {
-        uploadBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
+        uploadBtn.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
@@ -185,35 +179,17 @@
                 const response = await fetch('/api/upload/thumbnail', {
                     method: 'POST',
                     body: formData
-                    // 🔐 CSRF를 쓰고 있으면 여기서 헤더 추가 필요
-                    // headers: { 'X-CSRF-TOKEN': token }
                 });
 
-                if (!response.ok) {
-                    throw new Error('업로드 실패');
-                }
+                if (!response.ok) throw new Error('업로드 실패');
 
                 const data = await response.json();
-                const url = data.url;  // { "url": "https://..." } 형태라고 가정
+                const url = data.url;
 
-                // 인풋에 자동 세팅
                 thumbnailInput.value = url;
 
-                // 미리보기 갱신
-                if (previewImg) {
-                    previewImg.src = url;
-                    previewImg.style.display = 'block';
-                } else {
-                    // 위에서 빈 img를 두지 않았다면, 동적으로 만들어도 됨
-                    const img = document.createElement('img');
-                    img.id = 'thumbnailPreview';
-                    img.src = url;
-                    img.alt = '썸네일 미리보기';
-                    img.className = 'img-thumbnail mt-2';
-                    img.style.maxHeight = '150px';
-                    uploadBtn.closest('.mb-3').appendChild(img);
-                }
-
+                previewImg.src = url;
+                previewImg.style.display = 'block';
             } catch (e) {
                 console.error(e);
                 alert('이미지 업로드 중 오류가 발생했습니다.');
@@ -225,32 +201,60 @@
         });
     }
 
+    // URL 직접 입력했을 때도 미리보기 반영(blur/change)
+    function syncPreviewFromUrl() {
+        const v = (thumbnailInput.value || '').trim();
+        if (!v) {
+            previewImg.style.display = 'none';
+            previewImg.removeAttribute('src');
+            return;
+        }
+        previewImg.src = v;
+        previewImg.style.display = 'block';
+    }
+    thumbnailInput?.addEventListener('change', syncPreviewFromUrl);
+    thumbnailInput?.addEventListener('blur', syncPreviewFromUrl);
+
     const initial = thumbnailInput?.value?.trim();
-    if (initial && previewImg) {
+    if (initial) {
         previewImg.src = initial;
         previewImg.style.display = 'block';
     }
-
 </script>
 
+<!-- ✅ 대표 라디오: 체크된 태그만 활성화 -->
+<script>
+    function syncPrimaryEnablement() {
+        document.querySelectorAll('input[name="tagIds"]').forEach(cb => {
+            const tagId = cb.value;
+            const radio = document.getElementById(`primary-${tagId}`);
+            if (!radio) return;
+
+            radio.disabled = !cb.checked;
+            if (!cb.checked && radio.checked) radio.checked = false;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        syncPrimaryEnablement();
+        document.querySelectorAll('input[name="tagIds"]').forEach(cb => {
+            cb.addEventListener('change', syncPrimaryEnablement);
+        });
+    });
+</script>
+
+<!-- ✅ 저장 JS: JSON(Map) 응답 받고 redirectUrl로 이동 -->
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', () => {
-        // ✅ app.js가 [data-summernote] 자동 init 한다면 여기 호출 제거
-        // initiateSummernote();
-
         const formEl = document.getElementById('postForm');
         const btnSave = document.getElementById('btnSave');
 
         btnSave?.addEventListener('click', async () => {
             const formData = new FormData(formEl);
 
-            const payload = window.getSummernotePayload({
-                editorSelector: '#content'
-            });
-
+            const payload = window.getSummernotePayload({ editorSelector: '#content' });
             formData.set('content', payload.content);
 
-            // ✅ files는 1번만 append
             for (const f of payload.files) formData.append('files', f);
 
             fillPostTagsToFormData(formData);
@@ -260,10 +264,11 @@
             btnSave.textContent = '저장 중...';
 
             try {
-                const res = await fetch('/post/save', { method: 'POST', body: formData });
+                const res = await fetch('/post/new', { method: 'POST', body: formData });
                 if (!res.ok) throw new Error(await res.text());
-                const data = await res.json();
-                window.location.href = `/post/detail?id=${data.id}`;
+
+                const data = await res.json(); // { id, redirectUrl }
+                window.location.href = data.redirectUrl || (`/post/${data.id}`);
             } catch (e) {
                 console.error(e);
                 alert('저장 중 오류가 발생했습니다.\n' + (e.message ?? e));
@@ -273,36 +278,29 @@
             }
         });
     });
+
     function fillPostTagsToFormData(formData) {
-        formData.delete('tagIds'); // 체크박스 값은 이제 안 쓰고, postTags로 보낼거라 제거
+        // 체크박스 기본 전송값 제거하고 postTags로만 보냄
+        formData.delete('tagIds');
 
         const checked = Array.from(document.querySelectorAll('input[name="tagIds"]:checked'));
 
-        // sortOrder 정책:
-        // - 수정 화면: data-sort-order 있으면 그 값 사용
-        // - 없으면 체크된 순서대로 1..N
+        // 대표 선택(tagId)
+        const primaryRadio = document.querySelector('input[name="primaryTagId"]:checked');
+        const primaryTagId = primaryRadio ? (primaryRadio.value || '').trim() : null;
+
         checked.forEach((cb, idx) => {
             const tagId = (cb.value || '').trim();
-
-            const postId = (cb.dataset.postId || document.querySelector('input[name="id"]')?.value || '').trim();
-            const postTagId = (cb.dataset.postTagId || '').trim();
-            const sortOrder = (cb.dataset.sortOrder || (idx + 1)).toString().trim();
-            const primaryTag = (cb.dataset.primaryTag || 'false').toString().trim();
-
             const base = `postTags[${idx}]`;
 
-            // ✅ PostTagForm 포맷 그대로 채워서 보냄 (빈 값도 포함)
-            formData.append(`${base}.postTagId`, postTagId);
-            formData.append(`${base}.postId`, postId);
+            const isPrimary = (primaryTagId && primaryTagId === tagId) ? 'true' : 'false';
+
             formData.append(`${base}.tagId`, tagId);
-            formData.append(`${base}.sortOrder`, sortOrder);
-            formData.append(`${base}.primaryTag`, primaryTag);
+            formData.append(`${base}.sortOrder`, String(idx + 1));
+            formData.append(`${base}.primaryTag`, isPrimary);
         });
     }
-
 </script>
-
-
 
 </body>
 </html>

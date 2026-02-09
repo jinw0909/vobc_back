@@ -463,6 +463,7 @@ public class PostService {
             Long tagId = oldPt.getTag().getId();
             if (!dedup.containsKey(tagId)) {
                 post.removePostTag(oldPt); // clearPostTags 말고 remove 메서드 추천
+                existing.remove(tagId);
             }
         }
 
@@ -511,5 +512,15 @@ public class PostService {
         postResponse.setPostTags(postTagResponses);
 
         return postResponse;
+    }
+
+    @Transactional
+    public Long create(PostForm form) {
+        return save(null, form);
+    }
+
+    @Transactional
+    public Long update(Long postId, PostForm form) {
+        return save(postId, form);
     }
 }

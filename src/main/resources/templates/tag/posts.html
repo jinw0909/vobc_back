@@ -3,6 +3,7 @@
 <th:block th:replace="~{layout/head :: head}"></th:block>
 <body>
 <th:block th:replace="~{layout/header :: header}"></th:block>
+
 <div class="container mt-5">
 
     <!-- Header -->
@@ -17,13 +18,13 @@
         </a>
     </div>
 
-    <!-- If no posts -->
-    <div th:if="${#lists.isEmpty(posts)}" class="alert alert-info">
+    <!-- If no posts (Page<Post> 기준) -->
+    <div th:if="${posts.empty}" class="alert alert-info">
         이 태그와 연결된 게시글이 없습니다.
     </div>
 
     <!-- Post List -->
-    <div th:if="${!#lists.isEmpty(posts)}" class="list-group">
+    <div th:if="${!posts.empty}" class="list-group">
 
         <a th:each="post : ${posts}"
            th:href="@{/post/detail(id=${post.id})}"
@@ -43,7 +44,51 @@
 
     </div>
 
+    <!-- Pagination (/tag/{tagId}/posts 기준) -->
+    <nav th:if="${posts.totalPages > 1}" class="mt-4" aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+
+            <!-- Prev -->
+            <li class="page-item" th:classappend="${posts.first} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/tag/{tagId}/posts(tagId=${tag.id}, page=${posts.number - 1}, size=${posts.size})}"
+                   aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+
+            <!-- Page numbers (현재 페이지 기준 -2 ~ +2) -->
+            <li class="page-item"
+                th:each="p : ${#numbers.sequence(
+                    T(java.lang.Math).max(0, posts.number - 2),
+                    T(java.lang.Math).min(posts.totalPages - 1, posts.number + 2)
+                )}"
+                th:classappend="${p == posts.number} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/tag/{tagId}/posts(tagId=${tag.id}, page=${p}, size=${posts.size})}"
+                   th:text="${p + 1}">1</a>
+            </li>
+
+            <!-- Next -->
+            <li class="page-item" th:classappend="${posts.last} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/tag/{tagId}/posts(tagId=${tag.id}, page=${posts.number + 1}, size=${posts.size})}"
+                   aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+
+        </ul>
+
+        <!-- Summary -->
+        <div class="text-center text-muted mt-2" style="font-size: 0.9rem;">
+            총 <span th:text="${posts.totalElements}"></span>개 ·
+            <span th:text="${posts.number + 1}"></span>/<span th:text="${posts.totalPages}"></span> 페이지
+        </div>
+    </nav>
+
 </div>
+
 <th:block th:replace="~{layout/footer :: footer}"></th:block>
 </body>
 </html>

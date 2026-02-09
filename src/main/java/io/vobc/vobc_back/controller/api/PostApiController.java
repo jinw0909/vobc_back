@@ -42,6 +42,7 @@ public class PostApiController {
         return postService.getTranslatedPost(id, languageCode);
     }
 
+
     @GetMapping("/query/list")
     public List<PostQueryDto> queryList() {
         return postQueryService.findAllByDto();
@@ -76,5 +77,12 @@ public class PostApiController {
     ) {
         LanguageCode languageCode = LanguageCode.from(lang);
         return postQueryService.getRest(pageable, featuredId, languageCode);
+    }
+
+    @GetMapping("/{postId}/related")
+    public List<PostTranslatedResponse> related(@PathVariable Long postId,
+                                                @RequestParam(defaultValue = "en") String lang) {
+        LanguageCode languageCode = LanguageCode.from(lang);
+        return postQueryService.getRelatedPosts(postId, languageCode);
     }
 }

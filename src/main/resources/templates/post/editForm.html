@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+    #content figure > img { width: 33%; }
+    .tag-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .tag-name { display:flex; align-items:center; gap:10px; }
+    .tag-primary { white-space:nowrap; }
+    .tag-primary label { margin-left: 6px; }
+    .badge-primary-tag {
+        background: rgba(13,110,253,.12) !important;
+        color: #0d6efd !important;
+        border: 1px solid rgba(13,110,253,.35);
+        font-weight: 700;
+    }
+
+    .badge-primary-tag::before {
+        content: "대표";
+        display: inline-block;
+        margin-right: .4rem;
+        padding: .1rem .35rem;
+        border-radius: 999px;
+        background: rgba(13,110,253,.18);
+        color: #0d6efd;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+</style>
+
+<body>
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>게시글 수정</h2>
+        <a class="btn btn-outline-dark" th:href="@{/post/list}">목록</a>
+    </div>
+
+    <form id="postForm" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="id" th:value="${post.id}">
+
+        <div class="mb-3">
+            <label for="title" class="form-label">제목</label>
+            <input type="text" id="title" name="title" class="form-control"
+                   th:value="${post.title}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="summary" class="form-label">요약</label>
+            <input type="text" id="summary" name="summary" class="form-control"
+                   th:value="${post.summary}">
+        </div>
+
+        <div class="mb-3">
+            <label for="author" class="form-label">작성자</label>
+            <input type="text" id="author" name="author" class="form-control"
+                   th:value="${post.author}">
+        </div>
+
+        <div class="mb-3">
+            <label for="releaseDate" class="form-label">발행일</label>
+            <input type="date" id="releaseDate" name="releaseDate" class="form-control"
+                   th:value="${post.releaseDate}">
+        </div>
+
+        <!-- Thumbnail -->
+        <div class="mb-3">
+            <label for="thumbnail" class="form-label">썸네일</label>
+            <div class="input-group">
+                <input type="text" id="thumbnail" name="thumbnail" class="form-control"
+                       placeholder="https://example.com/image.jpg"
+                       th:value="${post.thumbnail}">
+                <button type="button" class="btn btn-outline-secondary" id="btnUploadThumbnail">
+                    이미지 업로드
+                </button>
+            </div>
+            <small class="text-muted d-block mt-1">
+                직접 URL을 붙여넣거나, 이미지 업로드 버튼을 눌러 파일을 올릴 수 있습니다.
+            </small>
+
+            <input type="file" id="thumbnailFile" accept="image/*" style="display:none;">
+
+            <div class="mt-2"
+                 th:if="${post.thumbnail != null and !#strings.isEmpty(post.thumbnail)}">
+                <img th:src="${post.thumbnail}" id="thumbnailPreview"
+                     alt="썸네일 미리보기" class="img-thumbnail"
+                     style="max-height: 150px;">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="content" class="form-label">내용</label>
+            <textarea id="content" name="content" rows="12" class="form-control"
+                      data-summernote th:text="${post.content}"></textarea>
+        </div>
+
+        <!-- Tags + Primary -->
+        <div class="mb-4">
+            <label class="form-label">태그</label>
+
+            <div class="border rounded p-2" style="max-height: 260px; overflow-y: auto;">
+                <div class="form-check py-1" th:each="tag : ${allTags}">
+                    <div class="tag-row">
+                        <div class="tag-name">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="tagIds"
+                                   th:id="${'tag-' + tag.id}"
+                                   th:value="${tag.id}"
+                                   th:checked="${postTagByTagId != null and postTagByTagId.containsKey(tag.id)}"
+                                   th:attr="
+                                      data-post-id=${post.id},
+                                      data-post-tag-id=${postTagByTagId != null && postTagByTagId.containsKey(tag.id) ? postTagByTagId.get(tag.id).postTagId : ''},
+                                      data-sort-order=${postTagByTagId != null && postTagByTagId.containsKey(tag.id) ? postTagByTagId.get(tag.id).sortOrder : ''},
+                                      data-primary-tag=${postTagByTagId != null && postTagByTagId.containsKey(tag.id) ? postTagByTagId.get(tag.id).primaryTag : 'false'}
+                                   ">
+                            <label class="form-check-label"
+                                   th:for="${'tag-' + tag.id}"
+                                   th:text="${tag.name}"></label>
+                        </div>
+
+                        <!-- 대표 태그: 라디오 1개만 -->
+                        <div class="tag-primary">
+                            <input class="form-check-input primary-radio"
+                                   type="radio"
+                                   name="primaryTagId"
+                                   th:id="${'primary-' + tag.id}"
+                                   th:value="${tag.id}"
+                                   th:checked="${postTagByTagId != null && postTagByTagId.containsKey(tag.id) && postTagByTagId.get(tag.id).primaryTag}"
+                                   th:disabled="${!(postTagByTagId != null and postTagByTagId.containsKey(tag.id))}">
+                            <label class="form-check-label" th:for="${'primary-' + tag.id}">
+                                대표
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(allTags)}" class="text-muted">
+                    등록된 태그가 없습니다. 먼저 태그를 생성해 주세요.
+                </div>
+            </div>
+
+            <small class="text-muted d-block mt-1">
+                ※ “대표”는 한 개만 선택할 수 있으며, 체크된 태그만 대표로 지정 가능합니다.
+            </small>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+            <a class="btn btn-outline-secondary" th:href="@{/post/list}">취소</a>
+            <button type="button" class="btn btn-primary" id="btnSave">수정하기</button>
+        </div>
+    </form>
+</div>
+
+<div th:replace="~{layout/footer :: footer}"></div>
+
+<script th:inline="javascript">
+    // ---- thumbnail upload ----
+    const uploadBtn = document.getElementById('btnUploadThumbnail');
+    const fileInput = document.getElementById('thumbnailFile');
+    const thumbnailInput = document.getElementById('thumbnail');
+    const previewImg = document.getElementById('thumbnailPreview');
+
+    if (uploadBtn && fileInput) {
+        uploadBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const fd = new FormData();
+            fd.append('file', file);
+
+            uploadBtn.disabled = true;
+            const originalText = uploadBtn.textContent;
+            uploadBtn.textContent = '업로드 중...';
+
+            try {
+                const res = await fetch('/api/upload/thumbnail', { method: 'POST', body: fd });
+                if (!res.ok) throw new Error('업로드 실패');
+                const data = await res.json();
+                const url = data.url;
+
+                thumbnailInput.value = url;
+
+                if (previewImg) {
+                    previewImg.src = url;
+                    previewImg.style.display = 'block';
+                } else {
+                    const img = document.createElement('img');
+                    img.id = 'thumbnailPreview';
+                    img.src = url;
+                    img.alt = '썸네일 미리보기';
+                    img.className = 'img-thumbnail mt-2';
+                    img.style.maxHeight = '150px';
+                    uploadBtn.closest('.mb-3').appendChild(img);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('이미지 업로드 중 오류가 발생했습니다.');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = originalText;
+                fileInput.value = '';
+            }
+        });
+    }
+
+    // ---- primary radio enable/disable by checkbox ----
+    function syncPrimaryEnablement() {
+        document.querySelectorAll('input[name="tagIds"]').forEach(cb => {
+            const tagId = cb.value;
+            const radio = document.getElementById(`primary-${tagId}`);
+            if (!radio) return;
+
+            radio.disabled = !cb.checked;
+            if (!cb.checked && radio.checked) radio.checked = false;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        syncPrimaryEnablement();
+
+        document.querySelectorAll('input[name="tagIds"]').forEach(cb => {
+            cb.addEventListener('change', syncPrimaryEnablement);
+        });
+
+        const formEl = document.getElementById('postForm');
+        const btnSave = document.getElementById('btnSave');
+
+        btnSave?.addEventListener('click', async () => {
+            const formData = new FormData(formEl);
+
+            const payload = window.getSummernotePayload({ editorSelector: '#content' });
+            formData.set('content', payload.content);
+            for (const f of payload.files) formData.append('files', f);
+
+            fillPostTagsToFormData(formData);
+
+            btnSave.disabled = true;
+            const originalText = btnSave.textContent;
+            btnSave.textContent = '저장 중...';
+
+            try {
+                // ✅ 네 old 라우팅 기준(현재 보여준 GET /update?id=...)
+                // 컨트롤러의 POST도 /update 로 맞추거나, 실제 POST 매핑에 맞게 아래 URL만 바꾸면 됨.
+                const postId = document.querySelector('input[name="id"]').value;
+                const url = `/post/${postId}/edit`; // <-- 네가 최종으로 쓰는 POST에 맞춰 여기만 수정해도 됨.
+
+                const res = await fetch(url, { method: 'POST', body: formData });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                window.location.href = data.redirectUrl || (`/post/${data.id}`);
+            } catch (e) {
+                console.error(e);
+                alert('저장 중 오류가 발생했습니다.\n' + (e.message ?? e));
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = originalText;
+            }
+        });
+    });
+
+    function fillPostTagsToFormData(formData) {
+        // checkbox 기본 전송값 제거(우리는 postTags[]로 보냄)
+        formData.delete('tagIds');
+
+        const checked = Array.from(document.querySelectorAll('input[name="tagIds"]:checked'));
+
+        // 대표 태그 선택값(tagId)
+        const primaryRadio = document.querySelector('input[name="primaryTagId"]:checked');
+        const primaryTagId = primaryRadio ? (primaryRadio.value || '').trim() : null;
+
+        checked.forEach((cb, idx) => {
+            const tagId = (cb.value || '').trim();
+
+            const postId = (cb.dataset.postId || document.querySelector('input[name="id"]')?.value || '').trim();
+            const postTagId = (cb.dataset.postTagId || '').trim();
+            const sortOrder = (cb.dataset.sortOrder || (idx + 1)).toString().trim();
+
+            // ✅ 대표로 선택된 tagId만 true
+            const primaryTag = (primaryTagId && primaryTagId === tagId) ? 'true' : 'false';
+
+            const base = `postTags[${idx}]`;
+            formData.append(`${base}.postTagId`, postTagId);
+            formData.append(`${base}.postId`, postId);
+            formData.append(`${base}.tagId`, tagId);
+            formData.append(`${base}.sortOrder`, sortOrder);
+            formData.append(`${base}.primaryTag`, primaryTag);
+        });
+    }
+</script>
+
+</body>
+</html>
