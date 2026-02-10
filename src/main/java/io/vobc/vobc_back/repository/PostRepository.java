@@ -106,7 +106,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             p.id,
             coalesce(tr.title, p.title),
             coalesce(tr.summary, p.summary),
-            p.author,
+            coalesce(tr.author, p.author),
             p.thumbnail,
             p.releaseDate
         )
@@ -133,7 +133,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             p.id,
             coalesce(tr.title, p.title),
             coalesce(tr.summary, p.summary),
-            p.author,
+            coalesce(tr.author, p.author),
             p.thumbnail,
             p.releaseDate
         )
@@ -155,12 +155,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     );
 
     @Query("""
-    select pt
-    from PostTag pt
-    join fetch pt.tag t
-    where pt.post.id in :postIds
-    order by pt.primaryTag desc, pt.sortOrder asc, pt.id asc
-""")
+        select pt
+        from PostTag pt
+        join fetch pt.tag t
+        where pt.post.id in :postIds
+        order by pt.primaryTag desc, pt.sortOrder asc, pt.id asc
+    """)
     List<PostTag> findPostTagsByPostIds(@Param("postIds") List<Long> postIds);
 
 }
