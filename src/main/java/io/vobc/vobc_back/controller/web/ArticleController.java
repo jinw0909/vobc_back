@@ -50,6 +50,18 @@ public class ArticleController {
         return "article/form";
     }
 
+    @GetMapping("/new")
+    public String createNewForm(Model model) {
+        model.addAttribute("form", new ArticleForm());
+        Map<Long, String> publishers = articleService.getPublishers();
+        List<Topic> topicList = topicService.getAllTopics();
+
+        model.addAttribute("publishers", publishers);
+        model.addAttribute("topics", topicList);
+
+        return "article/createForm";
+    }
+
     @GetMapping("/edit")
     public String editForm(@RequestParam("id") Long id, Model model) {
         ArticleForm articleForm = articleService.findById(id);
@@ -87,6 +99,44 @@ public class ArticleController {
         return "article/form";
     }
 
+    @GetMapping("/{articleId}/edit")
+    public String editFormOnly(@PathVariable Long articleId, Model model) {
+
+        ArticleForm articleForm = articleService.findById(articleId);
+        Map<Long, String> publishers = articleService.getPublishers();
+        List<Topic> topicList = topicService.getAllTopics();
+
+        // ✅ topic 선택/primary/sort를 템플릿이 쓰기 쉬운 형태로 내려줌
+        var selectedTopicIds = articleForm.getArticleTopics().stream()
+                .map(ArticleTopicForm::getTopicId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        Long primaryTopicId = articleForm.getArticleTopics().stream()
+                .filter(ArticleTopicForm::isPrimaryTopic)
+                .map(ArticleTopicForm::getTopicId)
+                .findFirst()
+                .orElse(null);
+
+        var topicSortMap = articleForm.getArticleTopics().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        ArticleTopicForm::getTopicId,
+                        ArticleTopicForm::getSortOrder,
+                        (a, b) -> a, // 중복 방지
+                        java.util.LinkedHashMap::new
+                ));
+
+        model.addAttribute("selectedTopicIds", selectedTopicIds);
+        model.addAttribute("primaryTopicId", primaryTopicId);
+        model.addAttribute("topicSortMap", topicSortMap);
+
+        model.addAttribute("form", articleForm);
+        model.addAttribute("topics", topicList);
+        model.addAttribute("articleId", articleId);
+        model.addAttribute("publishers", publishers);
+
+        return "article/editForm";
+    }
+
 
     @GetMapping("/detail")
     public String detail(@RequestParam("id") Long id, Model model) {
@@ -118,6 +168,21 @@ public class ArticleController {
     ) {
         Long savedId = articleService.saveOrUpdate(id, form);
         return Map.of("id", savedId);
+    }
+
+    @PostMapping(value="/new", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public Map<String, Long> createArticle(@ModelAttribute("form") ArticleForm form) {
+        Long savedId = articleService.create(form);
+        return Map.of("id", savedId);
+    }
+
+    @PostMapping(value="/{articleId}/edit", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public Map<String, Long> editArticle(@PathVariable Long articleId,
+                                         @ModelAttribute("form") ArticleForm form) {
+        Long updatedId = articleService.edit(articleId, form);
+        return Map.of("id", updatedId);
     }
 
     @GetMapping("/translate/{id}")
@@ -155,7 +220,8 @@ public class ArticleController {
         // ✅ langs 필요 없으면 제거
         // model.addAttribute("langs", articleService.getLanguages(id));
 
-        return "article/translation-form";
+//        return "article/translation-form";
+        return "article/translationForm";
     }
 
 
@@ -189,40 +255,6 @@ public class ArticleController {
 
         return "redirect:/article/translate/" + id + "?lang=" + form.getLanguageCode().getCode();
     }
-
-
-//    @GetMapping("/search/keyword")
-//    public String searchByKeyword(Model model,
-//                                  @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable,
-//                                  @RequestParam(required = false) String keyword) {
-//        Page<Article> page = articleService.findAllByKeyword(keyword, pageable);
-//        model.addAttribute("articles", page.getContent());
-//        model.addAttribute("page", page); // ✅ 페이징 위해 추가
-//        model.addAttribute("keyword", true);
-//        model.addAttribute("time", false);
-//        model.addAttribute("q", keyword);
-//
-//        return "article/list";
-//    }
-//
-//    @GetMapping("/search/date")
-//    public String searchByTime(Model model,
-//                               @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable,
-//                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-//                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-//        Page<Article> page = articleService.findAllByReleaseDate(startDate, endDate, pageable);
-//
-//        model.addAttribute("articles", page.getContent());
-//        model.addAttribute("page", page); // ✅ 페이징 위해 추가
-//        model.addAttribute("time", true);
-//        model.addAttribute("keyword", false);
-//
-//        // 검색값 유지용
-//        model.addAttribute("startDate", startDate);
-//        model.addAttribute("endDate", endDate);
-//
-//        return "article/list";
-//    }
 
 
     @GetMapping("/search")

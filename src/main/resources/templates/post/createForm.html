@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <th:block th:replace="~{layout/head :: head}"></th:block>
-
-<style>
-    #content figure > img { width: 33%; }
-
-    .tag-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .tag-name { display:flex; align-items:center; gap:10px; }
-    .tag-primary { white-space:nowrap; }
-    .tag-primary label { margin-left: 6px; }
-</style>
-
 <body>
 <th:block th:replace="~{layout/header :: header}"></th:block>
 
@@ -92,14 +82,51 @@
             </div>
         </div>
 
+        <!-- ✅ Tiptap Editor -->
         <div class="mb-3">
-            <label for="content" class="form-label">내용</label>
-            <textarea id="content"
-                      name="content"
-                      rows="12"
-                      class="form-control"
-                      data-summernote
-                      th:text="${post.content}"></textarea>
+            <label class="form-label">내용</label>
+
+
+
+            <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="btnBold"><b>B</b></button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnItalic"><i>I</i></button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnUnderline"><u>U</u></button>
+                </div>
+
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="btnLink"><i class="fa fa-link"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnUnlink"><i class="fa fa-unlink"></i></button>
+                </div>
+
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="btnBullet"><i class="fa fa-list-ul"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnNumber"><i class="fa fa-list-ol"></i></button>
+                </div>
+
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="btnSmall">12px</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnP">본문</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnH1">H1</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnH2">H2</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnH3">H3</button>
+                </div>
+
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnInsertImage">
+                    <i class="fa fa-image"></i> 이미지
+                </button>
+            </div>
+
+            <input type="file" id="editorImageInput" accept="image/*" hidden>
+            <textarea id="content" name="content" hidden th:text="${post.content}"></textarea>
+            <!-- ✅ 실제 에디터 렌더링 영역 -->
+            <div id="editor"
+                 class="form-control"
+                 style="min-height:420px; padding:12px;"></div>
+            <small class="text-muted d-block mt-1">
+                이미지 붙여넣기/드래그앤드롭은 가능하지만, 업로드는 저장 시 한 번에 처리됩니다.
+            </small>
         </div>
 
         <!-- ✅ 태그 선택 + 대표 지정(create) -->
@@ -243,7 +270,7 @@
     });
 </script>
 
-<!-- ✅ 저장 JS: JSON(Map) 응답 받고 redirectUrl로 이동 -->
+<!-- ✅ 저장 JS: Tiptap payload + JSON(Map) 응답 받고 redirectUrl로 이동 -->
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', () => {
         const formEl = document.getElementById('postForm');
@@ -252,9 +279,9 @@
         btnSave?.addEventListener('click', async () => {
             const formData = new FormData(formEl);
 
-            const payload = window.getSummernotePayload({ editorSelector: '#content' });
+            // ✅ Tiptap payload (content + files)
+            const payload = window.getEditorPayload();
             formData.set('content', payload.content);
-
             for (const f of payload.files) formData.append('files', f);
 
             fillPostTagsToFormData(formData);
@@ -301,6 +328,9 @@
         });
     }
 </script>
+
+<!-- ✅ Tiptap 번들 로드: DOM 준비된 후 로드되게 body 끝에 둠 -->
+<script type="module" th:src="@{/tiptap/editor.js}"></script>
 
 </body>
 </html>

@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/head :: head}"></head>
+
+<style>
+  /* Topics UI (기존 그대로) */
+  .topic-box{
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 12px;
+    background: #fff;
+    padding: 14px;
+  }
+  .topic-toolbar{
+    display:flex;
+    gap:.5rem;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom: .75rem;
+  }
+  .topic-list{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: .5rem .75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .topic-item{
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 10px;
+    padding: .6rem .65rem;
+  }
+  .topic-item.active{
+    border-color: rgba(13,110,253,.35);
+    box-shadow: 0 8px 18px rgba(13,110,253,.08);
+    background: rgba(13,110,253,.03);
+  }
+</style>
+
+<body class="bg-light">
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">기사 작성</h2>
+    <a class="btn btn-outline-secondary" th:href="@{/article/list}">목록</a>
+  </div>
+
+  <form id="articleForm" class="card p-3" enctype="multipart/form-data">
+    <!-- create 전용: articleId / id 없음 -->
+
+    <div class="mb-3">
+      <label class="form-label">제목</label>
+      <input class="form-control" name="title" id="title" required th:value="${form.title}">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">요약</label>
+      <textarea class="form-control" name="summary" id="summary" rows="2" th:text="${form.summary}"></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">상세</label>
+      <textarea class="form-control" name="description" id="description" rows="2" th:text="${form.description}"></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">작성자</label>
+      <input class="form-control" name="author" id="author" th:value="${form.author}">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">출시일</label>
+      <input type="date" class="form-control" name="releaseDate" id="releaseDate" th:value="${form.releaseDate}">
+    </div>
+
+    <!-- ✅ 썸네일: URL 직접 입력 + 파일 선택 즉시 업로드 + 미리보기 -->
+    <div class="mb-3">
+      <label class="form-label">썸네일</label>
+
+      <div class="input-group mb-2">
+        <input class="form-control" name="thumbnail" id="thumbnail" placeholder="https://... 또는 업로드"
+               th:value="${form.thumbnail}">
+        <button type="button" class="btn btn-outline-secondary" id="btnThumbPreview">미리보기</button>
+        <button type="button" class="btn btn-outline-danger" id="btnThumbClear">지우기</button>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        <input type="file" class="form-control" id="thumbnailFile" accept="image/*">
+        <span class="text-muted small" id="thumbUploadHint">파일 선택 시 자동 업로드됩니다.</span>
+      </div>
+
+      <div class="form-text">
+        URL을 직접 입력해도 되고, 파일 업로드하면 URL이 자동으로 입력됩니다.
+      </div>
+
+      <div class="mt-2" style="max-width: 420px;">
+        <img id="thumbPreview" src="" alt="thumbnail preview"
+             style="display:none; width:100%; border-radius:8px; border:1px solid #e5e7eb;">
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">링크</label>
+      <input class="form-control" name="link" id="link" placeholder="https://..." th:value="${form.link}">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Publisher</label>
+      <select class="form-select" name="publisherId" id="publisherId" required>
+        <option value="" th:selected="${form.publisher == null}">선택</option>
+        <option th:each="e : ${publishers.entrySet()}"
+                th:value="${e.key}"
+                th:text="${e.value}"
+                th:selected="${form.publisher != null and form.publisher.id == e.key}">
+        </option>
+      </select>
+      <div class="form-text">저장값은 Publisher ID 입니다.</div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">카테고리</label>
+      <select class="form-select" name="category" id="category">
+        <option value="" th:selected="${form.category == null}">선택</option>
+        <option value="news"      th:selected="${form.category != null and form.category.type == 'news'}">news</option>
+        <option value="event"     th:selected="${form.category != null and form.category.type == 'event'}">event</option>
+        <option value="interview" th:selected="${form.category != null and form.category.type == 'interview'}">interview</option>
+        <option value="publicity" th:selected="${form.category != null and form.category.type == 'publicity'}">publicity</option>
+        <option value="editorial" th:selected="${form.category != null and form.category.type == 'editorial'}">editorial</option>
+      </select>
+    </div>
+
+    <!-- ✅ Topics -->
+    <div class="mb-3">
+      <label class="form-label">Topics</label>
+
+      <div class="topic-box">
+        <div class="topic-toolbar">
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnToggleTopics">
+              Topics 선택 ▾
+            </button>
+            <span class="text-muted small" id="topicSelectionSummary">선택된 topic: 0</span>
+          </div>
+          <div class="text-muted small">Primary는 1개만 선택됩니다.</div>
+        </div>
+
+        <div id="topicsPanel" style="display:none;">
+          <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+            <input type="text" class="form-control form-control-sm" id="topicSearch"
+                   placeholder="토픽 검색..." style="max-width: 260px;">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnTopicClear">
+              선택 해제
+            </button>
+          </div>
+
+          <ul class="topic-list" id="topicList" th:if="${topics != null}">
+            <li class="topic-item"
+                th:each="t : ${topics}"
+                th:attr="data-topic-id=${t.id}, data-topic-name=${t.name}">
+
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <input type="checkbox"
+                       class="form-check-input topic-check"
+                       th:attr="data-topic-id=${t.id}"
+                       th:checked="${selectedTopicIds != null and selectedTopicIds.contains(t.id)}" />
+
+                <span class="fw-semibold" th:text="${t.name}">Topic Name</span>
+
+                <label class="ms-2 small text-muted d-flex align-items-center gap-1">
+                  <input type="radio"
+                         name="primaryTopicRadio"
+                         class="form-check-input topic-primary-radio"
+                         th:attr="data-topic-id=${t.id}"
+                         th:checked="${primaryTopicId != null and primaryTopicId == t.id}" />
+                  Primary
+                </label>
+
+                <input type="number"
+                       class="form-control form-control-sm topic-sort ms-auto"
+                       style="width: 110px;"
+                       min="0"
+                       placeholder="sort"
+                       th:attr="data-topic-id=${t.id}"
+                       th:value="${topicSortMap != null && topicSortMap.containsKey(t.id) ? topicSortMap[t.id] : ''}" />
+              </div>
+            </li>
+          </ul>
+
+          <div class="text-muted small" th:if="${topics == null or #lists.isEmpty(topics)}">
+            등록된 topic이 없습니다.
+          </div>
+        </div>
+
+        <div id="articleTopicsHidden"></div>
+      </div>
+    </div>
+
+    <!-- ✅ Tiptap Editor -->
+    <div class="mb-2">
+      <label class="form-label">내용</label>
+
+      <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn btn-outline-secondary" id="btnBold"><b>B</b></button>
+          <button type="button" class="btn btn-outline-secondary" id="btnItalic"><i>I</i></button>
+          <button type="button" class="btn btn-outline-secondary" id="btnUnderline"><u>U</u></button>
+        </div>
+
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn btn-outline-secondary" id="btnLink"><i class="fa fa-link"></i></button>
+          <button type="button" class="btn btn-outline-secondary" id="btnUnlink"><i class="fa fa-unlink"></i></button>
+        </div>
+
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn btn-outline-secondary" id="btnBullet"><i class="fa fa-list-ul"></i></button>
+          <button type="button" class="btn btn-outline-secondary" id="btnNumber"><i class="fa fa-list-ol"></i></button>
+        </div>
+
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn btn-outline-secondary" id="btnSmall">12px</button>
+          <button type="button" class="btn btn-outline-secondary" id="btnP">본문</button>
+          <button type="button" class="btn btn-outline-secondary" id="btnH1">H1</button>
+          <button type="button" class="btn btn-outline-secondary" id="btnH2">H2</button>
+          <button type="button" class="btn btn-outline-secondary" id="btnH3">H3</button>
+        </div>
+
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnInsertImage">
+          <i class="fa fa-image"></i> 이미지
+        </button>
+      </div>
+
+      <input type="file" id="editorImageInput" accept="image/*" hidden>
+      <textarea id="content" name="content" hidden th:text="${form.content}"></textarea>
+      <div id="editor" class="form-control" style="min-height:420px; padding:12px;"></div>
+
+      <div class="form-text">
+        이미지 붙여넣기/드래그앤드롭은 가능하지만, 업로드는 저장 시 한 번에 처리됩니다.
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+      <a class="btn btn-outline-secondary" th:href="@{/article/list}">취소</a>
+      <button type="button" class="btn btn-primary" id="btnSave">저장</button>
+    </div>
+
+    <div class="mt-3 text-danger" id="errorBox" style="display:none;"></div>
+  </form>
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  (function () {
+    // -------------------------
+    // 썸네일 유틸
+    // -------------------------
+    function setThumbPreview(url) {
+      const img = document.getElementById('thumbPreview');
+      if (!img) return;
+      if (!url) {
+        img.style.display = 'none';
+        img.src = '';
+        return;
+      }
+      img.src = url;
+      img.style.display = 'block';
+    }
+
+    async function uploadThumbnailFromFile(file) {
+      if (!file) throw new Error('썸네일 파일을 선택해주세요.');
+
+      const fd = new FormData();
+      fd.append('file', file);
+
+      const res = await fetch('/api/upload/thumbnail', {
+        method: 'POST',
+        body: fd,
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+      return await res.json(); // {url: "..."}
+    }
+
+    // -------------------------
+    // Topics 바인딩 (기존 그대로)
+    // -------------------------
+    const initialArticleTopics = (/*[[${form != null && form.articleTopics != null ? form.articleTopics : null}]]*/ null) || [];
+
+    function buildInitialMap(arr) {
+      const map = new Map();
+      try {
+        for (const it of (arr || [])) {
+          const tid = Number(it.topicId);
+          if (!tid) continue;
+          map.set(tid, {
+            id: it.id != null ? Number(it.id) : null,
+            primaryTopic: !!it.primaryTopic,
+            sortOrder: it.sortOrder != null ? Number(it.sortOrder) : 0
+          });
+        }
+      } catch (e) {
+        console.warn('initialArticleTopics parse failed', e);
+      }
+      return map;
+    }
+
+    const initialMap = buildInitialMap(initialArticleTopics);
+
+    function getAllTopicRows() { return Array.from(document.querySelectorAll('.topic-item')); }
+    function getCheck(tid) { return document.querySelector(`.topic-check[data-topic-id="${tid}"]`); }
+    function getPrimaryRadio(tid) { return document.querySelector(`.topic-primary-radio[data-topic-id="${tid}"]`); }
+    function getSortInput(tid) { return document.querySelector(`.topic-sort[data-topic-id="${tid}"]`); }
+    function getTopicNameById(tid) {
+      const row = document.querySelector(`.topic-item[data-topic-id="${tid}"]`);
+      if (!row) return '';
+      return String(row.getAttribute('data-topic-name') || '').trim();
+    }
+
+    function updateRowActiveState(tid) {
+      const row = document.querySelector(`.topic-item[data-topic-id="${tid}"]`);
+      const chk = getCheck(tid);
+      if (!row || !chk) return;
+      row.classList.toggle('active', !!chk.checked);
+    }
+
+    function currentSelected() {
+      const out = [];
+      const checks = Array.from(document.querySelectorAll('.topic-check'));
+      for (const c of checks) {
+        const tid = Number(c.getAttribute('data-topic-id'));
+        if (!tid || !c.checked) continue;
+
+        const r = getPrimaryRadio(tid);
+        const s = getSortInput(tid);
+
+        const primaryTopic = !!(r && r.checked);
+        const sortOrder = s ? Number(s.value || 0) : 0;
+
+        const initial = initialMap.get(tid);
+        out.push({
+          id: initial?.id ?? null,
+          topicId: tid,
+          primaryTopic,
+          sortOrder
+        });
+      }
+
+      let auto = 1;
+      for (const it of out) {
+        if (!it.sortOrder || it.sortOrder <= 0) it.sortOrder = auto++;
+      }
+
+      out.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      return out;
+    }
+
+    function updateTopicSummary() {
+      const el = document.getElementById('topicSelectionSummary');
+      if (!el) return;
+
+      const selected = currentSelected();
+      const count = selected.length;
+      const primary = selected.find(x => x.primaryTopic);
+      const primaryName = primary ? getTopicNameById(primary.topicId) : '';
+
+      el.textContent = primaryName
+              ? `선택된 topic: ${count} (Primary: ${primaryName})`
+              : `선택된 topic: ${count}`;
+    }
+
+    function rebuildHiddenInputs() {
+      const wrap = document.getElementById('articleTopicsHidden');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+
+      const selected = currentSelected();
+      selected.forEach((it, idx) => {
+        if (it.id != null) {
+          const idInput = document.createElement('input');
+          idInput.type = 'hidden';
+          idInput.name = `articleTopics[${idx}].id`;
+          idInput.value = String(it.id);
+          wrap.appendChild(idInput);
+        }
+
+        const topicIdInput = document.createElement('input');
+        topicIdInput.type = 'hidden';
+        topicIdInput.name = `articleTopics[${idx}].topicId`;
+        topicIdInput.value = String(it.topicId);
+        wrap.appendChild(topicIdInput);
+
+        const primaryInput = document.createElement('input');
+        primaryInput.type = 'hidden';
+        primaryInput.name = `articleTopics[${idx}].primaryTopic`;
+        primaryInput.value = String(!!it.primaryTopic);
+        wrap.appendChild(primaryInput);
+
+        const sortInput = document.createElement('input');
+        sortInput.type = 'hidden';
+        sortInput.name = `articleTopics[${idx}].sortOrder`;
+        sortInput.value = String(it.sortOrder || (idx + 1));
+        wrap.appendChild(sortInput);
+      });
+
+      updateTopicSummary();
+    }
+
+    function ensureSinglePrimary() {
+      const selected = currentSelected();
+      if (selected.length === 0) return;
+
+      const hasPrimary = selected.some(x => x.primaryTopic);
+      if (!hasPrimary) {
+        const firstTid = selected[0].topicId;
+        const r = getPrimaryRadio(firstTid);
+        if (r) r.checked = true;
+      }
+
+      let found = false;
+      for (const it of selected) {
+        const r = getPrimaryRadio(it.topicId);
+        if (!r) continue;
+        if (r.checked) {
+          if (!found) found = true;
+          else r.checked = false;
+        }
+      }
+    }
+
+    function applyInitialSelection() {
+      for (const [tid, v] of initialMap.entries()) {
+        const chk = getCheck(tid);
+        if (chk) chk.checked = true;
+
+        const r = getPrimaryRadio(tid);
+        if (r) r.checked = !!v.primaryTopic;
+
+        const s = getSortInput(tid);
+        if (s && v.sortOrder && v.sortOrder > 0) s.value = String(v.sortOrder);
+
+        updateRowActiveState(tid);
+      }
+
+      ensureSinglePrimary();
+      rebuildHiddenInputs();
+    }
+
+    function wireTopicEvents() {
+      const checks = Array.from(document.querySelectorAll('.topic-check'));
+      const radios = Array.from(document.querySelectorAll('.topic-primary-radio'));
+      const sorts  = Array.from(document.querySelectorAll('.topic-sort'));
+
+      checks.forEach(chk => {
+        chk.addEventListener('change', () => {
+          const tid = Number(chk.getAttribute('data-topic-id'));
+          updateRowActiveState(tid);
+
+          if (!chk.checked) {
+            const r = getPrimaryRadio(tid);
+            if (r) r.checked = false;
+          } else {
+            ensureSinglePrimary();
+          }
+          rebuildHiddenInputs();
+        });
+      });
+
+      radios.forEach(r => {
+        r.addEventListener('change', () => {
+          const tid = Number(r.getAttribute('data-topic-id'));
+          const chk = getCheck(tid);
+
+          if (chk && !chk.checked) {
+            chk.checked = true;
+            updateRowActiveState(tid);
+          }
+          ensureSinglePrimary();
+          rebuildHiddenInputs();
+        });
+      });
+
+      sorts.forEach(s => {
+        s.addEventListener('input', () => rebuildHiddenInputs());
+        s.addEventListener('change', () => rebuildHiddenInputs());
+      });
+
+      const btnClear = document.getElementById('btnTopicClear');
+      btnClear?.addEventListener('click', () => {
+        checks.forEach(c => { c.checked = false; });
+        radios.forEach(r => { r.checked = false; });
+        sorts.forEach(s => { s.value = ''; });
+        getAllTopicRows().forEach(row => row.classList.remove('active'));
+        rebuildHiddenInputs();
+      });
+
+      const search = document.getElementById('topicSearch');
+      search?.addEventListener('input', () => {
+        const q = String(search.value || '').trim().toLowerCase();
+        const rows = getAllTopicRows();
+        rows.forEach(row => {
+          const name = String(row.getAttribute('data-topic-name') || '').toLowerCase();
+          row.style.display = (!q || name.includes(q)) ? '' : 'none';
+        });
+      });
+
+      const btnToggle = document.getElementById('btnToggleTopics');
+      const panel = document.getElementById('topicsPanel');
+      btnToggle?.addEventListener('click', () => {
+        if (!panel) return;
+        const open = panel.style.display !== 'none';
+        panel.style.display = open ? 'none' : 'block';
+        btnToggle.textContent = open ? 'Topics 선택 ▾' : 'Topics 선택 ▴';
+      });
+    }
+
+    // -------------------------
+    // DOM Ready
+    // -------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+      const errorBox = document.getElementById('errorBox');
+      const btnSave = document.getElementById('btnSave');
+      const formEl = document.getElementById('articleForm');
+
+      // thumb
+      const thumbInput = document.getElementById('thumbnail');
+      const fileInput = document.getElementById('thumbnailFile');
+      const btnThumbPreview = document.getElementById('btnThumbPreview');
+      const btnThumbClear = document.getElementById('btnThumbClear');
+      const hint = document.getElementById('thumbUploadHint');
+
+      const initialThumb = thumbInput?.value?.trim();
+      if (initialThumb) setThumbPreview(initialThumb);
+
+      btnThumbPreview?.addEventListener('click', () => setThumbPreview((thumbInput?.value ?? '').toString().trim()));
+      btnThumbClear?.addEventListener('click', () => {
+        if (thumbInput) thumbInput.value = '';
+        setThumbPreview('');
+      });
+
+      fileInput?.addEventListener('change', async () => {
+        if (errorBox) { errorBox.style.display = 'none'; errorBox.textContent = ''; }
+
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+
+        try { setThumbPreview(URL.createObjectURL(file)); } catch (e) {}
+
+        if (hint) hint.textContent = '업로드 중...';
+        fileInput.disabled = true;
+
+        try {
+          const data = await uploadThumbnailFromFile(file);
+          const url = data.url;
+
+          if (thumbInput) thumbInput.value = url;
+          setThumbPreview(url);
+
+          if (hint) hint.textContent = '업로드 완료';
+        } catch (e) {
+          console.error(e);
+          if (errorBox) {
+            errorBox.style.display = 'block';
+            errorBox.textContent = '썸네일 업로드 실패: ' + (e?.message ?? e);
+          }
+          if (hint) hint.textContent = '업로드 실패 (다시 선택)';
+        } finally {
+          fileInput.value = '';
+          fileInput.disabled = false;
+        }
+      });
+
+      // Topics
+      applyInitialSelection();
+      wireTopicEvents();
+
+      // submit 방지
+      formEl?.addEventListener('submit', (e) => e.preventDefault());
+
+      // 저장(create): /article/new
+      btnSave?.addEventListener('click', async () => {
+        if (errorBox) { errorBox.style.display = 'none'; errorBox.textContent = ''; }
+
+        ensureSinglePrimary();
+        rebuildHiddenInputs();
+
+        const formData = new FormData(formEl);
+
+        // ✅ Tiptap payload
+        const payload = window.getEditorPayload
+                ? window.getEditorPayload()
+                : { content: document.getElementById('content')?.value ?? '', files: [] };
+
+        formData.set('content', payload.content);
+        for (const f of (payload.files || [])) formData.append('files', f);
+
+        btnSave.disabled = true;
+        const originalText = btnSave.textContent;
+        btnSave.textContent = '저장 중...';
+
+        try {
+          const res = await fetch('/article/new', { method: 'POST', body: formData });
+          if (!res.ok) throw new Error(await res.text());
+
+          const data = await res.json(); // {id}
+          window.location.href = `/article/detail?id=${data.id}`;
+        } catch (e) {
+          console.error(e);
+          if (errorBox) {
+            errorBox.style.display = 'block';
+            errorBox.textContent = '저장 실패: ' + (e?.message ?? e);
+          }
+        } finally {
+          btnSave.disabled = false;
+          btnSave.textContent = originalText;
+        }
+      });
+    });
+  })();
+  /*]]>*/
+</script>
+
+<!-- ✅ Tiptap 번들 -->
+<script type="module" th:src="@{/tiptap/editor.js}"></script>
+
+</body>
+</html>

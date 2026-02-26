@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-    <body>
+<body>
 
-        <footer th:fragment="footer">
-            <div class="container mt-5 mb-3">
-                <p class="text-center text-muted">
-                    &copy; 2025 VOBC. All rights reserved.
-                </p>
-            </div>
-            <script th:src="@{/webjars/jquery/3.7.1/jquery.min.js}"></script>
-            <script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
-            <script th:src="@{/summernote/summernote-bs5.js}"></script>
-            <script th:src="@{/dompurify/purify.js}"></script>
-            <script th:src="@{/js/app.js}"></script>
-        </footer>
+<footer th:fragment="footer" class="site-footer">
+    <div class="container mt-5 mb-3">
+        <p class="text-center text-muted mb-0">
+            &copy; <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2025</span>
+            VOBC. All rights reserved.
+        </p>
+    </div>
 
-    </body>
+    <!-- JS: footer에 두는 구조 OK -->
+    <script th:src="@{/webjars/jquery/3.7.1/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+    <!-- 필요시 -->
+    <!-- <script th:src="@{/summernote/summernote-bs5.js}"></script> -->
+    <!-- <script th:src="@{/dompurify/purify.js}"></script> -->
+    <!-- <script th:src="@{/js/app.js}"></script> -->
+</footer>
+
+</body>
 </html>

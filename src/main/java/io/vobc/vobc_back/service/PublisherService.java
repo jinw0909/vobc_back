@@ -10,10 +10,14 @@ import io.vobc.vobc_back.repository.publisher.PublisherTranslationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -58,13 +62,7 @@ public class PublisherService {
 
         log.info("Found translation: {}", publisherTranslation);
 
-        if (publisherTranslation == null) {
-            PublisherTranslationForm empty = new PublisherTranslationForm();
-            empty.setLanguageCode(languageCode);
-            return empty;
-        }
-
-        return new PublisherTranslationForm(publisherTranslation);
+        return (publisherTranslation == null) ? null : new PublisherTranslationForm(publisherTranslation);
     }
 
     @Transactional(readOnly = true)
@@ -100,8 +98,32 @@ public class PublisherService {
         return publisherTranslation.getLanguageCode();
     }
 
+    @Transactional
     public void deleteTranslation(Long id) {
         PublisherTranslation publisherTranslation = publisherTranslationRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Translation not found"));
         publisherTranslationRepository.delete(publisherTranslation);
+    }
+
+//    @Transactional(readOnly = true)
+//    public Page<PublisherForm> search(String name, Pageable pageable) {
+//        Page<Publisher> publishers =  publisherRepository.findByNameContainingIgnoreCase(name, pageable);
+//        return publishers.map(PublisherForm::new);
+//    }
+
+//    @Transactional(readOnly = true)
+//    public Page<PublisherForm> search(String name, Pageable pageable) {
+//        Page<Long> ids = publisherRepository.searchIds(name, pageable);
+//
+//        List<Long> idsList = ids.getContent();
+//        List<Publisher> publishers = ids.isEmpty() ? List.of() : publisherRepository.findAllByIdIn(idsList);
+//
+//        List<PublisherForm> content = publishers.stream().map(PublisherForm::new).toList();
+//        return new PageImpl<>(content, ids.getPageable(), ids.getTotalElements());
+//    }
+
+    @Transactional(readOnly = true)
+    public Page<PublisherForm> search(String name, Pageable pageable) {
+        Page<Publisher> publishers =  publisherRepository.search(name, pageable);
+        return publishers.map(PublisherForm::new);
     }
 }

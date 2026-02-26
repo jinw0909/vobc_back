@@ -1,5 +1,6 @@
 package io.vobc.vobc_back.dto.publisher;
 
+import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.publisher.Publisher;
 import lombok.Data;
 import lombok.Getter;
@@ -14,6 +15,7 @@ public class PublisherForm {
     public String name;
     public String introduction;
     public String logo;
+    private LanguageCode languageCode;
 
     public PublisherForm(Publisher publisher) {
         this.id = publisher.getId();

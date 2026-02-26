@@ -1,6 +1,7 @@
 package io.vobc.vobc_back.controller.web;
 
 import io.vobc.vobc_back.domain.LanguageCode;
+import io.vobc.vobc_back.domain.publisher.Publisher;
 import io.vobc.vobc_back.dto.TranslationForm;
 import io.vobc.vobc_back.dto.publisher.PublisherForm;
 import io.vobc.vobc_back.dto.publisher.PublisherResponse;
@@ -45,6 +46,7 @@ public class PublisherController {
         Page<PublisherForm> page = publisherService.getPublishers(pageable);
         model.addAttribute("publishers", page.getContent());
         model.addAttribute("page", page);
+        model.addAttribute("keyword", "");
         return "publisher/list";
     }
 
@@ -78,8 +80,14 @@ public class PublisherController {
         LanguageCode languageCode = LanguageCode.from(lang);
         PublisherForm publisher = publisherService.getPublisher(id);
         PublisherTranslationForm translation = publisherService.getTranslation(id, languageCode);
+        if (translation == null) {
+            translation = new PublisherTranslationForm();
+            translation.setLanguageCode(languageCode);
+            translation.setName(publisher.getName());
+            translation.setIntroduction(publisher.getIntroduction());
+        }
         model.addAttribute("publisher", publisher);
-        model.addAttribute("translation", translation != null ? translation : new PublisherTranslationForm());
+        model.addAttribute("translation", translation);
 
         return "publisher/translation";
     }
@@ -99,5 +107,19 @@ public class PublisherController {
                                     @RequestParam String lang) {
         publisherService.deleteTranslation(translationId);
         return "redirect:/publisher/translation/" + id + "?lang=" + lang;
+    }
+
+    @GetMapping("/search")
+    public String search(@RequestParam String keyword,
+                         @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
+                         Model model) {
+
+        Page<PublisherForm> page = publisherService.search(keyword, pageable);
+
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("page", page);
+        model.addAttribute("publishers", page.getContent());
+
+        return "publisher/list";
     }
 }

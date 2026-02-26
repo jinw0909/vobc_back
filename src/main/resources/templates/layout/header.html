@@ -1,40 +1,112 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org"
-    xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <th:block th:fragment="header">
+    <style>
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            background: rgba(255,255,255,.92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,.06);
+        }
+        .site-header .inner {
+            height: 64px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap: 16px;
+        }
+        .brand {
+            display:flex;
+            align-items:center;
+            gap: 10px;
+            text-decoration:none;
+            color: #111;
+            font-weight: 900;
+            letter-spacing: .6px;
+        }
+        .brand-badge {
+            font-size: .78rem;
+            color: rgba(33,37,41,.72);
+            background: rgba(0,0,0,.04);
+            border: 1px solid rgba(0,0,0,.06);
+            padding: 4px 10px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+        .nav-links {
+            display:flex;
+            align-items:center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .user-chip {
+            display:flex;
+            align-items:center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(13,110,253,.06);
+            border: 1px solid rgba(13,110,253,.10);
+            color: rgba(33,37,41,.88);
+            font-size: .92rem;
+            white-space: nowrap;
+        }
+        .user-chip i { opacity: .8; }
+    </style>
+
     <header class="site-header">
-        <div class="header-inner">
+        <div class="container">
+            <div class="inner">
 
-            <!-- ✅ 로고 / 홈 -->
-            <div class="header-left">
-                <a th:href="@{/}" class="logo">
-                    VOB
+                <!-- Brand -->
+                <a th:href="@{/}" class="brand">
+                    <span style="font-size:1.05rem;">VOB</span>
+                    <span class="brand-badge d-none d-sm-inline">Admin</span>
                 </a>
+
+                <!-- Right -->
+                <nav class="nav-links">
+
+                    <!-- quick links (optional) -->
+                    <a class="btn btn-sm btn-outline-secondary d-none d-md-inline"
+                       th:href="@{/publisher/list}">
+                        <i class="fa-solid fa-building me-1"></i>
+                        Publishers
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary d-none d-md-inline"
+                       th:href="@{/article/list}">
+                        <i class="fa-solid fa-newspaper me-1"></i>
+                        Articles
+                    </a>
+
+                    <!-- unauth -->
+                    <div th:if="${#authorization.expression('!isAuthenticated()')}" class="d-flex gap-2">
+                        <a th:href="@{/auth/login}" class="btn btn-sm btn-outline-secondary">Login</a>
+                        <a th:href="@{/auth/join}" class="btn btn-sm btn-primary">Sign up</a>
+                    </div>
+
+                    <!-- auth -->
+                    <div th:if="${#authorization.expression('isAuthenticated()')}" class="d-flex align-items-center gap-2">
+            <span class="user-chip">
+              <i class="fa-solid fa-user"></i>
+              <span>Hello, <strong>[[${#authentication.name}]]</strong></span>
+            </span>
+
+                        <form th:action="@{/auth/logout}" method="post" class="m-0">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+
+                </nav>
             </div>
-
-            <!-- ✅ 우측 영역 -->
-            <nav class="header-right">
-
-                <!-- 로그인 안 한 상태 -->
-                <div th:if="${#authorization.expression('!isAuthenticated()')}">
-                    <a th:href="@{/auth/login}">Login</a>
-                    <a th:href="@{/auth/join}">Sign up</a>
-                </div>
-
-                <!-- 로그인 한 상태 -->
-                <div th:if="${#authorization.expression('isAuthenticated()')}">
-                    <span class="user-info">
-                        Hello, <strong>[[${#authentication.name}]]</strong>
-                    </span>
-
-                    <form th:action="@{/auth/logout}" method="post" style="display:inline;">
-                        <button type="submit" class="logout-btn">Logout</button>
-                    </form>
-                </div>
-
-            </nav>
         </div>
-
     </header>
 </th:block>
 </html>

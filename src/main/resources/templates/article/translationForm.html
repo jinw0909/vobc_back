@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block th:replace="~{layout/head :: head}"></th:block>
+
+<style>
+  .card-soft {
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 10px 24px rgba(0,0,0,.06);
+    border-radius: 16px;
+  }
+  .form-readonly input[readonly],
+  .form-readonly textarea[readonly]{
+    background: #f8f9fa !important;
+    cursor: not-allowed;
+  }
+  .mono-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+  .preview-box img { max-width: 100%; height: auto; }
+  .preview-box table { width: 100%; }
+  .preview-box { background: #fff; border: 1px solid rgba(0,0,0,.12); border-radius: 12px; padding: 12px; }
+
+  /* Tiptap editor area */
+  #editor {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.12);
+    border-radius: 12px;
+    padding: 12px;
+    min-height: 320px;
+  }
+</style>
+
+<body class="bg-light">
+<th:block th:replace="~{layout/header :: header}"></th:block>
+
+<div class="container py-4">
+
+  <!-- 상단 -->
+  <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+    <div>
+      <h4 class="mb-1">번역 관리</h4>
+      <div class="text-muted small">
+        Article ID: <span th:text="${article.id}" class="mono-badge">0</span> ·
+        현재 언어: <span class="badge text-bg-dark mono-badge" th:text="${lang}">en</span>
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <!-- 상태 -->
+      <span class="badge"
+            th:classappend="${translation.id != null} ? ' text-bg-success' : ' text-bg-secondary'">
+                <span th:text="${translation.id != null} ? '번역 있음' : '번역 없음'">번역 있음</span>
+                <span th:if="${translation.id != null}"> · #<span th:text="${translation.id}">1</span></span>
+            </span>
+
+      <a class="btn btn-outline-secondary" th:href="@{/article/detail(id=${article.id})}">
+        ← 돌아가기
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- 좌: 원문 -->
+    <div class="col-12 col-lg-6">
+      <div class="card card-soft">
+        <div class="card-header bg-white d-flex align-items-start justify-content-between">
+          <div>
+            <div class="fw-semibold">원문(Article)</div>
+            <div class="text-muted small">읽기 전용</div>
+          </div>
+
+          <span class="badge text-bg-light border"
+                th:if="${article.publisher != null}">
+                        Publisher: <span class="mono-badge" th:text="${article.publisher.name}">Publisher</span>
+                    </span>
+        </div>
+
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-6">
+              <label class="form-label small text-muted">Title</label>
+              <input class="form-control" th:value="${article.title}" readonly>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small text-muted">Author</label>
+              <input class="form-control" th:value="${article.author}" readonly>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small text-muted">Category</label>
+              <input class="form-control" th:value="${article.category}" readonly>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small text-muted">Release Date</label>
+              <input class="form-control" th:value="${article.releaseDate}" readonly>
+            </div>
+            <div class="col-12">
+              <label class="form-label small text-muted">Thumbnail</label>
+              <input class="form-control" th:value="${article.thumbnail}" readonly>
+            </div>
+            <div class="col-12">
+              <label class="form-label small text-muted">Link</label>
+              <input class="form-control" th:value="${article.link}" readonly>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small text-muted">Description</label>
+              <textarea class="form-control" rows="3" readonly th:text="${article.description}"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label small text-muted">Summary</label>
+              <textarea class="form-control" rows="3" readonly th:text="${article.summary}"></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small text-muted">Content (Preview)</label>
+              <div class="preview-box" th:utext="${article.content}"></div>
+            </div>
+          </div>
+
+          <div class="text-muted small mt-2">
+            * 원문 수정은 Article 수정 화면에서 진행.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우: 번역 -->
+    <div class="col-12 col-lg-6">
+      <div class="card card-soft">
+        <div class="card-header bg-white d-flex align-items-start justify-content-between">
+          <div>
+            <div class="fw-semibold">
+              번역(Translation) · <span class="badge text-bg-dark mono-badge" th:text="${lang}">en</span>
+            </div>
+            <div class="text-muted small">
+                            <span th:text="${translation.id != null} ? '기존 번역: 잠금 상태 (수정 버튼 필요)' : '새 번역: 원문을 기본값으로 표시'">
+                                새 번역
+                            </span>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="button"
+                    class="btn btn-outline-primary"
+                    id="editBtn"
+                    th:if="${translation.id != null}">
+              ✏️ 수정
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+
+          <form id="translationForm"
+                th:action="@{|/article/translate/${article.id}|}"
+                method="post"
+                enctype="multipart/form-data"
+                th:object="${translation}"
+                class="form-readonly">
+
+            <!-- hidden -->
+            <input type="hidden" th:field="*{id}">
+            <input type="hidden" th:field="*{languageCode}">
+            <input type="hidden" name="lang" th:value="${lang}">
+
+            <div id="translationSection" class="row g-2">
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Title</label>
+                <input class="form-control"
+                       th:field="*{title}"
+                       th:value="${translation.id == null ? article.title : translation.title}"
+                       th:attr="readonly=${translation.id != null} ? 'readonly' : null">
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted">Author</label>
+                <input class="form-control"
+                       th:field="*{author}"
+                       th:value="${translation.id == null ? article.author : translation.author}"
+                       th:attr="readonly=${translation.id != null} ? 'readonly' : null">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small text-muted">Description</label>
+                <textarea class="form-control" rows="3"
+                          th:field="*{description}"
+                          th:text="${translation.id == null ? article.description : translation.description}"
+                          th:attr="readonly=${translation.id != null} ? 'readonly' : null"></textarea>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small text-muted">Summary</label>
+                <textarea class="form-control" rows="3"
+                          th:field="*{summary}"
+                          th:text="${translation.id == null ? article.summary : translation.summary}"
+                          th:attr="readonly=${translation.id != null} ? 'readonly' : null"></textarea>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small text-muted">Content</label>
+
+                <!-- ✅ 보기 모드 -->
+                <div id="translatedContentView"
+                     class="preview-box"
+                     th:utext="${translation.id == null ? article.content : translation.content}"
+                     th:style="${translation.id == null} ? 'display:none;' : ''">
+                </div>
+
+                <!-- ✅ 편집 모드 -->
+                <div id="translatedContentEditorWrap"
+                     class="mt-2"
+                     th:style="${translation.id != null} ? 'display:none;' : ''">
+
+                  <!-- ✅ tiptap toolbar (createForm과 동일 id) -->
+                  <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-outline-secondary" id="btnBold"><b>B</b></button>
+                      <button type="button" class="btn btn-outline-secondary" id="btnItalic"><i>I</i></button>
+                      <button type="button" class="btn btn-outline-secondary" id="btnUnderline"><u>U</u></button>
+                    </div>
+
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-outline-secondary" id="btnLink"><i class="fa fa-link"></i></button>
+                      <button type="button" class="btn btn-outline-secondary" id="btnUnlink"><i class="fa fa-unlink"></i></button>
+                    </div>
+
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-outline-secondary" id="btnBullet"><i class="fa fa-list-ul"></i></button>
+                      <button type="button" class="btn btn-outline-secondary" id="btnNumber"><i class="fa fa-list-ol"></i></button>
+                    </div>
+
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-outline-secondary" id="btnSmall">12px</button>
+                      <button type="button" class="btn btn-outline-secondary" id="btnP">본문</button>
+                      <button type="button" class="btn btn-outline-secondary" id="btnH1">H1</button>
+                      <button type="button" class="btn btn-outline-secondary" id="btnH2">H2</button>
+                      <button type="button" class="btn btn-outline-secondary" id="btnH3">H3</button>
+                    </div>
+
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnInsertImage">
+                      <i class="fa fa-image"></i> 이미지
+                    </button>
+                  </div>
+
+                  <input type="file" id="editorImageInput" accept="image/*" hidden>
+
+                  <!-- tiptap mount -->
+                  <div id="editor"></div>
+                </div>
+
+                <!-- ✅ 서버 제출용 hidden (tiptap/editor.js 가 여기 값을 갱신) -->
+                <textarea id="content" name="content" style="display:none;"
+                          th:text="${translation.id == null ? article.content : translation.content}"></textarea>
+              </div>
+
+            </div>
+
+            <!-- ✅ 번역 하단 버튼 영역 -->
+            <div class="d-flex justify-content-end gap-2 mt-3">
+              <button type="button"
+                      class="btn btn-primary"
+                      id="saveProxyBtn">
+                💾 저장
+              </button>
+
+              <button type="button"
+                      class="btn btn-outline-secondary"
+                      id="cancelBtn"
+                      style="display:none;">
+                ✖️ 취소
+              </button>
+            </div>
+
+            <div class="alert alert-warning mt-3 mb-0"
+                 id="lockHint"
+                 th:if="${translation.id != null}">
+              현재 번역은 잠겨 있어요. <b>수정</b>을 누른 후 저장할 수 있어요.
+            </div>
+
+            <div class="alert alert-info mt-3 mb-0"
+                 th:if="${translation.id == null}">
+              신규 번역 작성: 기본값으로 원문이 채워져 있어요. 수정 후 저장하면 번역이 생성됩니다.
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<th:block th:replace="~{layout/footer :: footer}"></th:block>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  const hasTranslation = /*[[${translation.id != null}]]*/ false;
+  const initialContent = /*[[${translation.id == null ? article.content : translation.content}]]*/ "";
+
+  const formEl = document.getElementById('translationForm');
+
+  const editBtn = document.getElementById('editBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const saveBtn = document.getElementById('saveProxyBtn');
+
+  const viewDiv = document.getElementById('translatedContentView');
+  const editorWrap = document.getElementById('translatedContentEditorWrap');
+
+  const contentHidden = document.getElementById('content');
+  const lockHint = document.getElementById('lockHint');
+
+  let originalHtmlForCancel = '';
+
+  function lockFields() {
+    const lockTargets = formEl.querySelectorAll('#translationSection input, #translationSection textarea');
+    lockTargets.forEach(el => el.setAttribute('readonly', 'readonly'));
+    if (saveBtn) saveBtn.disabled = true;
+    if (lockHint) lockHint.classList.remove('d-none');
+  }
+
+  function unlockFields() {
+    const lockTargets = formEl.querySelectorAll('#translationSection input, #translationSection textarea');
+    lockTargets.forEach(el => el.removeAttribute('readonly'));
+    if (saveBtn) saveBtn.disabled = false;
+    if (lockHint) lockHint.classList.add('d-none');
+  }
+
+  function showEditor() {
+    if (viewDiv) viewDiv.style.display = 'none';
+    if (editorWrap) editorWrap.style.display = 'block';
+  }
+
+  function showView() {
+    if (editorWrap) editorWrap.style.display = 'none';
+    if (viewDiv) viewDiv.style.display = 'block';
+  }
+
+  function enterViewMode() {
+    if (originalHtmlForCancel) {
+      if (viewDiv) viewDiv.innerHTML = originalHtmlForCancel;
+      if (contentHidden) contentHidden.value = originalHtmlForCancel;
+      if (window.__TIPTAP_EDITOR__) {
+        window.__TIPTAP_EDITOR__.commands.setContent(originalHtmlForCancel, false);
+      }
+    }
+
+    if (hasTranslation && window.__TIPTAP_EDITOR__) {
+      window.__TIPTAP_EDITOR__.setEditable(false);
+    }
+
+    showView();
+
+    if (editBtn) editBtn.style.display = hasTranslation ? 'inline-block' : 'none';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (saveBtn) saveBtn.disabled = hasTranslation;
+    lockFields();
+  }
+
+  function enterEditMode({ showCancelBtn = true } = {}) {
+    originalHtmlForCancel = viewDiv?.innerHTML || contentHidden?.value || initialContent || '';
+    if (contentHidden) contentHidden.value = originalHtmlForCancel;
+
+    unlockFields();
+
+    showEditor();
+
+    const ed = window.__TIPTAP_EDITOR__;
+    if (ed) {
+      ed.setEditable(true);
+      ed.commands.setContent(originalHtmlForCancel, false);
+    }
+
+    if (editBtn) editBtn.style.display = 'none';
+    if (cancelBtn) cancelBtn.style.display = showCancelBtn ? 'inline-block' : 'none';
+    if (saveBtn) saveBtn.disabled = false;
+  }
+
+  async function doSave() {
+    if (hasTranslation && saveBtn && saveBtn.disabled) return;
+
+    const payload = window.getEditorPayload
+            ? window.getEditorPayload()
+            : { content: contentHidden?.value || '', files: [] };
+
+    if (contentHidden) contentHidden.value = payload.content;
+
+    const fd = new FormData(formEl);
+    fd.delete('content');
+    fd.append('content', payload.content);
+
+    for (const f of (payload.files || [])) fd.append('files', f);
+
+    try {
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.dataset._txt = saveBtn.textContent;
+        saveBtn.textContent = '저장 중...';
+      }
+
+      const res = await fetch(formEl.action, { method: 'POST', body: fd });
+
+      if (res.redirected) { window.location.href = res.url; return; }
+      if (res.ok) { window.location.reload(); return; }
+
+      throw new Error('저장 실패: ' + res.status + ' ' + await res.text());
+    } catch (e) {
+      console.error(e);
+      alert(e?.message ?? e);
+      if (saveBtn) saveBtn.disabled = false;
+    } finally {
+      if (saveBtn && saveBtn.dataset._txt) {
+        saveBtn.textContent = saveBtn.dataset._txt;
+        delete saveBtn.dataset._txt;
+
+        if (hasTranslation && !window.__TIPTAP_EDITOR__) saveBtn.disabled = true;
+        else saveBtn.disabled = false;
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (contentHidden && !contentHidden.value) contentHidden.value = initialContent;
+
+    // tiptap/editor.js 가 자동 init 한 뒤, 기존 번역이면 잠금
+    if (hasTranslation) {
+      lockFields();
+      if (window.__TIPTAP_EDITOR__) window.__TIPTAP_EDITOR__.setEditable(false);
+      showView();
+      if (editBtn) editBtn.style.display = 'inline-block';
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      if (saveBtn) saveBtn.disabled = true;
+    } else {
+      // 신규 번역: 바로 edit
+      unlockFields();
+      originalHtmlForCancel = contentHidden.value || initialContent || '';
+      if (contentHidden) contentHidden.value = originalHtmlForCancel;
+
+      showEditor();
+
+      if (window.__TIPTAP_EDITOR__) {
+        window.__TIPTAP_EDITOR__.setEditable(true);
+        window.__TIPTAP_EDITOR__.commands.setContent(originalHtmlForCancel, false);
+      }
+
+      if (editBtn) editBtn.style.display = 'none';
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      if (saveBtn) saveBtn.disabled = false;
+    }
+
+    editBtn?.addEventListener('click', () => enterEditMode({ showCancelBtn: true }));
+    cancelBtn?.addEventListener('click', enterViewMode);
+    saveBtn?.addEventListener('click', doSave);
+
+    formEl?.addEventListener('submit', (e) => e.preventDefault());
+  });
+  /*]]>*/
+</script>
+
+<!-- ✅ 너가 올린 tiptap 모듈(자동 초기화 + getEditorPayload 제공) -->
+<script type="module" th:src="@{/tiptap/editor.js}"></script>
+
+</body>
+</html>

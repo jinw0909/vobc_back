@@ -40,3 +40,6 @@ out/
 
 *.yml
 *.yaml
+
+# frontend build workspace
+/editor/

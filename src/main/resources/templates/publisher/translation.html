@@ -61,10 +61,10 @@
       <input type="text" th:value="${translation.languageCode.code}" readonly/>
 
       <label for="tname">Name (translated)</label>
-      <input id="tname" type="text" th:field="*{name}" placeholder="Translated name"/>
+      <input id="tname" type="text" th:field="*{name}"/>
 
       <label for="tintro">Introduction (translated)</label>
-      <textarea id="tintro" th:field="*{introduction}" placeholder="Translated introduction"></textarea>
+      <textarea id="tintro" th:field="*{introduction}"></textarea>
 
       <div class="actions">
         <button class="btn primary" type="submit"

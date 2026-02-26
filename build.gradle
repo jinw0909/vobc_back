@@ -51,11 +51,13 @@ dependencies {
     // ✅ Oracle JDBC BOM (버전은 하나만 관리)
     implementation(platform("com.oracle.database.jdbc:ojdbc-bom:23.4.0.24.05"))
 
-    runtimeOnly "com.oracle.database.jdbc:ojdbc11:23.4.0.24.05"
+//    runtimeOnly "com.oracle.database.jdbc:ojdbc11:23.4.0.24.05"
+    runtimeOnly "com.oracle.database.jdbc:ojdbc11:23.5.0.24.07"
     runtimeOnly "com.oracle.database.security:oraclepki:21.20.0.0"
     runtimeOnly "com.oracle.database.security:osdt_core:21.20.0.0"
     runtimeOnly "com.oracle.database.security:osdt_cert:21.20.0.0"
-
+    runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
+    runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

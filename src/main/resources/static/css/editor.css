@@ -1,0 +1,161 @@
+/* 기존: #content figure > img { width: 33%; }  // content는 이제 hidden textarea라 의미 없음 */
+#editor img { max-width: 100%; height: auto; }
+
+.tag-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.tag-name { display:flex; align-items:center; gap:10px; }
+.tag-primary { white-space:nowrap; }
+.tag-primary label { margin-left: 6px; }
+/* Tiptap(=ProseMirror) 기본 스타일 */
+#editor .ProseMirror {
+    outline: none;
+    min-height: 360px;
+    line-height: 1.65;
+}
+
+/* 문단/헤딩 간격 */
+#editor .ProseMirror p {
+    margin: 0;
+}
+#editor .ProseMirror h1,
+#editor .ProseMirror h2,
+#editor .ProseMirror h3 { margin: 1rem 0 0.6rem; }
+
+/* 리스트 */
+#editor .ProseMirror ul,
+#editor .ProseMirror ol { padding-left: 1.25rem; margin: 0 0 0.8rem; }
+
+/* 인용/코드 */
+#editor .ProseMirror blockquote {
+    border-left: 4px solid rgba(0,0,0,.15);
+    padding-left: 12px;
+    margin: 0.8rem 0;
+    color: rgba(0,0,0,.7);
+}
+#editor .ProseMirror pre {
+    background: rgba(0,0,0,.05);
+    padding: 12px;
+    border-radius: 8px;
+    overflow: auto;
+}
+
+#editor {
+    background: #fff;
+}
+
+#editor .ProseMirror {
+    outline: none;
+    font-size: 16px;
+    line-height: 1.65;          /* 사람들 익숙한 줄간격 */
+    padding: 0;                 /* 바깥 div가 padding 12px */
+    /*white-space: pre-wrap;*/
+    word-break: break-word;
+}
+
+/* “ChatGPT 입력창” 느낌: 문단 간격 거의 없게 */
+#editor .ProseMirror p { margin: 0; white-space: pre-wrap;}
+
+/* ✅ 빈 문단(Enter 두 번)도 “한 줄 공백”처럼 보이게 */
+#editor .ProseMirror p:empty::before {
+    content: "";
+    display: inline-block;
+    height: 1em;
+}
+
+/* 헤딩은 쓰더라도 과하게 크지 않게 */
+#editor .ProseMirror h1 { font-size: 1.35rem; margin: 0.6rem 0 0.3rem; }
+#editor .ProseMirror h2 { font-size: 1.2rem;  margin: 0.6rem 0 0.3rem; }
+#editor .ProseMirror h3 { font-size: 1.05rem; margin: 0.6rem 0 0.3rem; }
+
+#editor .ProseMirror ul,
+#editor .ProseMirror ol { margin: 0; padding-left: 1.2rem; }
+
+#editor img { max-width: 100%; height: auto; vertical-align: bottom;}
+
+#editor .ProseMirror-selectednode {
+    outline: 2px solid rgba(13,110,253,.6);
+    border-radius: 8px;
+}
+
+/* 에디터 */
+#editor .ProseMirror span[data-small-text] {
+    font-size: 12px;
+    line-height: 1.4;
+    color: rgba(0,0,0,.65);
+}
+.chat-content {
+    font-size: 16px;
+    line-height: 1.65;
+    color: rgba(0,0,0,.88);
+
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 12px;
+    padding: 16px;
+
+    max-height: 100vh;
+    overflow: auto;
+
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* ✅ 핵심: p 기본 마진 제거(엔터 1번이 과하게 벌어지는 원인 제거) */
+.chat-content p { margin: 0; }
+
+/* ✅ 문단 사이(연속 p)는 아주 얕게만 */
+.chat-content p + p { margin-top: .25rem; }
+
+/* ✅ “빈 문단(엔터 2번)”은 문단 구분처럼 보이게 */
+.chat-content p:empty { height: 1rem; }
+
+.chat-content p span[data-small-text] { font-size: 12px; line-height: 1.4; color: rgba(0,0,0,.85);}
+
+/* 헤딩은 과하지 않게 */
+.chat-content h1 { font-size: 1.35rem; margin: .8rem 0 .35rem; }
+.chat-content h2 { font-size: 1.2rem;  margin: .75rem 0 .35rem; }
+.chat-content h3 { font-size: 1.05rem; margin: .7rem 0 .3rem; }
+.chat-content h4,
+.chat-content h5,
+.chat-content h6 { margin: .7rem 0 .3rem; }
+
+/* 리스트: 간결 */
+.chat-content ul,
+.chat-content ol {
+    margin: .35rem 0;
+    padding-left: 1.25rem;
+}
+.chat-content li { margin: .15rem 0; }
+
+/* 인용/코드 */
+.chat-content blockquote {
+    margin: .6rem 0;
+    padding-left: 12px;
+    border-left: 4px solid rgba(0,0,0,.15);
+    color: rgba(0,0,0,.72);
+}
+
+.chat-content pre {
+    margin: .6rem 0;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(0,0,0,.05);
+    overflow: auto;
+}
+
+.chat-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.95em;
+}
+
+/* ✅ 이미지: 강제 100% 제거, 흐름은 깔끔하게 */
+.chat-content img {
+    display: inline-block;
+    max-width: 100%;
+    height: auto;
+    margin: .6rem 0;
+    vertical-align: middle;
+}
+
+/* figure 강제 규칙 제거 */
+.chat-content figure { margin: .6rem 0; }
+.chat-content figure > img { width: auto; }

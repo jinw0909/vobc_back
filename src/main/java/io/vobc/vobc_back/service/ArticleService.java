@@ -227,39 +227,8 @@ public class ArticleService {
                 .orElseGet(() -> ArticleTranslationForm.empty(languageCode));
     }
 
-//    @Transactional
-//    public Long saveTranslation(Long id, ArticleTranslationForm form) {
-//
-//        Article article = articleRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("article not found"));
-//
-//        if (form.getId() == null) {
-//            ArticleTranslation articleTranslation = ArticleTranslation.create(
-//                    article,
-//                    form.getLanguageCode(),
-//                    form.getTitle(),
-//                    form.getContent(),
-//                    form.getSummary(),
-//                    form.getDescription(),
-//                    form.getAuthor()
-//            );
-//            ArticleTranslation saved = articleTranslationRepository.save(articleTranslation);
-//            return saved.getId();
-//        } else {
-//            ArticleTranslation articleTranslation = articleTranslationRepository.findById(form.getId()).orElseThrow(() -> new IllegalArgumentException("article translation not found"));
-//            articleTranslation.setArticle(article);
-//            article.addTranslation(articleTranslation);
-//            articleTranslation.setLanguageCode(form.getLanguageCode());
-//            articleTranslation.setTitle(form.getTitle());
-//            articleTranslation.setContent(form.getContent());
-//            articleTranslation.setSummary(form.getSummary());
-//            articleTranslation.setDescription(form.getDescription());
-//            articleTranslation.setAuthor(form.getAuthor());
-//
-//            return articleTranslation.getId();
-//        }
-//    }
     @Transactional
-    public Long saveTranslation(Long id, ArticleTranslationForm form) {
+    public void saveTranslation(Long id, ArticleTranslationForm form) {
 
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("article not found"));
@@ -296,8 +265,6 @@ public class ArticleService {
 
             log.info("=== Called Save Translation ===");
 
-            return saved.getId();
-
         } else {
             ArticleTranslation articleTranslation = articleTranslationRepository.findById(form.getId())
                     .orElseThrow(() -> new IllegalArgumentException("article translation not found"));
@@ -318,7 +285,6 @@ public class ArticleService {
 
             log.info("=== Called Update Translation ===");
 
-            return articleTranslation.getId();
         }
     }
 
@@ -437,5 +403,15 @@ public class ArticleService {
     @Transactional(readOnly = true)
     public Page<Article> search(String keyword, String publisher, LocalDate startDate, LocalDate endDate, Pageable pageable) {
         return articleRepository.search(keyword, publisher, startDate, endDate, pageable);
+    }
+
+    @Transactional
+    public Long create(ArticleForm form) {
+        return save(form);
+    }
+
+    @Transactional
+    public Long edit(Long articleId, ArticleForm form) {
+        return update(articleId, form);
     }
 }

@@ -8,7 +8,7 @@
 
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="m-0">기사 목록</h2>
-    <a class="btn btn-primary" th:href="@{/article/create}">
+    <a class="btn btn-primary" th:href="@{/article/new}">
       <i class="fa-solid fa-pen-to-square me-1"></i> 새 글
     </a>
   </div>
@@ -163,7 +163,7 @@
               보기
             </a>
             <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/article/edit(id=${a.id})}">
+               th:href="@{/article/{id}/edit(id=${a.id})}">
               수정
             </a>
           </td>

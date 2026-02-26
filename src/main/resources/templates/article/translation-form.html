@@ -203,13 +203,18 @@
                                 </div>
 
                                 <!-- ✅ 편집 모드(서머노트 textarea) -->
-                                <div id="translatedContentEditorWrap"
-                                     class="mt-2"
+                                <div id="translatedContentEditorWrap" class="mt-2"
                                      th:style="${translation.id != null} ? 'display:none;' : ''">
-                                     <textarea id="translatedContentEditor"
-                                               class="form-control"
-                                               style="display:none;"></textarea>
+                                    <!-- Tiptap이 붙을 mount -->
+                                    <div id="translatedContentEditor" class="preview-box"></div>
                                 </div>
+<!--                                <div id="translatedContentEditorWrap"-->
+<!--                                     class="mt-2"-->
+<!--                                     th:style="${translation.id != null} ? 'display:none;' : ''">-->
+<!--                                     <textarea id="translatedContentEditor"-->
+<!--                                               class="form-control"-->
+<!--                                               style="display:none;"></textarea>-->
+<!--                                </div>-->
 
                                 <!-- ✅ 서버 제출용 hidden (초기값은 thymeleaf로 채우고, JS가 계속 갱신) -->
                                 <input type="hidden" name="content" id="contentHidden"
@@ -436,6 +441,8 @@
     });
     /*]]>*/
 </script>
+
+<script type="module" th:src="@{/tiptap/editor.js}"></script>
 
 </body>
 </html>

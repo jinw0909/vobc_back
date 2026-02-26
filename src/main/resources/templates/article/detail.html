@@ -3,6 +3,23 @@
 <th:block th:replace="~{layout/head :: head}"></th:block>
 
 <style>
+
+    /* ===== Top actions (목록/수정) ===== */
+    .hero-topbar{
+        display:flex;
+        justify-content: space-between;
+        align-items:center;
+        gap:.75rem;
+        flex-wrap:wrap;
+        margin-bottom: 10px;
+    }
+    .hero-actions{
+        display:flex;
+        gap:.5rem;
+        align-items:center;
+        flex-wrap:wrap;
+    }
+
     .article-wrapper { max-width: 860px; margin: 0 auto; }
 
     /* ===== Header Card ===== */
@@ -168,6 +185,17 @@
 
     <!-- ✅ 헤더(썸네일/요약/메타) -->
     <div class="article-hero">
+        <div class="hero-topbar">
+            <div class="hero-actions">
+                <a th:href="@{/article/list}" class="btn btn-outline-secondary btn-sm">← 목록</a>
+                <a th:href="@{/article/{id}/edit(id=${article.id})}" class="btn btn-outline-primary btn-sm">수정</a>
+            </div>
+
+            <!-- (선택) 링크 원문 이동 같은 거 나중에 넣기 좋게 오른쪽 비워둠 -->
+            <div></div>
+        </div>
+
+
 
         <!-- ✅ 번역 이동 버튼 (LanguageCode Enum 기반) -->
         <div class="translate-bar" th:if="${allLangs != null}">
@@ -243,10 +271,10 @@
             <!-- Summernote HTML -->
         </div>
 
-        <div class="article-actions">
-            <a th:href="@{/article/list}" class="btn btn-outline-secondary">← 목록</a>
-            <a th:href="@{/article/edit(id=${article.id})}" class="btn btn-outline-primary">수정</a>
-        </div>
+<!--        <div class="article-actions">-->
+<!--            <a th:href="@{/article/list}" class="btn btn-outline-secondary">← 목록</a>-->
+<!--            <a th:href="@{/article/edit(id=${article.id})}" class="btn btn-outline-primary">수정</a>-->
+<!--        </div>-->
     </div>
 
 </div>
