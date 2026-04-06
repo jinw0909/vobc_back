@@ -1,57 +1,188 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" xmlns:th="http://www.thymeleaf.org">-->
+<!--<th:block th:replace="~{layout/head :: head}"></th:block>-->
+
+<!--<body>-->
+<!--<th:block th:replace="~{layout/header :: header}"></th:block>-->
+<!--<div class="container" style="max-width: 420px; margin: 60px auto;">-->
+
+<!--    <h2 style="text-align: center; margin-bottom: 24px;">-->
+<!--        Login-->
+<!--    </h2>-->
+
+<!--    &lt;!&ndash; ✅ 로그인 실패 메시지 &ndash;&gt;-->
+<!--    <div th:if="${param.error}" class="alert alert-danger">-->
+<!--        Invalid email or password.-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; ✅ 로그아웃 성공 메시지 &ndash;&gt;-->
+<!--    <div th:if="${param.logout}" class="alert alert-success">-->
+<!--        You have been logged out.-->
+<!--    </div>-->
+
+<!--    <form th:action="@{/auth/login}" method="post">-->
+
+<!--        <div style="margin-bottom: 16px;">-->
+<!--            <label for="username">Email</label>-->
+<!--            <input type="text"-->
+<!--                   id="username"-->
+<!--                   name="username"-->
+<!--                   placeholder="email@example.com"-->
+<!--                   required-->
+<!--                   class="form-control"/>-->
+<!--        </div>-->
+
+<!--        <div style="margin-bottom: 20px;">-->
+<!--            <label for="password">Password</label>-->
+<!--            <input type="password"-->
+<!--                   id="password"-->
+<!--                   name="password"-->
+<!--                   required-->
+<!--                   class="form-control"/>-->
+<!--        </div>-->
+
+<!--        <button type="submit"-->
+<!--                class="btn btn-primary"-->
+<!--                style="width: 100%;">-->
+<!--            Login-->
+<!--        </button>-->
+<!--    </form>-->
+
+<!--    <div style="text-align: center; margin-top: 16px;">-->
+<!--        <a th:href="@{/auth/join}">-->
+<!--            Don’t have an account? Sign up-->
+<!--        </a>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!--<th:block th:replace="~{layout/footer :: footer}"></th:block>-->
+<!--</body>-->
+<!--</html>-->
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <th:block th:replace="~{layout/head :: head}"></th:block>
 
+<style>
+    .login-wrap {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 16px;
+        background: linear-gradient(180deg, rgba(248,249,250,1), rgba(255,255,255,1));
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 420px;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.06);
+        padding: 28px;
+    }
+
+    .login-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 0 0 8px;
+        text-align: center;
+    }
+
+    .login-sub {
+        text-align: center;
+        color: #6c757d;
+        margin-bottom: 20px;
+        font-size: .95rem;
+    }
+
+    .form-label {
+        font-weight: 700;
+        font-size: .9rem;
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+
+    .btn-login {
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-weight: 800;
+        width: 100%;
+    }
+
+    .login-footer {
+        text-align: center;
+        margin-top: 14px;
+        font-size: .95rem;
+    }
+
+    .login-footer a {
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .alert {
+        border-radius: 12px;
+    }
+</style>
+
 <body>
 <th:block th:replace="~{layout/header :: header}"></th:block>
-<div class="container" style="max-width: 420px; margin: 60px auto;">
 
-    <h2 style="text-align: center; margin-bottom: 24px;">
-        Login
-    </h2>
+<div class="login-wrap">
+    <div class="login-card">
 
-    <!-- ✅ 로그인 실패 메시지 -->
-    <div th:if="${param.error}" class="alert alert-danger">
-        Invalid email or password.
-    </div>
+        <h2 class="login-title">Login</h2>
+        <div class="login-sub">Welcome back. Please sign in.</div>
 
-    <!-- ✅ 로그아웃 성공 메시지 -->
-    <div th:if="${param.logout}" class="alert alert-success">
-        You have been logged out.
-    </div>
-
-    <form th:action="@{/auth/login}" method="post">
-
-        <div style="margin-bottom: 16px;">
-            <label for="username">Email</label>
-            <input type="text"
-                   id="username"
-                   name="username"
-                   placeholder="email@example.com"
-                   required
-                   class="form-control"/>
+        <!-- ✅ 로그인 실패 메시지 -->
+        <div th:if="${param.error}" class="alert alert-danger">
+            Invalid email or password.
         </div>
 
-        <div style="margin-bottom: 20px;">
-            <label for="password">Password</label>
-            <input type="password"
-                   id="password"
-                   name="password"
-                   required
-                   class="form-control"/>
+        <!-- ✅ 로그아웃 성공 메시지 -->
+        <div th:if="${param.logout}" class="alert alert-success">
+            You have been logged out.
         </div>
 
-        <button type="submit"
-                class="btn btn-primary"
-                style="width: 100%;">
-            Login
-        </button>
-    </form>
+        <!-- ✅ 여기 action이 포인트 (아래 2번 참고) -->
+        <form th:action="@{/auth/login}" method="post">
 
-    <div style="text-align: center; margin-top: 16px;">
-        <a th:href="@{/auth/join}">
-            Don’t have an account? Sign up
-        </a>
+            <div class="mb-3">
+                <label for="username" class="form-label">Email</label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       placeholder="email@example.com"
+                       autocomplete="username"
+                       required
+                       class="form-control"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password"
+                       id="password"
+                       name="password"
+                       autocomplete="current-password"
+                       required
+                       class="form-control"/>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-login">
+                Login
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <a th:href="@{/auth/join}">Don’t have an account? Sign up</a>
+        </div>
+
     </div>
 </div>
 
