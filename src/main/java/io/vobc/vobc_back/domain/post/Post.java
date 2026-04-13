@@ -59,6 +59,10 @@ public class Post {
     @JoinColumn(name = "member_id")
     private Member member;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "post_type", length = 20)
+    private PostType postType = PostType.feature;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;

@@ -1,6 +1,7 @@
 package io.vobc.vobc_back.controller.api;
 
 import io.vobc.vobc_back.domain.LanguageCode;
+import io.vobc.vobc_back.domain.post.PostType;
 import io.vobc.vobc_back.dto.PagedResponse;
 import io.vobc.vobc_back.dto.post.PostDto;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
@@ -84,5 +85,25 @@ public class PostApiController {
                                                 @RequestParam(defaultValue = "en") String lang) {
         LanguageCode languageCode = LanguageCode.from(lang);
         return postQueryService.getRelatedPosts(postId, languageCode);
+    }
+
+    @GetMapping("/query/search/type")
+    public Page<PostTranslatedResponse> searchByType(@RequestParam(defaultValue = "en") String lang,
+                                               @PageableDefault(size = 10) Pageable pageable,
+                                               @RequestParam("type") String type,
+                                               @RequestParam("featuredId") Integer featuredId) {
+        LanguageCode languageCode = LanguageCode.from(lang);
+        PostType postType = PostType.from(type);
+        return postQueryService.searchPostByPostType(postType, languageCode, featuredId, pageable);
+
+    }
+
+    @GetMapping("/query/search/author")
+    public Page<PostTranslatedResponse> searchByAuthor(@RequestParam(defaultValue = "en") String lang,
+                                                       @PageableDefault(size = 10) Pageable pageable,
+                                                       @RequestParam("author") String author,
+                                                       @RequestParam("featuredId") Integer featuredId) {
+        LanguageCode languageCode = LanguageCode.from(lang);
+        return postQueryService.searchPostByAuthor(author, languageCode, featuredId, pageable);
     }
 }

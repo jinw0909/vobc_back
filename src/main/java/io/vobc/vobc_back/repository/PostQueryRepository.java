@@ -2,6 +2,7 @@ package io.vobc.vobc_back.repository;
 
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.post.Post;
+import io.vobc.vobc_back.domain.post.PostType;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
 import io.vobc.vobc_back.dto.post.PostTagResponse;
 import io.vobc.vobc_back.dto.post.PostTranslatedResponse;
@@ -201,6 +202,39 @@ public interface PostQueryRepository extends JpaRepository<Post, Long> {
          and t.languageCode = :languageCode
         order by p.releaseDate desc
     """)
-    List<PostTranslatedResponse> findFeaturedTranslated(@Param("languageCode") LanguageCode languageCode,
-                                                        Pageable pageable);
+    List<PostTranslatedResponse> findFeaturedTranslated(@Param("languageCode") LanguageCode languageCode, Pageable pageable);
+
+    @Query("""
+        select new io.vobc.vobc_back.dto.post.PostTranslatedResponse(
+            p.id,
+            coalesce(t.title, p.title),
+            coalesce(t.summary, p.summary),
+            coalesce(t.author, p.author),
+            p.thumbnail,
+            p.releaseDate
+        )
+        from Post p
+        left join p.translations t on t.languageCode = :languageCode
+       where p.postType = :postType
+         and (:featuredId is null or p.id <> :featuredId)
+       order by p.releaseDate desc
+    """)
+    Page<PostTranslatedResponse> findAllPostsByPostType(@Param("postType") PostType postType, @Param("languageCode") LanguageCode languageCode, @Param("featuredId") Integer featuredId, Pageable pageable);
+
+    @Query("""
+        select new io.vobc.vobc_back.dto.post.PostTranslatedResponse(
+            p.id,
+            coalesce(t.title, p.title),
+            coalesce(t.summary, p.summary),
+            coalesce(t.author, p.author),
+            p.thumbnail,
+            p.releaseDate
+        )
+        from Post p
+        left join p.translations t on t.languageCode = :languageCode
+        where lower(p.author) = lower(:author)
+        and (:featuredId is null or p.id <> :featuredId)
+        order by p.releaseDate desc
+    """)
+    Page<PostTranslatedResponse> findAllPostsByAuthor(@Param("author") String author, @Param("languageCode") LanguageCode languageCode, @Param("featuredId") Integer featuredId, Pageable pageable);
 }

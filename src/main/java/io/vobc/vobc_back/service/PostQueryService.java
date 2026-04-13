@@ -3,6 +3,7 @@ package io.vobc.vobc_back.service;
 import io.vobc.vobc_back.domain.LanguageCode;
 import io.vobc.vobc_back.domain.post.Post;
 import io.vobc.vobc_back.domain.post.PostTag;
+import io.vobc.vobc_back.domain.post.PostType;
 import io.vobc.vobc_back.domain.post.Translation;
 import io.vobc.vobc_back.dto.post.PostDto;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
@@ -15,6 +16,7 @@ import io.vobc.vobc_back.repository.PostRepository;
 import io.vobc.vobc_back.repository.TagRepository;
 import io.vobc.vobc_back.repository.TranslationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -275,5 +277,15 @@ public class PostQueryService {
 
         return result;
 
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostTranslatedResponse> searchPostByPostType(PostType type, LanguageCode languageCode, Integer featuredId, Pageable pageable) {
+        return postQueryRepository.findAllPostsByPostType(type, languageCode, featuredId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostTranslatedResponse> searchPostByAuthor(String author, LanguageCode languageCode, Integer featuredId, Pageable pageable) {
+        return postQueryRepository.findAllPostsByAuthor(author, languageCode, featuredId, pageable);
     }
 }

@@ -40,7 +40,6 @@ public class PostTranslatedResponse {
         this.author = author;
         this.thumbnail = thumbnail;
         this.releaseDate = releaseDate;
-
     }
 
     // ✅ related 전용 생성자 (content 제외)
