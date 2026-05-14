@@ -1,7 +1,7 @@
 package io.vobc.vobc_back.dto.post;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.vobc.vobc_back.dto.postTag.PostTagQueryDto;
+import io.vobc.vobc_back.dto.posttag.PostTagQueryDto;
 import io.vobc.vobc_back.dto.translation.TranslationQueryDto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

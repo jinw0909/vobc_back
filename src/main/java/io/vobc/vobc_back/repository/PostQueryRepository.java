@@ -6,7 +6,7 @@ import io.vobc.vobc_back.domain.post.PostType;
 import io.vobc.vobc_back.dto.post.PostQueryDto;
 import io.vobc.vobc_back.dto.post.PostTagResponse;
 import io.vobc.vobc_back.dto.post.PostTranslatedResponse;
-import io.vobc.vobc_back.dto.postTag.PostTagQueryDto;
+import io.vobc.vobc_back.dto.posttag.PostTagQueryDto;
 import io.vobc.vobc_back.dto.translation.TranslationQueryDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -91,7 +91,7 @@ public interface PostQueryRepository extends JpaRepository<Post, Long> {
     // 컬렉션 조회용
 
     @Query("""
-        select new io.vobc.vobc_back.dto.postTag.PostTagQueryDto(
+        select new io.vobc.vobc_back.dto.posttag.PostTagQueryDto(
             pt.post.id,
             t.name,
             pt.sortOrder,

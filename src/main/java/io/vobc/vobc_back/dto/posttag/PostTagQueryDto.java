@@ -1,4 +1,4 @@
-package io.vobc.vobc_back.dto.postTag;
+package io.vobc.vobc_back.dto.posttag;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;

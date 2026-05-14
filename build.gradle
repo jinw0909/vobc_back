@@ -25,44 +25,6 @@ repositories {
     maven { url = 'https://repo.spring.io/snapshot' }
 }
 
-//dependencies {
-//    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-//    implementation 'org.springframework.boot:spring-boot-starter-security'
-//    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-//    implementation 'org.springframework.boot:spring-boot-starter-web'
-//    implementation 'org.springframework.boot:spring-boot-starter-validation'
-//    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-//    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
-//    implementation 'org.jsoup:jsoup:1.17.2'
-//
-//
-//    implementation 'org.webjars:bootstrap:5.3.3'
-//    implementation 'org.webjars:jquery:3.7.1'
-//    implementation 'org.webjars:font-awesome:6.5.1'
-//
-//    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-//
-//    compileOnly 'org.projectlombok:lombok'
-//    runtimeOnly 'com.mysql:mysql-connector-j'
-//    runtimeOnly 'org.postgresql:postgresql'
-//    annotationProcessor 'org.projectlombok:lombok'
-//    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-//    testImplementation 'org.springframework.security:spring-security-test'
-//    // ✅ Oracle JDBC BOM (버전은 하나만 관리)
-//    implementation(platform("com.oracle.database.jdbc:ojdbc-bom:23.4.0.24.05"))
-//
-////    runtimeOnly "com.oracle.database.jdbc:ojdbc11:23.4.0.24.05"
-//    runtimeOnly "com.oracle.database.jdbc:ojdbc11:23.5.0.24.07"
-//    runtimeOnly "com.oracle.database.security:oraclepki:21.20.0.0"
-//    runtimeOnly "com.oracle.database.security:osdt_core:21.20.0.0"
-//    runtimeOnly "com.oracle.database.security:osdt_cert:21.20.0.0"
-//    runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
-//    runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
-//
-//
-//    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-//}
-
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -76,6 +38,11 @@ dependencies {
     implementation 'org.webjars:bootstrap:5.3.3'
     implementation 'org.webjars:jquery:3.7.1'
     implementation 'org.webjars:font-awesome:6.5.1'
+
+    implementation 'org.web3j:core:4.12.3'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
