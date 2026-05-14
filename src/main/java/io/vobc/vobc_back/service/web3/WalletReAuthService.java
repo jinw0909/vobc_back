@@ -3,6 +3,7 @@ package io.vobc.vobc_back.service.web3;
 import io.vobc.vobc_back.domain.web3.WalletNonce;
 import io.vobc.vobc_back.dto.web3.WalletReAuthResponse;
 import io.vobc.vobc_back.dto.web3.WalletReAuthVerifyRequest;
+import io.vobc.vobc_back.exception.WalletAuthException;
 import io.vobc.vobc_back.repository.web3.WalletNonceRepository;
 import io.vobc.vobc_back.security.jwt.JwtTokenProvider;
 import jakarta.validation.constraints.NotBlank;
@@ -36,11 +37,11 @@ public class WalletReAuthService {
                 .orElseThrow(() -> new IllegalStateException("Valid Nonce not found"));
 
         if (walletNonce.isUsed()) {
-            throw new IllegalStateException("Nonce has already been used");
+            throw new WalletAuthException("Nonce has already been used");
         }
 
         if (walletNonce.isExpired(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Nonce has expired");
+            throw new WalletAuthException("Nonce has expired");
         }
 
         String recoveredAddress = recoverAddress(
@@ -50,7 +51,7 @@ public class WalletReAuthService {
         );
 
         if (!address.equalsIgnoreCase(recoveredAddress)) {
-            throw new IllegalArgumentException("Signature verification failed");
+            throw new WalletAuthException("Signature verification failed");
         }
 
         walletNonce.markUsed();
@@ -93,9 +94,9 @@ public class WalletReAuthService {
                 }
             }
 
-            throw new IllegalArgumentException("Failed to recover matching address from signature");
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid signature format", e);
+            throw new WalletAuthException("Failed to recover matching address from signature");
+        } catch (WalletAuthException e) {
+            throw new WalletAuthException("Invalid signature format", e);
         }
     }
 
@@ -103,7 +104,7 @@ public class WalletReAuthService {
         byte[] sigBytes = Numeric.hexStringToByteArray(signature);
 
         if (sigBytes.length != 65) {
-            throw new IllegalArgumentException("Invalid signature length");
+            throw new WalletAuthException("Invalid signature length");
         }
 
         byte v = sigBytes[64];
@@ -120,7 +121,7 @@ public class WalletReAuthService {
 
     private String normalize(@NotBlank String address) {
         if (address == null || address.isBlank()) {
-            throw new IllegalArgumentException("Wallet address is required");
+            throw new WalletAuthException("Wallet address is required");
         }
 
         return address.trim().toLowerCase();

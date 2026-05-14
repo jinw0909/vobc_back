@@ -3,6 +3,7 @@ package io.vobc.vobc_back.service.web3;
 import io.vobc.vobc_back.domain.web3.WalletRefreshToken;
 import io.vobc.vobc_back.domain.web3.WalletUser;
 import io.vobc.vobc_back.dto.web3.WalletRefreshResponse;
+import io.vobc.vobc_back.exception.WalletAuthException;
 import io.vobc.vobc_back.repository.web3.WalletRefreshTokenRepository;
 import io.vobc.vobc_back.repository.web3.WalletUserRepository;
 import io.vobc.vobc_back.security.jwt.JwtTokenProvider;
@@ -27,12 +28,12 @@ public class WalletRefreshService {
         String refreshToken = cookieProvider.getTokenFromCookie(request);
 
         if (refreshToken == null) {
-            throw new RuntimeException("Refresh token not found");
+            throw new WalletAuthException("Refresh token not found");
         }
 
         //1. JWT 검증
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new RuntimeException("Refresh token is invalid");
+            throw new WalletAuthException("Refresh token is invalid");
         }
 
         //2. wallet address 추출
@@ -43,7 +44,7 @@ public class WalletRefreshService {
                 .orElseThrow(() -> new RuntimeException("Refresh token not found in DB"));
 
         if (!saved.getRefreshToken().equals(refreshToken)) {
-            throw new RuntimeException("Refresh token mismatch");
+            throw new WalletAuthException("Refresh token mismatch");
         }
 
         //4. 새 access token 생성

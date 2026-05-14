@@ -33,7 +33,7 @@ public class WalletNonceService {
     public WalletNonceResponse issueNonce(WalletNonceRequest request) {
 
 //        String uri = "http://localhost:3000/login";
-        String uri = "http://" + domain + "/login";
+        String uri = domain + "/login";
 
         String walletAddress = request.getAddress().trim();
         String checksumAddress = Keys.toChecksumAddress(walletAddress);

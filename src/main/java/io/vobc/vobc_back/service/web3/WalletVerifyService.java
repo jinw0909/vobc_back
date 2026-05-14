@@ -5,12 +5,14 @@ import io.vobc.vobc_back.domain.web3.WalletRefreshToken;
 import io.vobc.vobc_back.domain.web3.WalletUser;
 import io.vobc.vobc_back.dto.web3.WalletVerifyRequest;
 import io.vobc.vobc_back.dto.web3.WalletVerifyResult;
+import io.vobc.vobc_back.exception.WalletAuthException;
 import io.vobc.vobc_back.repository.web3.WalletNonceRepository;
 import io.vobc.vobc_back.repository.web3.WalletRefreshTokenRepository;
 import io.vobc.vobc_back.repository.web3.WalletUserRepository;
 import io.vobc.vobc_back.security.jwt.JwtTokenProvider;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.web3j.crypto.ECDSASignature;
@@ -23,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -41,26 +44,24 @@ public class WalletVerifyService {
 //                .orElseThrow(() -> new IllegalStateException("Valid Nonce not found"));
 
         WalletNonce walletNonce = walletNonceRepository.findByWalletAddressAndNonce(address, request.getNonce())
-                .orElseThrow(() -> new IllegalStateException("Valid Nonce not found"));
+                .orElseThrow(() -> new WalletAuthException("Valid Nonce not found"));
 
         if (walletNonce.isUsed()) {
-            throw new IllegalStateException("Nonce has already been used");
+            throw new WalletAuthException("Nonce has already been used");
         }
 
         if (walletNonce.isExpired(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Nonce has expired");
+            throw new WalletAuthException("Nonce has expired");
         }
 
-        System.out.println("request address = " + address);
-        System.out.println("stored message = [" + walletNonce.getMessage() + "]");
-        System.out.println("signature = " + signature);
+        log.debug("request address = {}", address);
 
         String recoveredAddress = recoverAddress(walletNonce.getMessage(), signature, address);
-        System.out.println("recovered address = " + recoveredAddress);
 
+        log.debug("recovered address = {}", recoveredAddress);
 
         if (!address.equalsIgnoreCase(recoveredAddress)) {
-            throw new IllegalArgumentException("Signature verification failed");
+            throw new WalletAuthException("Signature verification failed");
         }
 
         walletNonce.markUsed();
@@ -123,8 +124,8 @@ public class WalletVerifyService {
             }
 
             throw new IllegalArgumentException("Failed to recover matching address from signature");
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid signature format", e);
+        } catch (WalletAuthException e) {
+            throw new WalletAuthException("Invalid signature format", e);
         }
     }
 
@@ -132,7 +133,7 @@ public class WalletVerifyService {
         byte[] sigBytes = Numeric.hexStringToByteArray(signature);
 
         if (sigBytes.length != 65) {
-            throw new IllegalArgumentException("Invalid signature length");
+            throw new WalletAuthException("Invalid signature length");
         }
 
         byte v = sigBytes[64];
