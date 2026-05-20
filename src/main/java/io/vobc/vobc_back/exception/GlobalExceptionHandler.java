@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(WalletAuthException.class)
     public ResponseEntity<Map<String, String>> handleWalletAuthException(WalletAuthException e) {
-        log.warn("Wallet auth failed: {}", e.getMessage(), e);
+        log.warn("Wallet auth failed: {}", e.getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.warn("Bad request: {}", e.getMessage(), e);
+        log.warn("Bad request: {}", e.getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
