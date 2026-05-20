@@ -13,4 +13,6 @@ public class WalletVerifyResult {
     private String walletAddress;
     private String profileImageUrl;
     private String nickname;
+    private String email;
+    private String bio;
 }

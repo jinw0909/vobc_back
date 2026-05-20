@@ -1,17 +1,13 @@
-package io.vobc.vobc_back.dto.web3;
+package io.vobc.vobc_back.dto.web3.profile;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import java.lang.String;
+import lombok.Data;
 
-@Getter
+@Data
 @AllArgsConstructor
-public class WalletVerifyResponse {
+public class WalletProfileResponse {
 
-    private String accessToken;
-    private Long userId;
     private String walletAddress;
-
     private String nickname;
     private String email;
     private String bio;

@@ -10,9 +10,11 @@ import io.vobc.vobc_back.service.web3.WalletVerifyService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/web3/auth")
@@ -37,12 +39,17 @@ public class WalletAuthController {
 
         WalletVerifyResult result = walletVerifyService.verify(request);
 
+
         cookieProvider.addCookie(response, result.getRefreshToken());
 
         return new WalletVerifyResponse(
-            result.getAccessToken(),
-            result.getUserId(),
-            result.getWalletAddress()
+                result.getAccessToken(),
+                result.getUserId(),
+                result.getWalletAddress(),
+                result.getNickname(),
+                result.getEmail(),
+                result.getBio(),
+                result.getProfileImageUrl()
         );
     }
 
@@ -64,7 +71,6 @@ public class WalletAuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-
         return walletRefreshService.refresh(request, response);
     }
 

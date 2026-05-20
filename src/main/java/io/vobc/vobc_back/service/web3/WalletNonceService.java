@@ -46,7 +46,7 @@ public class WalletNonceService {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
         String message = String.join("\n",
-                domain + " wants you to sign in with your Ethereum account:",
+                removeSchemeFromDomain(domain) + " wants you to sign in with your Ethereum account:",
                 checksumAddress,
                 "",
                 "Sign in to VOB",
@@ -89,10 +89,10 @@ public class WalletNonceService {
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-        String uri = "http://" + domain + "/profile";
+        String uri = domain + "/profile";
 
         String message = String.join("\n",
-                domain + " wants you to sign in with your Ethereum account:",
+                removeSchemeFromDomain(domain) + " wants you to sign in with your Ethereum account:",
                 checksumAddress,
                 "",
                 "Re-authenticate to VOB for " + action,
@@ -121,4 +121,15 @@ public class WalletNonceService {
                 expirationTime.toLocalDateTime()
         );
     }
+
+    private String removeSchemeFromDomain(String domain) {
+        if (domain == null) {
+            return "";
+        }
+
+        return domain
+                .replaceFirst("^https?://", "")
+                .replaceFirst("/$", "");
+    }
+
 }

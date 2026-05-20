@@ -1,15 +1,19 @@
 package io.vobc.vobc_back.controller.web3;
 
 import io.vobc.vobc_back.dto.web3.PortfolioResponse;
+import io.vobc.vobc_back.dto.web3.profile.ProfileImageUploadResponse;
 import io.vobc.vobc_back.dto.web3.profile.SetProfileRequest;
+import io.vobc.vobc_back.dto.web3.profile.WalletProfileResponse;
 import io.vobc.vobc_back.dto.web3.walletuser.WalletUserResponse;
 import io.vobc.vobc_back.security.jwt.JwtTokenProvider;
 import io.vobc.vobc_back.security.jwt.WalletPrincipal;
 import io.vobc.vobc_back.service.web3.WalletProfileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,6 +22,25 @@ public class WalletProfileController {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final WalletProfileService walletProfileService;
+
+
+    @GetMapping
+    public WalletProfileResponse getProfile(@AuthenticationPrincipal WalletPrincipal principal) {
+        return walletProfileService.getProfile(principal.getWalletAddress());
+    }
+
+
+    @PostMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProfileImageUploadResponse> uploadProfileImage(@AuthenticationPrincipal WalletPrincipal principal,
+                                                                         @RequestPart("file") MultipartFile file) {
+        if (principal == null || principal.getWalletAddress() == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        ProfileImageUploadResponse response = walletProfileService.uploadProfileImage(principal.getWalletAddress(), file);
+        return ResponseEntity.ok(response);
+    }
+
 
     @GetMapping("/portfolio")
     public ResponseEntity<?> getPortfolio(@AuthenticationPrincipal WalletPrincipal principal,

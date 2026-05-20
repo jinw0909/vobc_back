@@ -37,6 +37,8 @@ public class WalletVerifyService {
     private final WalletRefreshTokenRepository walletRefreshTokenRepository;
 
     public WalletVerifyResult verify(WalletVerifyRequest request) {
+
+        log.info("WalletVerifyService.verify()");
         String address = normalize(request.getAddress());
         String signature = request.getSignature();
 
@@ -74,10 +76,12 @@ public class WalletVerifyService {
                 walletUser.getWalletAddress()
         );
 
+
         String refreshToken = jwtTokenProvider.createRefreshToken(walletUser.getWalletAddress());
 
         WalletRefreshToken saved = walletRefreshTokenRepository.findByWalletAddress(walletUser.getWalletAddress())
                 .orElseGet(() -> WalletRefreshToken.create(walletUser));
+
 
         saved.updateToken(refreshToken, LocalDateTime.now().plusSeconds(jwtTokenProvider.getRefreshTokenExpirationMs() / 1000));
 
@@ -89,7 +93,9 @@ public class WalletVerifyService {
                 walletUser.getId(),
                 walletUser.getWalletAddress(),
                 walletUser.getProfileImageUrl(),
-                walletUser.getNickname()
+                walletUser.getNickname(),
+                walletUser.getEmail(),
+                walletUser.getBio()
         );
     }
 
