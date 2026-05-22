@@ -38,6 +38,8 @@ public class WalletNonceService {
         String walletAddress = request.getAddress().trim();
         String checksumAddress = Keys.toChecksumAddress(walletAddress);
 
+        Long chainId = request.getChainId() != null ? request.getChainId() : 1L;
+
         String nonce = generateNonce(16); // alphanumeric only, >= 8
 
         ZonedDateTime issuedAt = ZonedDateTime.now(KST_ZONE).withNano(0);
@@ -53,7 +55,7 @@ public class WalletNonceService {
                 "",
                 "URI: " + uri,
                 "Version: 1",
-                "Chain ID: 1",
+                "Chain ID: " + chainId,
                 "Nonce: " + nonce,
                 "Issued At: " + issuedAt.format(formatter),
                 "Expiration Time: " + expirationTime.format(formatter)
@@ -80,6 +82,8 @@ public class WalletNonceService {
             throw new IllegalArgumentException("Action is required");
         }
 
+        Long chainId = request.getChainId() != null ? request.getChainId() : 1L;
+
         String checksumAddress = Keys.toChecksumAddress(walletAddress);
 
         String nonce = generateNonce(16);
@@ -99,7 +103,7 @@ public class WalletNonceService {
                 "",
                 "URI: " + uri,
                 "Version: 1",
-                "Chain ID: 1",
+                "Chain ID: " + chainId,
                 "Nonce: " + nonce,
                 "Issued At: " + issuedAt.format(formatter),
                 "Expiration Time: " + expirationTime.format(formatter)

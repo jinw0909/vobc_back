@@ -16,4 +16,5 @@ public class WalletVerifyRequest {
     private String signature;
     @NotBlank
     private String nonce;
+    private Long chainId;
 }

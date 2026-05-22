@@ -15,15 +15,27 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.FunctionReturnDecoder;
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.DynamicBytes;
+import org.web3j.abi.datatypes.Function;
+import org.web3j.abi.datatypes.generated.Bytes32;
+import org.web3j.abi.datatypes.generated.Bytes4;
 import org.web3j.crypto.ECDSASignature;
 import org.web3j.crypto.Keys;
 import org.web3j.crypto.Sign;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.methods.request.Transaction;
+import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Numeric;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -35,6 +47,9 @@ public class WalletVerifyService {
     private final WalletUserRepository walletUserRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final WalletRefreshTokenRepository walletRefreshTokenRepository;
+
+    private static final String BASE_RPC_URL = "https://mainnet.base.org";
+    private static final String ERC1271_MAGIC_VALUE = "0x1626ba7e";
 
     public WalletVerifyResult verify(WalletVerifyRequest request) {
 
@@ -58,11 +73,17 @@ public class WalletVerifyService {
 
         log.debug("request address = {}", address);
 
-        String recoveredAddress = recoverAddress(walletNonce.getMessage(), signature, address);
+//        String recoveredAddress = recoverAddress(walletNonce.getMessage(), signature, address);
+//
+//        log.debug("recovered address = {}", recoveredAddress);
+//
+//        if (!address.equalsIgnoreCase(recoveredAddress)) {
+//            throw new WalletAuthException("Signature verification failed");
+//        }
 
-        log.debug("recovered address = {}", recoveredAddress);
+        boolean valid = verifySignature(walletNonce.getMessage(), signature, address);
 
-        if (!address.equalsIgnoreCase(recoveredAddress)) {
+        if (!valid) {
             throw new WalletAuthException("Signature verification failed");
         }
 
@@ -99,6 +120,97 @@ public class WalletVerifyService {
         );
     }
 
+    private boolean verifySmartWalletSignature(String message, String signature, String walletAddress) {
+        try {
+            Web3j web3j = Web3j.build(new HttpService(BASE_RPC_URL));
+
+            byte[] messageHash = Sign.getEthereumMessageHash(
+                    message.getBytes(StandardCharsets.UTF_8)
+            );
+
+            byte[] signatureBytes = Numeric.hexStringToByteArray(signature);
+
+            Function function = new Function(
+                    "isValidSignature",
+                    List.of(
+                            new Bytes32(messageHash),
+                            new DynamicBytes(signatureBytes)
+                    ),
+                    List.of(new TypeReference<Bytes4>() {})
+            );
+
+            String encodedFunction = FunctionEncoder.encode(function);
+
+            Transaction transaction = Transaction.createEthCallTransaction(
+                    null,
+                    walletAddress,
+                    encodedFunction
+            );
+
+            String result = web3j.ethCall(
+                    transaction,
+                    DefaultBlockParameterName.LATEST
+            ).send().getValue();
+
+            log.info("ERC1271 isValidSignature result={}", result);
+
+            if (result == null || result.equals("0x")) {
+                return false;
+            }
+
+            List<org.web3j.abi.datatypes.Type> decoded =
+                    FunctionReturnDecoder.decode(result, function.getOutputParameters());
+
+            if (decoded.isEmpty()) {
+                return false;
+            }
+
+            Bytes4 magicValue = (Bytes4) decoded.get(0);
+            String returnedMagicValue = Numeric.toHexString(magicValue.getValue());
+
+            log.info("ERC1271 returnedMagicValue={}", returnedMagicValue);
+
+            return ERC1271_MAGIC_VALUE.equalsIgnoreCase(returnedMagicValue);
+        } catch (Exception e) {
+            log.warn("Smart wallet signature verification failed. wallet={}, error={}",
+                    walletAddress,
+                    e.getMessage()
+            );
+            return false;
+        }
+    }
+
+
+    private boolean verifySignature(String message, String signature, String expectedAddress) {
+        if (!isValidHexSignature(signature)) {
+            throw new WalletAuthException("Invalid signature format");
+        }
+
+        byte[] sigBytes = Numeric.hexStringToByteArray(signature);
+
+        if (sigBytes.length == 65) {
+            String recoveredAddress = recoverAddress(message, signature, expectedAddress);
+            log.debug("recovered address = {}", recoveredAddress);
+            return expectedAddress.equalsIgnoreCase(recoveredAddress);
+        }
+
+        log.info("Smart wallet signature detected. signatureBytesLength={}", sigBytes.length);
+
+        return verifySmartWalletSignature(message, signature, expectedAddress);
+    }
+
+    private boolean isValidHexSignature(String signature) {
+        if (signature == null || !signature.startsWith("0x")) {
+            return false;
+        }
+
+        String hex = signature.substring(2);
+
+        return !hex.isBlank()
+                && hex.length() % 2 == 0
+                && hex.matches("^[0-9a-fA-F]+$");
+    }
+
     private String recoverAddress(String message, String signature, String expectedAddress) {
         try {
             Sign.SignatureData signatureData = signatureStringToData(signature);
@@ -130,7 +242,7 @@ public class WalletVerifyService {
             }
 
             throw new IllegalArgumentException("Failed to recover matching address from signature");
-        } catch (WalletAuthException e) {
+        } catch (Exception e) {
             throw new WalletAuthException("Invalid signature format", e);
         }
     }

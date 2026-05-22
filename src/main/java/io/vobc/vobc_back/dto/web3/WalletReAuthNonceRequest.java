@@ -8,4 +8,5 @@ import java.lang.String;
 @NoArgsConstructor
 public class WalletReAuthNonceRequest {
     private String action;
+    private Long chainId;
 }
