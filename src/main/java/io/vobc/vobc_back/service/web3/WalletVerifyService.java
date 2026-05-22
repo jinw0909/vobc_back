@@ -13,29 +13,11 @@ import io.vobc.vobc_back.security.jwt.JwtTokenProvider;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.web3j.abi.FunctionEncoder;
-import org.web3j.abi.FunctionReturnDecoder;
-import org.web3j.abi.TypeReference;
-import org.web3j.abi.datatypes.DynamicBytes;
-import org.web3j.abi.datatypes.Function;
-import org.web3j.abi.datatypes.generated.Bytes32;
-import org.web3j.abi.datatypes.generated.Bytes4;
-import org.web3j.crypto.ECDSASignature;
-import org.web3j.crypto.Keys;
-import org.web3j.crypto.Sign;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.http.HttpService;
-import org.web3j.utils.Numeric;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -47,8 +29,13 @@ public class WalletVerifyService {
     private final WalletUserRepository walletUserRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final WalletRefreshTokenRepository walletRefreshTokenRepository;
+    private final WalletSignatureVerifier walletSignatureVerifier;
 
-    private static final String BASE_RPC_URL = "https://mainnet.base.org";
+//    private static final String BASE_RPC_URL = "https://mainnet.base.org";
+
+    @Value("${web3.base.rpc-url}")
+    private String baseRpcUrl;
+
     private static final String ERC1271_MAGIC_VALUE = "0x1626ba7e";
 
     public WalletVerifyResult verify(WalletVerifyRequest request) {
@@ -81,7 +68,17 @@ public class WalletVerifyService {
 //            throw new WalletAuthException("Signature verification failed");
 //        }
 
-        boolean valid = verifySignature(walletNonce.getMessage(), signature, address);
+//        boolean valid = verifySignature(walletNonce.getMessage(), signature, address);
+//
+//        if (!valid) {
+//            throw new WalletAuthException("Signature verification failed");
+//        }
+
+        boolean valid = walletSignatureVerifier.verify(
+                walletNonce.getMessage(),
+                signature,
+                address
+        );
 
         if (!valid) {
             throw new WalletAuthException("Signature verification failed");
@@ -120,150 +117,6 @@ public class WalletVerifyService {
         );
     }
 
-    private boolean verifySmartWalletSignature(String message, String signature, String walletAddress) {
-        try {
-            Web3j web3j = Web3j.build(new HttpService(BASE_RPC_URL));
-
-            byte[] messageHash = Sign.getEthereumMessageHash(
-                    message.getBytes(StandardCharsets.UTF_8)
-            );
-
-            byte[] signatureBytes = Numeric.hexStringToByteArray(signature);
-
-            Function function = new Function(
-                    "isValidSignature",
-                    List.of(
-                            new Bytes32(messageHash),
-                            new DynamicBytes(signatureBytes)
-                    ),
-                    List.of(new TypeReference<Bytes4>() {})
-            );
-
-            String encodedFunction = FunctionEncoder.encode(function);
-
-            Transaction transaction = Transaction.createEthCallTransaction(
-                    null,
-                    walletAddress,
-                    encodedFunction
-            );
-
-            String result = web3j.ethCall(
-                    transaction,
-                    DefaultBlockParameterName.LATEST
-            ).send().getValue();
-
-            log.info("ERC1271 isValidSignature result={}", result);
-
-            if (result == null || result.equals("0x")) {
-                return false;
-            }
-
-            List<org.web3j.abi.datatypes.Type> decoded =
-                    FunctionReturnDecoder.decode(result, function.getOutputParameters());
-
-            if (decoded.isEmpty()) {
-                return false;
-            }
-
-            Bytes4 magicValue = (Bytes4) decoded.get(0);
-            String returnedMagicValue = Numeric.toHexString(magicValue.getValue());
-
-            log.info("ERC1271 returnedMagicValue={}", returnedMagicValue);
-
-            return ERC1271_MAGIC_VALUE.equalsIgnoreCase(returnedMagicValue);
-        } catch (Exception e) {
-            log.warn("Smart wallet signature verification failed. wallet={}, error={}",
-                    walletAddress,
-                    e.getMessage()
-            );
-            return false;
-        }
-    }
-
-
-    private boolean verifySignature(String message, String signature, String expectedAddress) {
-        if (!isValidHexSignature(signature)) {
-            throw new WalletAuthException("Invalid signature format");
-        }
-
-        byte[] sigBytes = Numeric.hexStringToByteArray(signature);
-
-        if (sigBytes.length == 65) {
-            String recoveredAddress = recoverAddress(message, signature, expectedAddress);
-            log.debug("recovered address = {}", recoveredAddress);
-            return expectedAddress.equalsIgnoreCase(recoveredAddress);
-        }
-
-        log.info("Smart wallet signature detected. signatureBytesLength={}", sigBytes.length);
-
-        return verifySmartWalletSignature(message, signature, expectedAddress);
-    }
-
-    private boolean isValidHexSignature(String signature) {
-        if (signature == null || !signature.startsWith("0x")) {
-            return false;
-        }
-
-        String hex = signature.substring(2);
-
-        return !hex.isBlank()
-                && hex.length() % 2 == 0
-                && hex.matches("^[0-9a-fA-F]+$");
-    }
-
-    private String recoverAddress(String message, String signature, String expectedAddress) {
-        try {
-            Sign.SignatureData signatureData = signatureStringToData(signature);
-
-            byte[] messageHash = Sign.getEthereumMessageHash(
-                    message.getBytes(StandardCharsets.UTF_8)
-            );
-
-            for (int recId = 0; recId < 4; recId++) {
-                BigInteger publicKey = Sign.recoverFromSignature(
-                        recId,
-                        new ECDSASignature(
-                                new BigInteger(1, signatureData.getR()),
-                                new BigInteger(1, signatureData.getS())
-                        ),
-                        messageHash
-                );
-
-                if (publicKey == null) {
-                    continue;
-                }
-
-                String recovered = "0x" + Keys.getAddress(publicKey);
-                String normalizedRecovered = recovered.toLowerCase();
-
-                if (normalizedRecovered.equals(expectedAddress.toLowerCase())) {
-                    return normalizedRecovered;
-                }
-            }
-
-            throw new IllegalArgumentException("Failed to recover matching address from signature");
-        } catch (Exception e) {
-            throw new WalletAuthException("Invalid signature format", e);
-        }
-    }
-
-    private Sign.SignatureData signatureStringToData(String signature) {
-        byte[] sigBytes = Numeric.hexStringToByteArray(signature);
-
-        if (sigBytes.length != 65) {
-            throw new WalletAuthException("Invalid signature length");
-        }
-
-        byte v = sigBytes[64];
-        if (v < 27) {
-            v += 27;
-        }
-
-        byte[] r = Arrays.copyOfRange(sigBytes, 0, 32);
-        byte[] s = Arrays.copyOfRange(sigBytes, 32, 64);
-
-        return new Sign.SignatureData(v, r, s);
-    }
 
     private String normalize(@NotBlank String address) {
         if (address == null || address.isBlank()) {
