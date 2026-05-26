@@ -3,7 +3,11 @@ package io.vobc.vobc_back.security.jwt;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
+
+import java.time.Duration;
 
 @Component
 public class RefreshTokenCookieProvider {
@@ -12,21 +16,27 @@ public class RefreshTokenCookieProvider {
     private static final int EXPIRE_SECONDS = 60 * 60 * 24 * 7;
 
     public void addCookie(HttpServletResponse response, String token) {
-        Cookie cookie = new Cookie(COOKIE_NAME, token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(EXPIRE_SECONDS);
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from(COOKIE_NAME, token)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(Duration.ofSeconds(EXPIRE_SECONDS))
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     public void deleteCookie(HttpServletResponse response) {
-        Cookie cookie = new Cookie(COOKIE_NAME, null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from(COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     public String getTokenFromCookie(HttpServletRequest request) {
@@ -37,6 +47,7 @@ public class RefreshTokenCookieProvider {
                 return cookie.getValue();
             }
         }
+
         return null;
     }
 }
