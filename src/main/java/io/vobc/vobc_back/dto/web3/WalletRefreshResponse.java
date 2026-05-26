@@ -13,4 +13,9 @@ public class WalletRefreshResponse {
     private String tokenType;
     private Long expiresIn;
 
+    private String nickname;
+    private String email;
+    private String bio;
+    private String profileImageUrl;
+
 }

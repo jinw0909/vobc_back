@@ -68,7 +68,12 @@ public class WalletRefreshService {
                 walletUser.getWalletAddress(),
                 newAccessToken,
                 "Bearer",
-                jwtTokenProvider.getAccessTokenExpirationMs() / 1000
+                jwtTokenProvider.getAccessTokenExpirationMs() / 1000,
+                walletUser.getNickname(),
+                walletUser.getEmail(),
+                walletUser.getBio(),
+                walletUser.getProfileImageUrl()
+
         );
 
     }
