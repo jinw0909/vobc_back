@@ -33,7 +33,8 @@ public class WalletNonceService {
     public WalletNonceResponse issueNonce(WalletNonceRequest request) {
 
 //        String uri = "http://localhost:3000/login";
-        String uri = domain + "/login";
+//        String uri = domain + "/login";
+        String uri = domain;
 
         String walletAddress = request.getAddress().trim();
         String checksumAddress = Keys.toChecksumAddress(walletAddress);
@@ -93,7 +94,8 @@ public class WalletNonceService {
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-        String uri = domain + "/profile";
+//        String uri = domain + "/profile";
+        String uri = domain;
 
         String message = String.join("\n",
                 removeSchemeFromDomain(domain) + " wants you to sign in with your Ethereum account:",
