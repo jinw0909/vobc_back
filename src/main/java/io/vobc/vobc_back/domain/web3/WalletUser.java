@@ -1,5 +1,8 @@
 package io.vobc.vobc_back.domain.web3;
 
+import io.vobc.vobc_back.domain.web3.entry.EntryComment;
+import io.vobc.vobc_back.domain.web3.entry.Entry;
+import io.vobc.vobc_back.domain.web3.entry.EntryLike;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -10,6 +13,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter @Setter
@@ -45,6 +50,15 @@ public class WalletUser {
 
     @Column(name = "balance_updated_at")
     private LocalDateTime balanceUpdatedAt;
+
+    @OneToMany(mappedBy = "walletUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Entry> entryList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "walletUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EntryLike> entryLikeList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "walletUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EntryComment> entryCommentList = new ArrayList<>();
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

@@ -40,7 +40,6 @@ public class Media {
     @JoinColumn(name = "post_id")
     Post post;
 
-
     private boolean deleted = false;
 
     public static Media create(String assetId, String url, String s3Key, ContentType contentType, Article article) {
