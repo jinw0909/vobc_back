@@ -59,4 +59,12 @@ public class Entry {
         entry.setContent(request.getContent());
         return entry;
     }
+
+    public void changeCoverImageUrl(String coverImageUrl) {
+
+    }
+
+    public void changeContent(String finalContent) {
+
+    }
 }

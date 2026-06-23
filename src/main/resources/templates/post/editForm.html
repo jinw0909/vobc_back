@@ -199,7 +199,7 @@
             uploadBtn.textContent = '업로드 중...';
 
             try {
-                const res = await fetch('/api/upload/thumbnail', { method: 'POST', body: fd });
+                const res = await fetch('/upload/thumbnail', { method: 'POST', body: fd });
                 if (!res.ok) throw new Error('업로드 실패');
                 const data = await res.json();
                 const url = data.url;

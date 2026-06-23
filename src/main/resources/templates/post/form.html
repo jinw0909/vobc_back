@@ -182,7 +182,7 @@
             uploadBtn.textContent = '업로드 중...';
 
             try {
-                const response = await fetch('/api/upload/thumbnail', {
+                const response = await fetch('/upload/thumbnail', {
                     method: 'POST',
                     body: formData
                     // 🔐 CSRF를 쓰고 있으면 여기서 헤더 추가 필요

@@ -13,9 +13,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,18 +28,44 @@ public class EntryController {
 
     private final EntryService entryService;
 
-    @PostMapping("/create")
-    public ResponseEntity<EntryCreateResponse> create(@RequestBody EntryCreateRequest request,
-                                                      @AuthenticationPrincipal WalletPrincipal walletPrincipal) {
+//    @PostMapping("/create")
+//    public ResponseEntity<EntryCreateResponse> create(@RequestBody EntryCreateRequest request,
+//                                                      @AuthenticationPrincipal WalletPrincipal walletPrincipal) {
+//
+//        if (walletPrincipal == null) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//        }
+//
+//        Entry entry = entryService.create(walletPrincipal.getUserId(), request);
+//        EntryCreateResponse response = EntryCreateResponse.from(entry);
+//
+//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//    }
 
+    @PostMapping(
+            value = "/create",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<EntryCreateResponse> create(
+            @RequestPart("request") EntryCreateRequest request,
+            @RequestPart(value = "coverImage", required = false) MultipartFile coverImage,
+            @RequestPart(value = "contentImages", required = false) List<MultipartFile> contentImages,
+            @AuthenticationPrincipal WalletPrincipal walletPrincipal
+    ) {
         if (walletPrincipal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Entry entry = entryService.create(walletPrincipal.getUserId(), request);
-        EntryCreateResponse response = EntryCreateResponse.from(entry);
+        Entry entry = entryService.create(
+                walletPrincipal.getUserId(),
+                request,
+                coverImage,
+                contentImages == null ? List.of() : contentImages
+        );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(EntryCreateResponse.from(entry));
     }
 
     @GetMapping("/list")
