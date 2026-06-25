@@ -1,6 +1,7 @@
 package io.vobc.vobc_back.service.web3;
 
 import io.vobc.vobc_back.domain.web3.WalletNonce;
+import io.vobc.vobc_back.domain.web3.WalletNonceStatus;
 import io.vobc.vobc_back.domain.web3.WalletRefreshToken;
 import io.vobc.vobc_back.domain.web3.WalletUser;
 import io.vobc.vobc_back.dto.web3.WalletVerifyRequest;
@@ -50,6 +51,10 @@ public class WalletVerifyService {
         WalletNonce walletNonce = walletNonceRepository.findByWalletAddressAndNonce(address, request.getNonce())
                 .orElseThrow(() -> new WalletAuthException("Valid Nonce not found"));
 
+        if (walletNonce.getStatus() != WalletNonceStatus.PENDING) {
+            throw new WalletAuthException("Nonce is not pending");
+        }
+
         if (walletNonce.isUsed()) {
             throw new WalletAuthException("Nonce has already been used");
         }
@@ -85,6 +90,8 @@ public class WalletVerifyService {
         }
 
         walletNonce.markUsed();
+
+        walletNonceRepository.invalidatePendingNoncesByAddress(address, walletNonce.getId(), LocalDateTime.now());
 
         WalletUser walletUser = walletUserRepository.findByWalletAddress(address)
                 .orElseGet(() -> walletUserRepository.save(WalletUser.create(address)));

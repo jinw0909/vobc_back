@@ -42,10 +42,7 @@ public class EntryController {
 //        return ResponseEntity.status(HttpStatus.CREATED).body(response);
 //    }
 
-    @PostMapping(
-            value = "/create",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EntryCreateResponse> create(
             @RequestPart("request") EntryCreateRequest request,
             @RequestPart(value = "coverImage", required = false) MultipartFile coverImage,

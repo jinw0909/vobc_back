@@ -30,6 +30,14 @@ public class WalletNonce {
     @Column(nullable = false)
     private boolean used = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private WalletNonceStatus status = WalletNonceStatus.PENDING;
+
+    private LocalDateTime usedAt;
+
+    private LocalDateTime invalidatedAt;
+
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
@@ -48,6 +56,13 @@ public class WalletNonce {
 
     public void markUsed() {
         this.used = true;
+        this.status = WalletNonceStatus.USED;
+        this.usedAt = LocalDateTime.now();
+    }
+
+    public void invalidate() {
+        this.status = WalletNonceStatus.INVALIDATED;
+        this.invalidatedAt = LocalDateTime.now();
     }
 
     public boolean isExpired(LocalDateTime now) {

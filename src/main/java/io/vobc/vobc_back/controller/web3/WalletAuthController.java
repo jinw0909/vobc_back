@@ -11,8 +11,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.lang.String;
 
 @Slf4j
 @RestController
@@ -75,8 +78,17 @@ public class WalletAuthController {
     }
 
     @PostMapping("/logout")
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         walletRefreshService.logout(request, response);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/disconnect")
+    public ResponseEntity<Void> disconnect(@RequestBody String walletAddress,
+                                           HttpServletRequest request,
+                                           HttpServletResponse response) {
+        walletRefreshService.disconnect(walletAddress, request, response);
+        return ResponseEntity.ok().build();
     }
 
 }
