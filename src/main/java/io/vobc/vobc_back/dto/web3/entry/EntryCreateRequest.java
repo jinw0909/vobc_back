@@ -7,4 +7,6 @@ public class EntryCreateRequest {
 
     private String title;
     private String content;
+    private String coverImageUrl;
+
 }

@@ -21,52 +21,39 @@ import java.util.List;
 public class EntryService {
 
     private final EntryRepository entryRepository;
-    private final WalletUserRepository WalletUserRepository;
+    private final WalletUserRepository walletUserRepository;
     private final EntryImageService entryImageService;
-
-
-
-//    @Transactional
-//    public Entry create(Long userId, EntryCreateRequest request) {
-//        WalletUser walletUser = WalletUserRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Wallet user not found: " + userId));
-//        Entry entry = Entry.createEntry(walletUser, request);
-//        entryRepository.save(entry);
-//        return entry;
-//    }
 
     @Transactional(readOnly = true)
     public Page<EntryResponse> list(Pageable pageable) {
         return null;
     }
 
+    @Transactional
     public Entry create(Long userId,
                         EntryCreateRequest request,
-                        MultipartFile coverImage,
-                        List<MultipartFile> contentImages) {
-        WalletUser user = WalletUserRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                        List<MultipartFile> contentImages,
+                        List<String> contentImageSrcs) {
+        WalletUser user = walletUserRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
 
-        Entry entry = Entry.createEntry(
-                user,
-                request
-        );
+        Entry entry = Entry.createEntry(user, request);
 
         entryRepository.save(entry);
-
-        String coverImageUrl = null;
-
-        if (coverImage != null && !coverImage.isEmpty()) {
-            coverImageUrl = entryImageService.uploadCoverImage(entry.getId(), coverImage);
-            entry.changeCoverImageUrl(coverImageUrl);
-        }
 
         String finalContent = entryImageService.replaceContentImageAndSave(
                 entry,
                 request.getContent(),
-                contentImages
+                contentImages,
+                contentImageSrcs
         );
 
         entry.changeContent(finalContent);
 
         return entry;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EntryResponse> myEntries(Long userId, Pageable pageable) {
+        return entryRepository.findByWalletUserId(userId, pageable).map(EntryResponse::from);
     }
 }

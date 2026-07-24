@@ -34,15 +34,21 @@ public class Entry {
 
     private String title;
 
+    @Lob
     private String content;
+
+    @Column(length = 1024)
+    private String coverImageUrl;
 
     private Integer likeCount;
 
     @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL)
     private List<EntryComment> entryComments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL)
-    private List<EntryMedia> media = new ArrayList<>();
+//    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL)
+//    private List<EntryMedia> media = new ArrayList<>();
+
+
 
     @CreatedDate
     @Column(updatable = false)
@@ -57,14 +63,17 @@ public class Entry {
         walletUser.getEntryList().add(entry);
         entry.setTitle(request.getTitle());
         entry.setContent(request.getContent());
+        entry.setCoverImageUrl(request.getCoverImageUrl());
+        entry.setLikeCount(0);
         return entry;
     }
 
     public void changeCoverImageUrl(String coverImageUrl) {
+        this.coverImageUrl = coverImageUrl;
 
     }
 
     public void changeContent(String finalContent) {
-
+        this.content = finalContent;
     }
 }

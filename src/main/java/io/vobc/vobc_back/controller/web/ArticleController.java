@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -226,34 +227,69 @@ public class ArticleController {
 
 
 
-    @PostMapping(value = "/translate/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String translate(@PathVariable Long id,
-                            @RequestParam("lang") String lang,
-                            @ModelAttribute("translation") ArticleTranslationForm form,
-                            RedirectAttributes ra
-    ) {
+//    @PostMapping(value = "/translate/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public String translate(@PathVariable Long id,
+//                            @RequestParam("lang") String lang,
+//                            @ModelAttribute("translation") ArticleTranslationForm form,
+//                            RedirectAttributes ra
+//    ) {
+//
+//        form.setLanguageCode(LanguageCode.from(lang));
+//
+//        try {
+//            articleService.saveTranslation(id, form);
+//
+//            ra.addFlashAttribute("flashType", "success");
+//            ra.addFlashAttribute("flashMsg", "저장 완료");
+//
+//        } catch (DataIntegrityViolationException e) {
+//            FlashError fe = FlashError.from(e);
+//
+//            ra.addFlashAttribute("flashType", "danger");
+//            ra.addFlashAttribute("flashMsg", fe.userMessage());
+//            ra.addFlashAttribute("detail", fe.detail());
+//        } catch (Exception e) {
+//            ra.addFlashAttribute("flashType", "danger");
+//            ra.addFlashAttribute("flashMsg", "저장 중 오류가 발생했습니다.");
+//            ra.addFlashAttribute("flashDetail", rootMessage(e));
+//        }
+//
+//        return "redirect:/article/translate/" + id + "?lang=" + form.getLanguageCode().getCode();
+//    }
 
-        form.setLanguageCode(LanguageCode.from(lang));
+    @PostMapping(value = "/translate/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public ResponseEntity<?> translate(@PathVariable Long id,
+                                       @RequestParam("lang") String lang,
+                                       @ModelAttribute("translation") ArticleTranslationForm form) {
+
+        LanguageCode languageCode = LanguageCode.from(lang);
+        form.setLanguageCode(languageCode);
 
         try {
             articleService.saveTranslation(id, form);
 
-            ra.addFlashAttribute("flashType", "success");
-            ra.addFlashAttribute("flashMsg", "저장 완료");
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "저장 완료"
+            ));
 
         } catch (DataIntegrityViolationException e) {
             FlashError fe = FlashError.from(e);
 
-            ra.addFlashAttribute("flashType", "danger");
-            ra.addFlashAttribute("flashMsg", fe.userMessage());
-            ra.addFlashAttribute("detail", fe.detail());
-        } catch (Exception e) {
-            ra.addFlashAttribute("flashType", "danger");
-            ra.addFlashAttribute("flashMsg", "저장 중 오류가 발생했습니다.");
-            ra.addFlashAttribute("flashDetail", rootMessage(e));
-        }
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", fe.userMessage(),
+                    "detail", fe.detail()
+            ));
 
-        return "redirect:/article/translate/" + id + "?lang=" + form.getLanguageCode().getCode();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "message", "저장 중 오류가 발생했습니다.",
+                    "detail", rootMessage(e)
+            ));
+        }
     }
 
 

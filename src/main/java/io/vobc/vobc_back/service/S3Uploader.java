@@ -44,6 +44,11 @@ public class S3Uploader {
         return uploadAndReturnKey(file, dirName);
     }
 
+    public UploadResult uploadEntryImageToS3(Long entryId, String assetId, MultipartFile file) throws IOException {
+        String dirName = "entries/" + entryId + "/" + assetId;
+        return uploadAndReturnKey(file, dirName);
+    }
+
     public UploadResult uploadAndReturnKey(MultipartFile file, String dirName) throws IOException {
         String originalName = file.getOriginalFilename();
         String ext = "";

@@ -398,12 +398,48 @@
         saveBtn.textContent = '저장 중...';
       }
 
-      const res = await fetch(formEl.action, { method: 'POST', body: fd });
+      // const res = await fetch(formEl.getAttribute('action'), { method: 'POST', body: fd, redirect: 'manual' });
+      //
+      // // if (res.redirected) { window.location.href = res.url; return; }
+      // // if (res.ok) { window.location.reload(); return; }
+      //
+      // if (
+      //         res.ok ||
+      //         res.status === 0 ||
+      //         (res.status >= 300 && res.status < 400) ||
+      //         res.type === 'opaqueredirect'
+      // ) {
+      //   window.location.reload();
+      //   return;
+      // }
+      //
+      // throw new Error('저장 실패: ' + res.status + ' ' + await res.text());
 
-      if (res.redirected) { window.location.href = res.url; return; }
-      if (res.ok) { window.location.reload(); return; }
+      const actionPath = formEl.getAttribute('action');
+      const postUrl = new URL(actionPath, window.location.origin);
+
+      postUrl.protocol = window.location.protocol;
+      postUrl.host = window.location.host;
+
+      const res = await fetch(postUrl.toString(), {
+        method: 'POST',
+        body: fd,
+        redirect: 'manual',
+        credentials: 'same-origin'
+      });
+
+      if (
+              res.ok ||
+              res.status === 0 ||
+              (res.status >= 300 && res.status < 400) ||
+              res.type === 'opaqueredirect'
+      ) {
+        window.location.reload();
+        return;
+      }
 
       throw new Error('저장 실패: ' + res.status + ' ' + await res.text());
+
     } catch (e) {
       console.error(e);
       alert(e?.message ?? e);

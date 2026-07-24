@@ -46,7 +46,7 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
         left join PublisherTranslation pt
           on pt.publisher = p
          and pt.languageCode = :languageCode
-        order by a.releaseDate desc
+        order by a.releaseDate desc, a.id desc
     """)
     Page<ArticleResponse> findAllWithTranslations(
             Pageable pageable,
@@ -117,7 +117,7 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
       on ptr.publisher = p
      and ptr.languageCode = :languageCode
     where a.id <> :articleId
-    order by a.releaseDate desc
+    order by a.releaseDate desc, a.id desc
 """)
     List<ArticleResponse> findRelatedByPrimaryTopic(
             @Param("articleId") Long articleId,
