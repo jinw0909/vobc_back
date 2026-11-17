@@ -538,3 +538,44 @@
         font-size: 1.2rem;
     }
 }
+
+
+/* =========================================
+   Sticky Tiptap Toolbar
+========================================= */
+
+.editor-toolbar {
+    position: sticky;
+    top: 60px;
+    z-index: 100;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 12px;
+
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* 툴바 버튼 */
+.editor-toolbar .btn {
+    white-space: nowrap;
+}
+
+/* 모바일 */
+@media (max-width: 768px) {
+    .editor-toolbar {
+        top: 55px;
+        padding: 8px;
+        gap: 6px;
+        z-index: 100;
+    }
+}
