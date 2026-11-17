@@ -79,35 +79,262 @@
     }
 
     /* ===== Body Card ===== */
+
+    /* =========================================
+       Article Detail - Body Card
+    ========================================= */
+
     .article-body {
         background: #fff;
-        border: 1px solid rgba(0,0,0,.08);
+        border: 1px solid rgba(0, 0, 0, 0.08);
         border-radius: 14px;
-        padding: 26px 22px;
-        box-shadow: 0 6px 18px rgba(0,0,0,.04);
+        padding: 30px 28px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
     }
 
-    .article-content { font-size: 1.05rem; line-height: 1.85; color: #212529; }
-    .article-content p { margin-bottom: 1.2rem; }
-    .article-content img { max-width: 100%; height: auto; border-radius: 10px; margin: 1.5rem 0; }
+    /* =========================================
+       Article Content
+    ========================================= */
+
+    .article-content {
+        width: 100%;
+        min-width: 0;
+
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.85;
+
+        color: #292929;
+        word-break: normal;
+        overflow-wrap: break-word;
+    }
+
+    /* 일반 문단 */
+    .article-content p {
+        margin: 0 0 1.4rem;
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.85;
+    }
+
+    /* 첫 번째 요소 */
+    .article-content > :first-child {
+        margin-top: 0;
+    }
+
+    /* 마지막 요소 */
+    .article-content > :last-child {
+        margin-bottom: 0;
+    }
+
+    /* 빈 문단 */
+    .article-content p:empty,
+    .article-content p:has(> br:only-child) {
+        display: none;
+    }
+
+    /* =========================================
+       Headings
+    ========================================= */
+
+    .article-content h1 {
+        margin: 3rem 0 1.25rem;
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: -0.025em;
+        color: #151515;
+    }
+
     .article-content h2 {
-        font-size: 1.55rem; font-weight: 800;
-        margin: 2.4rem 0 1rem;
-        border-left: 4px solid #0d6efd;
-        padding-left: .75rem;
-    }
-    .article-content h3 { font-size: 1.25rem; font-weight: 700; margin: 2rem 0 .75rem; }
-    .article-content ul, .article-content ol { padding-left: 1.4rem; margin-bottom: 1.2rem; }
-    .article-content blockquote {
-        border-left: 4px solid #dee2e6;
-        padding: .85rem 1rem;
-        margin: 1.6rem 0;
-        background: #f8f9fa;
-        color: #495057;
-        border-radius: 10px;
+        margin: 2.5rem 0 1rem;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: -0.015em;
+        color: #222;
     }
 
-    .article-actions { display: flex; gap: .5rem; justify-content: space-between; flex-wrap: wrap; margin-top: 22px; }
+    .article-content h3 {
+        margin: 2rem 0 0.85rem;
+        font-size: 19px;
+        font-weight: 600;
+        line-height: 1.45;
+        color: #292929;
+    }
+
+    .article-content h4 {
+        margin: 1.75rem 0 0.75rem;
+        font-size: 17px;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    /* 제목 내부 strong */
+    .article-content h1 strong,
+    .article-content h2 strong,
+    .article-content h3 strong {
+        font-weight: inherit;
+    }
+
+    /* =========================================
+       Text Formatting
+    ========================================= */
+
+    .article-content strong,
+    .article-content b {
+        font-weight: 700;
+    }
+
+    .article-content em,
+    .article-content i {
+        font-style: italic;
+    }
+
+    .article-content span[data-small-text] {
+        font-size: 12px;
+        line-height: 1.5;
+        color: #777;
+    }
+
+    /* =========================================
+       Images
+    ========================================= */
+
+    .article-content img {
+        display: block;
+        width: auto;
+        max-width: 100%;
+        height: auto;
+
+        margin: 2rem auto 0.75rem;
+        border-radius: 6px;
+        object-fit: contain;
+    }
+
+    /* 이미지 단독 문단 */
+    .article-content p:has(> img:only-child) {
+        margin-bottom: 0.5rem;
+    }
+
+    /* 이미지 다음 캡션 */
+    .article-content p:has(> img:only-child)
+    + p:has(span[data-small-text]) {
+        margin: 0 0 2.25rem;
+        font-size: 12px;
+        line-height: 1.6;
+        color: #888;
+    }
+
+    /* 캡션 기울임 제거 */
+    .article-content p:has(> img:only-child)
+    + p:has(span[data-small-text]) em {
+        font-style: normal;
+    }
+
+    /* =========================================
+       Lists
+    ========================================= */
+
+    .article-content ul,
+    .article-content ol {
+        margin: 1.25rem 0 1.75rem;
+        padding-left: 1.5rem;
+    }
+
+    .article-content li {
+        margin-bottom: 0.65rem;
+        line-height: 1.8;
+    }
+
+    .article-content li p {
+        margin-bottom: 0.4rem;
+    }
+
+    /* =========================================
+       Links
+    ========================================= */
+
+    .article-content a {
+        color: #2563eb;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
+    .article-content a:hover {
+        color: #1d4ed8;
+    }
+
+    /* =========================================
+       Blockquote
+    ========================================= */
+
+    .article-content blockquote {
+        margin: 1.75rem 0;
+        padding: 0.75rem 1.25rem;
+
+        border-left: 3px solid #d1d5db;
+        border-radius: 6px;
+        background: #f8f9fa;
+        color: #555;
+    }
+
+    /* =========================================
+       Code
+    ========================================= */
+
+    .article-content pre {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        border-radius: 8px;
+        background: #f3f4f6;
+        overflow-x: auto;
+    }
+
+    .article-content code {
+        font-family: ui-monospace, SFMono-Regular,
+        Menlo, Monaco, Consolas, monospace;
+        font-size: 0.9em;
+    }
+
+    /* =========================================
+       Mobile
+    ========================================= */
+
+    @media (max-width: 768px) {
+
+        .article-body {
+            padding: 20px 16px;
+        }
+
+        .article-content,
+        .article-content p {
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .article-content p {
+            margin-bottom: 1.2rem;
+        }
+
+        .article-content h1 {
+            font-size: 23px;
+            margin: 2.5rem 0 1rem;
+        }
+
+        .article-content h2 {
+            font-size: 20px;
+            margin: 2rem 0 0.9rem;
+        }
+
+        .article-content h3 {
+            font-size: 18px;
+        }
+
+        .article-content img {
+            margin-top: 1.75rem;
+        }
+    }
 
     .translate-bar{
         display:flex;
