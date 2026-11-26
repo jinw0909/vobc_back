@@ -376,7 +376,7 @@
             params.append('tagId', tagId);
             params.append('sortOrder', newOrder);
 
-            fetch('/post/tag/order', {
+            adminFetch('/post/tag/order', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -407,7 +407,7 @@
             params.append('postId', postId);
             params.append('tagId', tagId);
 
-            fetch('/post/tag/remove', {
+            adminFetch('/post/tag/remove', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -449,7 +449,7 @@
             params.append('postId', postId);
             params.append('tagId', tagId);
 
-            fetch('/post/tag/add', {
+            adminFetch('/post/tag/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'

@@ -398,7 +398,7 @@
         saveBtn.textContent = '저장 중...';
       }
 
-      // const res = await fetch(formEl.getAttribute('action'), { method: 'POST', body: fd, redirect: 'manual' });
+      // const res = await adminFetch(formEl.getAttribute('action'), { method: 'POST', body: fd, redirect: 'manual' });
       //
       // // if (res.redirected) { window.location.href = res.url; return; }
       // // if (res.ok) { window.location.reload(); return; }
@@ -421,7 +421,7 @@
       postUrl.protocol = window.location.protocol;
       postUrl.host = window.location.host;
 
-      const res = await fetch(postUrl.toString(), {
+      const res = await adminFetch(postUrl.toString(), {
         method: 'POST',
         body: fd,
         redirect: 'manual',

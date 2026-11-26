@@ -225,7 +225,7 @@
                 const fd = new FormData();
                 fd.append('file', file);
 
-                const res = await fetch('/api/upload/thumbnail', {
+                const res = await adminFetch('/upload/thumbnail', {
                     method: 'POST',
                     body: fd
                     // ※ 같은 도메인/세션이면 credentials 필요 없음

@@ -431,7 +431,7 @@
             }
 
             const url = buildSaveUrl();
-            const res = await fetch(url, { method: 'POST', body: fd, headers });
+            const res = await adminFetch(url, { method: 'POST', body: fd, headers });
             if (!res.ok) throw new Error(await res.text());
 
             const data = await res.json();

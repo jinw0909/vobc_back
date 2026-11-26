@@ -446,7 +446,7 @@
         formData.append('file', file);
 
         try {
-            const res = await fetch('/api/upload/thumbnail', {
+            const res = await adminFetch('/upload/thumbnail', {
                 method: 'POST',
                 body: formData
             });
