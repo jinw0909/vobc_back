@@ -16,12 +16,6 @@ public class UploadController {
 
     private final S3Uploader s3Uploader;
 
-    @PostMapping("/api/upload/thumbnail")
-    public Map<String, String> uploadThumbnail(@RequestParam("file") MultipartFile file) throws IOException {
-        String url = s3Uploader.upload(file, "thumbnails");
-        return Map.of("url", url);
-    }
-
     @PostMapping("/web3/api/upload/image")
     public Map<String, String> uploadImage(@RequestParam("file") MultipartFile file) throws IOException {
         String url = s3Uploader.upload(file, "entry-covers");

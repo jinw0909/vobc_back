@@ -203,7 +203,7 @@
             uploadBtn.textContent = '업로드 중...';
 
             try {
-                const response = await fetch('/upload/thumbnail', {
+                const response = await adminFetch('/upload/thumbnail', {
                     method: 'POST',
                     body: formData
                 });
@@ -291,7 +291,7 @@
             btnSave.textContent = '저장 중...';
 
             try {
-                const res = await fetch('/post/new', { method: 'POST', body: formData });
+                const res = await adminFetch('/post/new', { method: 'POST', body: formData });
                 if (!res.ok) throw new Error(await res.text());
 
                 const data = await res.json(); // { id, redirectUrl }

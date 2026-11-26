@@ -1,6 +1,7 @@
 package io.vobc.vobc_back.security;
 
 import io.vobc.vobc_back.domain.member.Member;
+import io.vobc.vobc_back.domain.member.MemberStatus;
 import io.vobc.vobc_back.domain.member.Role;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,12 +18,15 @@ public class CustomUserDetails implements UserDetails {
     private final String email;
     private final String password;
     private final Role role;
+    private final MemberStatus status;
+
 
     public CustomUserDetails(Member member) {
         this.id = member.getId();
         this.email = member.getEmail();
         this.password = member.getPassword();
         this.role = member.getRole();
+        this.status = member.getStatus();
     }
 
     @Override
@@ -57,6 +61,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return status == MemberStatus.ACTIVE;
     }
 }

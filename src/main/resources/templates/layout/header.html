@@ -87,7 +87,6 @@
                     <!-- unauth -->
                     <div th:if="${#authorization.expression('!isAuthenticated()')}" class="d-flex gap-2">
                         <a th:href="@{/auth/login}" class="btn btn-sm btn-outline-secondary">Login</a>
-                        <a th:href="@{/auth/join}" class="btn btn-sm btn-primary">Sign up</a>
                     </div>
 
                     <!-- auth -->
